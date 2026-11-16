@@ -1,0 +1,193 @@
+<?php
+/* Banners do carrossel da página inicial do site (artes 1600 × 900) */
+require __DIR__ . '/../includes/app.php';
+exigir('site.publicar');
+
+$bid = (int)($_GET['editar'] ?? $_POST['id'] ?? 0);
+$atual = $bid ? q_um('SELECT * FROM site_banners WHERE id = ?', [$bid]) : null;
+
+if (eh_post()) {
+    csrf_verificar();
+    $acao = $_POST['acao'] ?? '';
+    try {
+        switch ($acao) {
+            case 'salvar':
+                $t = trim((string)($_POST['titulo'] ?? ''));
+                if (mb_strlen($t) < 3) throw new RuntimeException('Escreva o que o banner diz (serve para quem usa leitor de tela e para achar no painel).');
+                $tipo = (string)($_POST['link_tipo'] ?? '');
+                $link = $tipo === 'outro' ? banner_link_valido((string)($_POST['link_outro'] ?? '')) : banner_link_valido($tipo);
+                if ($tipo === 'outro' && trim((string)($_POST['link_outro'] ?? '')) !== '' && $link === '') throw new RuntimeException('O endereço do link precisa começar com https://');
+                $ini = data_valida($_POST['inicio'] ?? '') ? $_POST['inicio'] : null;
+                $fim = data_valida($_POST['fim'] ?? '') ? $_POST['fim'] : null;
+                if ($ini && $fim && $fim < $ini) throw new RuntimeException('A data de saída do ar é antes da data de início.');
+                $tem_arquivo = !empty($_FILES['imagem']['name']);
+                if (!$atual && !$tem_arquivo) throw new RuntimeException('Escolha a arte do banner (1600 × 900 px).');
+                $dados = [mb_substr($t, 0, 140), $link ?: null, !empty($_POST['ativo']) ? 1 : 0, $ini, $fim];
+                if ($atual) q('UPDATE site_banners SET titulo = ?, link = ?, ativo = ?, inicio = ?, fim = ? WHERE id = ?', [...$dados, $bid]);
+                else {
+                    $ordem = (int)q_valor('SELECT COALESCE(MIN(ordem), 1) - 1 FROM site_banners');   // novo entra primeiro
+                    q('INSERT INTO site_banners (titulo, link, ativo, inicio, fim, imagem, ordem, criado_por, criado_em) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [...$dados, '', $ordem, uid(), date('Y-m-d H:i:s')]);
+                    $bid = (int)db()->lastInsertId();
+                }
+                if ($tem_arquivo) {
+                    [$arq, $w, $h] = site_img_salvar($_FILES['imagem'], 'banners', 'b' . $bid);
+                    if ($atual && $atual['imagem']) site_img_apagar($atual['imagem']);
+                    q('UPDATE site_banners SET imagem = ? WHERE id = ?', [$arq, $bid]);
+                    if ($h > 0 && abs($w / $h - 16 / 9) > 0.08) flash('warning', 'A arte do celular tem ' . $w . ' × ' . $h . ' px. O ideal é 1600 × 900 (16:9): nesse formato ela aparece inteira, sem cortes.');
+                }
+                if (!empty($_FILES['imagem_larga']['name'])) {
+                    [$arq, $w, $h] = site_img_salvar($_FILES['imagem_larga'], 'banners', 'bl' . $bid);
+                    if ($atual && !empty($atual['imagem_larga'])) site_img_apagar($atual['imagem_larga']);
+                    q('UPDATE site_banners SET imagem_larga = ? WHERE id = ?', [$arq, $bid]);
+                    if ($h > 0 && abs($w / $h - 4.8) > 0.4) flash('warning', 'A arte larga tem ' . $w . ' × ' . $h . ' px. O ideal é 1920 × 400: fora disso ela é cortada no computador.');
+                } elseif ($atual && !empty($_POST['tirar_larga']) && !empty($atual['imagem_larga'])) { site_img_apagar($atual['imagem_larga']); q('UPDATE site_banners SET imagem_larga = NULL WHERE id = ?', [$bid]); }
+                registrar_log('site_banner', $t);
+                flash('success', $atual ? 'Banner atualizado.' : 'Banner publicado no site.');
+                redirecionar('banners_site.php');
+            case 'ativo':
+                if ($atual) q('UPDATE site_banners SET ativo = 1 - ativo WHERE id = ?', [$bid]);
+                redirecionar('banners_site.php');
+            case 'mover':
+                $lista = q_todos('SELECT id FROM site_banners ORDER BY ordem, id DESC');
+                $ids = array_map('intval', array_column($lista, 'id'));
+                $k = array_search($bid, $ids, true); $d = (int)($_POST['dir'] ?? 0);
+                if ($k !== false && isset($ids[$k + $d])) { [$ids[$k], $ids[$k + $d]] = [$ids[$k + $d], $ids[$k]]; }
+                foreach ($ids as $i => $id) q('UPDATE site_banners SET ordem = ? WHERE id = ?', [$i + 1, $id]);
+                redirecionar('banners_site.php');
+            case 'apagar':
+                if ($atual) { site_img_apagar($atual['imagem']); site_img_apagar($atual['imagem_larga'] ?? null); q('DELETE FROM site_banners WHERE id = ?', [$bid]); registrar_log('site_banner_apagado', $atual['titulo']); flash('success', 'Banner apagado.'); }
+                redirecionar('banners_site.php');
+            case 'importar_padrao':
+                $pasta = pasta_dados('site/banners'); $n = 0;
+                foreach ($BANNERS_PADRAO ?? [] as $k => $b) {
+                    $orig = dirname(__DIR__) . '/' . $b['imagem'];
+                    if (!is_file($orig)) continue;
+                    $nome = 'bp' . $k . '_' . bin2hex(random_bytes(4));
+                    copy($orig, "$pasta/$nome.jpg"); copy($orig, "$pasta/{$nome}_p.jpg");
+                    $larga = null; $ol = dirname(__DIR__) . '/' . ($b['larga'] ?? '');
+                    if (!empty($b['larga']) && is_file($ol)) { copy($ol, "$pasta/{$nome}_l.jpg"); copy($ol, "$pasta/{$nome}_l_p.jpg"); $larga = "site/banners/{$nome}_l.jpg"; }
+                    q('INSERT INTO site_banners (titulo, imagem, imagem_larga, link, ordem, ativo, inicio, fim, criado_por, criado_em) VALUES (?, ?, ?, ?, ?, 1, NULL, ?, ?, ?)',
+                      [$b['titulo'], "site/banners/$nome.jpg", $larga, $b['link'] ?: null, $k + 1, $b['fim'] ?: null, uid(), date('Y-m-d H:i:s')]);
+                    $n++;
+                }
+                flash('success', $n . ' banners prontos para editar.');
+                redirecionar('banners_site.php');
+        }
+    } catch (RuntimeException $e) { flash('warning', $e->getMessage()); redirecionar('banners_site.php' . ($bid ? '?editar=' . $bid : '')); }
+    redirecionar('banners_site.php');
+}
+
+$lista = site_banners(false);
+$hoje = date('Y-m-d');
+$situacao = function (array $b) use ($hoje): array {
+    if (!$b['ativo']) return ['Desligado', 'off'];
+    if ($b['inicio'] && $b['inicio'] > $hoje) return ['Entra em ' . data_curta($b['inicio']), 'agenda'];
+    if ($b['fim'] && $b['fim'] < $hoje) return ['Saiu do ar em ' . data_curta($b['fim']), 'fim'];
+    return ['No ar' . ($b['fim'] ? ' até ' . data_curta($b['fim']) : ''), 'ar'];
+};
+/* destinos prontos para o link */
+$destinos = ['' => 'Sem link (só a imagem)', 'informes.php' => 'Todas as notícias', '#agenda' => 'Página inicial › Próximos eventos', '#cursos' => 'Página inicial › Cursos',
+             '#escola' => 'Página inicial › A escola', '#historia' => 'Página inicial › História', '#contato' => 'Página inicial › Contato'];
+foreach (site_informes(true, 40) as $i) $destinos['informe.php?id=' . $i['id']] = 'Informe › ' . mb_strimwidth($i['titulo'], 0, 60, '…');
+$f = $atual ?: ['id' => 0, 'titulo' => '', 'link' => '', 'ativo' => 1, 'inicio' => null, 'fim' => null, 'imagem' => '', 'imagem_larga' => null];
+$link_atual = (string)$f['link'];
+$link_outro = $link_atual !== '' && !isset($destinos[$link_atual]);
+
+$titulo = 'Banners do site';
+$subtitulo = 'As artes que passam no topo da página inicial: 1920 × 400 px (computador) e 1600 × 900 px (celular).';
+$menu = 'site';
+require __DIR__ . '/../includes/layout_topo.php';
+require __DIR__ . '/../includes/site_abas.php';
+?>
+<div class="pg-acoes"><?= janela_botao('novoBanner', 'Novo banner', 'plus-lg') ?></div>
+<div class="row g-3">
+    <div class="col-12">
+        <?php if (!$lista): ?>
+        <div class="card"><div class="card-body d-flex flex-column flex-sm-row align-items-sm-center gap-3">
+            <div class="flex-grow-1"><strong class="d-block">Nenhum banner cadastrado ainda</strong><span class="small text-secondary">Enquanto isso, o site mostra os <?= count($BANNERS_PADRAO ?? []) ?> banners padrão da escola (Matrículas, ENEM, UECE e Venha ser EEEP). Os de data passada saem sozinhos.</span></div>
+            <form method="post"><?= csrf_campo() ?><input type="hidden" name="acao" value="importar_padrao"><button class="btn btn-outline-primary text-nowrap" type="submit"><i class="bi bi-download me-1"></i>Trazer os padrão para editar</button></form>
+        </div></div>
+        <?php else: ?>
+        <div class="bn-lista">
+            <?php foreach ($lista as $k => $b): [$st, $cl] = $situacao($b); ?>
+            <article class="bn-item<?= (int)$b['id'] === $bid ? ' ativo' : '' ?> st-<?= $cl ?>">
+                <div class="bn-thumb"><img src="<?= e(site_img_url('b', (int)$b['id'], $b['imagem'], true, RAIZ)) ?>" alt="" loading="lazy"><span class="bn-n"><?= $k + 1 ?></span></div>
+                <div class="bn-info">
+                    <span class="bn-st"><i class="bi bi-circle-fill"></i><?= e($st) ?></span>
+                    <strong><?= e($b['titulo']) ?></strong>
+                    <small><?= $b['link'] ? '<i class="bi bi-link-45deg"></i>' . e($destinos[$b['link']] ?? $b['link']) : 'Sem link' ?></small>
+                </div>
+                <div class="bn-acoes">
+                    <form method="post"><?= csrf_campo() ?><input type="hidden" name="acao" value="mover"><input type="hidden" name="id" value="<?= $b['id'] ?>"><input type="hidden" name="dir" value="-1"><button class="btn btn-sm btn-light" type="submit" aria-label="Subir"<?= $k === 0 ? ' disabled' : '' ?>><i class="bi bi-arrow-up"></i></button></form>
+                    <form method="post"><?= csrf_campo() ?><input type="hidden" name="acao" value="mover"><input type="hidden" name="id" value="<?= $b['id'] ?>"><input type="hidden" name="dir" value="1"><button class="btn btn-sm btn-light" type="submit" aria-label="Descer"<?= $k === count($lista) - 1 ? ' disabled' : '' ?>><i class="bi bi-arrow-down"></i></button></form>
+                    <form method="post"><?= csrf_campo() ?><input type="hidden" name="acao" value="ativo"><input type="hidden" name="id" value="<?= $b['id'] ?>"><button class="btn btn-sm btn-light" type="submit" aria-label="<?= $b['ativo'] ? 'Desligar' : 'Ligar' ?>" title="<?= $b['ativo'] ? 'Tirar do site' : 'Mostrar no site' ?>"><i class="bi bi-<?= $b['ativo'] ? 'eye' : 'eye-slash' ?>"></i></button></form>
+                    <a class="btn btn-sm btn-light" href="?editar=<?= $b['id'] ?>" aria-label="Editar"><i class="bi bi-pencil"></i></a>
+                    <form method="post" data-confirmar="Apagar o banner &quot;<?= e($b['titulo']) ?>&quot;?" data-botao="Apagar"><?= csrf_campo() ?><input type="hidden" name="acao" value="apagar"><input type="hidden" name="id" value="<?= $b['id'] ?>"><button class="btn btn-sm btn-light" type="submit" aria-label="Apagar"><i class="bi bi-trash"></i></button></form>
+                </div>
+            </article>
+            <?php endforeach; ?>
+        </div>
+        <p class="small text-secondary mt-2"><i class="bi bi-info-circle me-1"></i>O site mostra só os que estão <strong>no ar</strong>, na ordem acima. Os novos entram em primeiro.</p>
+        <?php endif; ?>
+    </div>
+</div>
+<?= janela_abre('novoBanner', $atual ? 'Editar banner' : 'Novo banner', $atual ? 'pencil' : 'image', (bool)$atual) ?>
+        <form method="post" enctype="multipart/form-data" class="card bn-form">
+            <?= csrf_campo() ?><input type="hidden" name="acao" value="salvar"><input type="hidden" name="id" value="<?= (int)$f['id'] ?>">
+            <div class="card-header"><h2><i class="bi bi-<?= $atual ? 'pencil' : 'plus-lg' ?> me-1"></i><?= $atual ? 'Editar banner' : 'Novo banner' ?></h2><?php if ($atual): ?><a class="ms-auto small" href="banners_site.php">novo</a><?php endif; ?></div>
+            <div class="card-body">
+                <label class="form-label"><i class="bi bi-display me-1"></i>Arte larga · computador</label>
+                <label class="bn-arte larga" for="bnImgL">
+                    <img id="bnPrevL"<?= !empty($f['imagem_larga']) ? ' src="' . e(site_img_url('b', (int)$f['id'], $f['imagem_larga'], true, RAIZ)) . '&l=1"' : ' hidden' ?> alt="">
+                    <span id="bnPrevTxtL"<?= !empty($f['imagem_larga']) ? ' hidden' : '' ?>><i class="bi bi-image"></i><b>Escolher a arte larga</b><small>1920 × 400 px</small></span>
+                </label>
+                <input class="form-control form-control-sm mt-2" type="file" id="bnImgL" name="imagem_larga" data-recorte="24:5" data-saida="1920" data-recorte-titulo="Enquadrar a arte larga (computador)" accept="image/jpeg,image/png,image/webp">
+                <?php if (!empty($f['imagem_larga'])): ?><label class="form-check small mt-1"><input class="form-check-input" type="checkbox" name="tirar_larga" value="1"> Tirar a arte larga</label><?php endif; ?>
+                <div class="form-text mb-3">Sem a arte larga, o computador mostra a do celular cortada nas bordas.</div>
+                <label class="form-label obrigatorio"><i class="bi bi-phone me-1"></i>Arte do celular</label>
+                <label class="bn-arte" for="bnImg">
+                    <img id="bnPrev"<?= $f['imagem'] ? ' src="' . e(site_img_url('b', (int)$f['id'], $f['imagem'], true, RAIZ)) . '"' : ' hidden' ?> alt="">
+                    <span id="bnPrevTxt"<?= $f['imagem'] ? ' hidden' : '' ?>><i class="bi bi-image"></i><b>Escolher a arte</b><small>JPG ou PNG · 1600 × 900 px (16:9)</small></span>
+                </label>
+                <input class="form-control form-control-sm mt-2" type="file" id="bnImg" name="imagem" data-recorte="16:9" data-saida="1600" data-recorte-titulo="Enquadrar a arte do celular" accept="image/jpeg,image/png,image/webp">
+                <div class="small mt-1" id="bnMedida" hidden></div>
+
+                <label class="form-label mt-3 obrigatorio" for="bnT">O que o banner diz</label>
+                <input class="form-control" id="bnT" name="titulo" maxlength="140" required value="<?= e($f['titulo']) ?>" placeholder="Ex.: Matrículas 2027 abertas">
+                <div class="form-text">Para quem usa leitor de tela e para achar o banner aqui.</div>
+
+                <label class="form-label mt-3" for="bnL">Ao tocar no banner, abrir</label>
+                <select class="form-select" id="bnL" name="link_tipo">
+                    <?php foreach ($destinos as $v => $rot): ?><option value="<?= e($v) ?>"<?= !$link_outro && $link_atual === $v ? ' selected' : '' ?>><?= e($rot) ?></option><?php endforeach; ?>
+                    <option value="outro"<?= $link_outro ? ' selected' : '' ?>>Outro endereço (https://…)</option>
+                </select>
+                <input class="form-control mt-2" id="bnLo" name="link_outro" value="<?= $link_outro ? e($link_atual) : '' ?>" placeholder="https://…"<?= $link_outro ? '' : ' hidden' ?>>
+
+                <div class="row g-2 mt-2">
+                    <div class="col-6"><label class="form-label" for="bnI">Entra no ar em</label><input class="form-control" type="date" id="bnI" name="inicio" value="<?= e((string)$f['inicio']) ?>"></div>
+                    <div class="col-6"><label class="form-label" for="bnF">Sai do ar depois de</label><input class="form-control" type="date" id="bnF" name="fim" value="<?= e((string)$f['fim']) ?>"></div>
+                </div>
+                <div class="form-text">Deixe vazio para publicar já e não tirar sozinho.</div>
+                <label class="form-check form-switch mt-3"><input class="form-check-input" type="checkbox" name="ativo" value="1"<?= $f['ativo'] ? ' checked' : '' ?>> Mostrar no site</label>
+                <button class="btn btn-primary w-100 mt-3" type="submit"><i class="bi bi-send me-1"></i><?= $atual ? 'Salvar alterações' : 'Publicar banner' ?></button>
+            </div>
+        </form>
+        <div class="card mt-3"><div class="card-body small bn-dicas">
+            <strong class="d-block mb-1"><i class="bi bi-lightbulb me-1"></i>Para a arte ficar boa no celular</strong>
+            Computador: 1920 × 400 px · celular: 1600 × 900 px · margem de 80 px sem texto nas bordas · título com 100 px ou mais · no máximo umas 12 palavras · texto à esquerda e foto à direita. No Canva: Tamanho personalizado 1600 × 900, baixar em JPG.
+        </div></div>
+<?= janela_fecha() ?>
+<?php
+$script_pagina = '<script>
+(function () {
+    const inp = document.getElementById("bnImg"), p = document.getElementById("bnPrev"), t = document.getElementById("bnPrevTxt"), m = document.getElementById("bnMedida");
+    const iL = document.getElementById("bnImgL"), pL = document.getElementById("bnPrevL"), tL = document.getElementById("bnPrevTxtL");
+    iL.addEventListener("change", () => { const f = iL.files[0]; if (!f) return; pL.src = URL.createObjectURL(f); pL.hidden = false; tL.hidden = true; });
+    inp.addEventListener("change", () => { const f = inp.files[0]; if (!f) return; const u = URL.createObjectURL(f); p.src = u; p.hidden = false; t.hidden = true;
+        const i = new Image(); i.onload = () => { const r = i.width / i.height, ok = Math.abs(r - 16 / 9) < .08; m.hidden = false; m.className = "small mt-1 " + (ok ? "text-success" : "text-warning");
+            m.innerHTML = (ok ? "<i class=\"bi bi-check-circle-fill\"></i> " : "<i class=\"bi bi-exclamation-triangle-fill\"></i> ") + i.width + " × " + i.height + " px" + (ok ? " · formato certo" : " · o ideal é 1600 × 900 (16:9); fora disso a arte pode ser cortada"); }; i.src = u; });
+    const s = document.getElementById("bnL"), o = document.getElementById("bnLo");
+    s.addEventListener("change", () => { o.hidden = s.value !== "outro"; if (!o.hidden) o.focus(); });
+})();
+</script>';
+require __DIR__ . '/../includes/layout_rodape.php';

@@ -1,0 +1,6 @@
+/* Fontes hospedadas no próprio site (licença SIL Open Font License) */
+@font-face { font-family: "Bricolage Grotesque"; src: url("../vendor/fonts/BricolageGrotesque-Medium.woff") format("woff"); font-weight: 500; font-display: swap; }
+@font-face { font-family: "Bricolage Grotesque"; src: url("../vendor/fonts/BricolageGrotesque-Bold.woff") format("woff"); font-weight: 600 700; font-display: swap; }
+@font-face { font-family: "Bricolage Grotesque"; src: url("../vendor/fonts/BricolageGrotesque-ExtraBold.woff") format("woff"); font-weight: 800 900; font-display: swap; }
+@font-face { font-family: "Source Sans 3"; src: url("../vendor/fonts/SourceSans3-VF.woff2") format("woff2-variations"), url("../vendor/fonts/SourceSans3-VF.woff2") format("woff2"); font-weight: 200 900; font-display: swap; }
+@font-face { font-family: "Plus Jakarta Sans"; src: url("../vendor/fonts/PlusJakartaSans-VF.woff2") format("woff2-variations"), url("../vendor/fonts/PlusJakartaSans-VF.woff2") format("woff2"); font-weight: 200 800; font-display: swap; }

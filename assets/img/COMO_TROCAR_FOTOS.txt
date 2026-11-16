@@ -1,0 +1,22 @@
+FOTOS DO SITE
+=============
+Coloque as fotos nesta pasta (assets/img) com exatamente estes nomes.
+Fotos que não existirem simplesmente não aparecem; nada quebra.
+
+Já incluídas:
+  escola-aerea.jpg   foto aérea (abertura e seção "A escola")
+  diretor.jpg        foto do diretor (seção "Gestão escolar")
+  brasao.png / brasao-128.png / logo-completa.png / favicon.png
+
+Para acrescentar (opcional):
+  curso-informatica.jpg, curso-ds.jpg, curso-enfermagem.jpg, curso-administracao.jpg
+      -> aparecem no lado esquerdo do quadro de cada curso
+  historia-1.jpg ... historia-5.jpg
+      -> fotos de cada marco da linha do tempo
+  galeria-1.jpg ... galeria-6.jpg
+      -> a seção "Fotos" aparece sozinha quando houver pelo menos 3
+
+Para usar outras fotos na abertura (carrossel), edite includes/escola.php,
+parte $HERO, trocando 'escola-aerea.jpg' pelo nome da nova foto.
+
+Dica: fotos deitadas (paisagem), de 1600 a 2000 px de largura, em JPG.

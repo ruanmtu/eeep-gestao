@@ -1,0 +1,187 @@
+/* =====================================================================
+   Tela de login · painel escuro à esquerda, formulário branco à direita
+   ===================================================================== */
+:root { --vn: #062a14; --ve: #0b4a20; --v: #13692a; --vv: #1f9a3a; --vc: #e7f4ea; --l: #f07c12; --le: #d4650a; --ci: #66756b; --li: #dfe6e1;
+        --titulo: "Bricolage Grotesque", "Plus Jakarta Sans", system-ui, sans-serif; --texto: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { font-family: var(--texto); color: #0f1f14; background: #fff; -webkit-font-smoothing: antialiased; line-height: 1.5; }
+h1, h2 { font-family: var(--titulo); letter-spacing: -.035em; line-height: 1.05; margin: 0; }
+a { color: var(--ve); }
+[hidden] { display: none !important; }
+
+.lx { display: grid; grid-template-columns: 1.6fr 1fr; min-height: 100vh; min-height: 100dvh; }
+
+/* ---------- lado escuro ---------- */
+.lx-lado { position: relative; overflow: hidden; color: #fff; padding: 56px 64px; display: flex; flex-direction: column; isolation: isolate;
+           background: radial-gradient(900px 600px at 30% 20%, rgba(31,154,58,.35), transparent 65%), linear-gradient(170deg, #0b4a20 0%, #072f16 55%, #041d0d 100%); }
+.lx-lado::before { content: ""; position: absolute; inset: 0; z-index: -1; background: url("../img/escola-aerea.jpg") center / cover no-repeat; opacity: .07; mix-blend-mode: luminosity; }
+.lx-lado::after { content: ""; position: absolute; right: -120px; bottom: -140px; width: 520px; height: 520px; z-index: -1; border-radius: 50%;
+                  background: url("../img/brasao.png") center / 70% no-repeat; opacity: .07; }
+.lx-canto { position: absolute; width: 44px; height: 44px; border: 2px solid rgba(255,255,255,.45); }
+.lx-canto.c1 { left: 30px; top: 30px; border-right: 0; border-bottom: 0; }
+.lx-canto.c2 { right: 30px; top: 30px; border-left: 0; border-bottom: 0; }
+.lx-canto.c3 { left: 30px; bottom: 30px; border-right: 0; border-top: 0; }
+.lx-canto.c4 { right: 30px; bottom: 30px; border-left: 0; border-top: 0; }
+.lx-marca { display: inline-flex; align-items: center; gap: 14px; color: #fff; text-decoration: none; align-self: flex-start; }
+.lx-marca img { width: 50px; height: 50px; filter: drop-shadow(0 4px 10px rgba(0,0,0,.35)); }
+.lx-marca b { display: block; font-family: var(--titulo); font-size: 1.45rem; font-weight: 800; letter-spacing: -.03em; line-height: 1; }
+.lx-marca small { display: block; font-size: .82rem; color: #cfe3d4; margin-top: 3px; }
+.lx-texto { margin-top: auto; max-width: 700px; }
+.lx-texto h1 { font-size: clamp(2.6rem, 4.6vw, 4.2rem); font-weight: 800; }
+.lx-texto > p { font-size: 1.08rem; color: #dbeadf; margin: 22px 0 34px; max-width: 46ch; line-height: 1.6; }
+.lx-recursos { list-style: none; margin: 0; padding: 28px 0 0; border-top: 1px solid rgba(255,255,255,.16); display: grid; grid-template-columns: repeat(3, 1fr); }
+.lx-recursos li { padding-right: 18px; }
+.lx-recursos li + li { padding-left: 22px; border-left: 1px solid rgba(255,255,255,.14); }
+.lx-recursos span { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.18); font-size: 1.1rem; color: #ffb36b; margin-bottom: 14px; }
+.lx-recursos b { display: block; font-size: .98rem; }
+.lx-recursos small { display: block; font-size: .84rem; color: #c2d8c8; margin-top: 2px; line-height: 1.4; }
+
+/* ---------- formulário ---------- */
+.lx-form { display: flex; flex-direction: column; justify-content: center; padding: 48px 56px; background: #fff; }
+.lx-marca-cel { display: none; }
+.lx-caixa { width: 100%; max-width: 440px; margin: 0 auto; }
+.lx-caixa h2 { font-size: 2.15rem; font-weight: 800; color: var(--vn); }
+.lx-sub { color: var(--ci); margin: 10px 0 30px; font-size: 1rem; }
+.lx-caixa label { display: block; font-weight: 700; font-size: .92rem; margin: 0 0 8px; color: #14241a; }
+.lx-campo { display: flex; align-items: center; gap: 12px; height: 56px; padding: 0 8px 0 18px; margin-bottom: 20px; border-radius: 14px; background: #f1f4f2; border: 1.5px solid #e3e9e5; transition: border-color .2s, background .2s, box-shadow .2s; }
+.lx-campo > i { color: #5f6e65; font-size: 1.1rem; }
+.lx-campo input { flex: 1; min-width: 0; height: 100%; border: 0; outline: 0; background: none; font: inherit; font-size: 1rem; color: #0f1f14; }
+.lx-campo input::placeholder { color: #95a29a; }
+.lx-campo:focus-within { background: #fff; border-color: var(--v); box-shadow: 0 0 0 4px rgba(19,105,42,.12); }
+.lx-campo.falta { border-color: #d0453a; box-shadow: 0 0 0 4px rgba(208,69,58,.12); }
+.lx-ver { width: 42px; height: 42px; border: 0; border-radius: 10px; background: none; color: #5f6e65; font-size: 1.1rem; cursor: pointer; }
+.lx-ver:hover { background: #e6ebe7; }
+.lx-caps { margin: -12px 0 14px; font-size: .8rem; color: var(--le); font-weight: 700; display: flex; gap: 6px; align-items: center; }
+.lx-linha { display: flex; justify-content: flex-end; margin: -6px 0 24px; }
+.lx-linha a { font-weight: 800; font-size: .92rem; text-decoration: none; color: var(--ve); }
+.lx-linha a:hover { color: var(--le); }
+.lx-entrar { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; height: 58px; border: 0; border-radius: 14px; cursor: pointer;
+             background: var(--ve); color: #fff; font: inherit; font-weight: 800; font-size: 1.05rem; box-shadow: 0 14px 26px -14px rgba(11,74,32,.9); transition: background .2s, transform .1s; }
+.lx-entrar:hover { background: var(--v); }
+.lx-entrar:active { transform: scale(.99); }
+.lx-entrar.enviando { opacity: .8; }
+.lx-google { display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; height: 56px; margin-top: 14px; border-radius: 14px; border: 1.5px solid var(--li);
+             background: #fff; color: var(--vn); font-weight: 800; font-size: 1rem; text-decoration: none; transition: background .2s, border-color .2s; }
+.lx-google:hover { background: #f7f9f8; border-color: #c9d3cc; color: var(--vn); }
+.lx-google.enviando { opacity: .7; pointer-events: none; }
+.lx-nota { text-align: center; font-size: .84rem; color: var(--ci); margin: 12px 0 0; }
+.lx-voltar { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 34px; padding-top: 22px; border-top: 1px solid #e8ede9; font-weight: 800; color: var(--ve); text-decoration: none; }
+.lx-voltar:hover { color: var(--le); }
+.lx-aviso { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 12px; font-size: .9rem; font-weight: 600; margin: -12px 0 20px; line-height: 1.4; }
+.lx-aviso.erro { background: #fdecea; color: #a1231a; } .lx-aviso.atencao { background: #fff4e5; color: #8a4a00; } .lx-aviso.ok { background: var(--vc); color: var(--v); }
+.lx-icone { width: 54px; height: 54px; border-radius: 16px; display: grid; place-items: center; background: #fff1e3; color: var(--le); font-size: 1.4rem; margin-bottom: 16px; }
+.lx-contatos { list-style: none; padding: 0; margin: 0 0 20px; display: grid; gap: 8px; }
+.lx-contatos li { display: flex; gap: 12px; align-items: center; padding: 12px; border-radius: 14px; background: #f1f4f2; font-weight: 600; font-size: .92rem; }
+.lx-contatos li > span { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: #fff; color: var(--v); flex-shrink: 0; }
+.lx-contatos small { display: block; font-size: .7rem; color: var(--ci); text-transform: uppercase; letter-spacing: .06em; font-weight: 700; }
+.lx-contatos a { overflow-wrap: anywhere; }
+.lx-secundario { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; height: 52px; border-radius: 14px; border: 1.5px solid var(--li); background: #fff; color: var(--ve); font: inherit; font-weight: 800; cursor: pointer; }
+
+@media (max-width: 1180px) { .lx { grid-template-columns: 1.25fr 1fr; } .lx-lado { padding: 48px; } .lx-form { padding: 40px; } }
+/* ---------- celular ---------- */
+@media (max-width: 900px) {
+    .lx { display: block; }
+    .lx-lado { display: none; }
+    .lx-form { min-height: 100vh; min-height: 100dvh; justify-content: flex-start; padding: 0 20px 28px; }
+    .lx-marca-cel { display: flex; align-items: center; gap: 12px; margin: 0 -20px 28px; padding: 22px 20px 26px; color: #fff; text-decoration: none;
+                    background: radial-gradient(400px 200px at 100% 0, rgba(240,124,18,.3), transparent 70%), linear-gradient(160deg, #0b4a20, #062a14); border-radius: 0 0 26px 26px; }
+    .lx-marca-cel img { width: 44px; height: 44px; }
+    .lx-marca-cel b { display: block; font-family: var(--titulo); font-size: 1.2rem; font-weight: 800; letter-spacing: -.02em; line-height: 1; }
+    .lx-marca-cel small { display: block; font-size: .8rem; color: #cfe3d4; }
+    .lx-caixa h2 { font-size: 1.85rem; }
+    .lx-sub { margin-bottom: 24px; }
+}
+
+/* v41: logos no lugar do nome digitado */
+.lx-marca img { width: auto !important; height: 64px !important; filter: drop-shadow(0 4px 12px rgba(0,0,0,.35)); }
+.lx-logo { display: block; height: 70px; width: auto; margin-bottom: 26px; }
+@media (max-width: 900px) {
+    .lx-marca-cel { justify-content: center; padding: 20px 20px 22px !important; }
+    .lx-marca-cel img { width: auto !important; height: 50px !important; }
+    .lx-logo { height: 56px; margin: 0 auto 20px; }
+    .lx-caixa h2, .lx-sub { text-align: center; }
+}
+@media (max-width: 900px) { .lx-marca-cel { display: none !important; } .lx-form { padding-top: 34px !important; border-top: 5px solid; border-image: linear-gradient(90deg, #1f9a3a, #5cbf3f 30%, #f3b22c 55%, #f07c12 78%, #e8650c) 1; } }
+
+/* =====================================================================
+   v43 · celular: topo verde da escola + folha branca com o formulário
+   ===================================================================== */
+.lx-topo-cel { display: none; }
+@media (max-width: 900px) {
+    html, body { background: #062a14; }
+    .lx-form { min-height: 100dvh; padding: 0 !important; border: 0 !important; display: flex; flex-direction: column; position: relative; isolation: isolate;
+               background: radial-gradient(420px 260px at 100% 0, rgba(240,124,18,.32), transparent 70%), radial-gradient(500px 300px at 0 10%, rgba(31,154,58,.35), transparent 65%), linear-gradient(170deg, #0b4a20 0%, #062a14 60%); }
+    .lx-form { overflow: hidden; }
+    .lx-form::before { content: ""; position: absolute; right: -70px; top: -50px; width: 260px; height: 260px; z-index: -1; background: url("../img/brasao.png") center / contain no-repeat; opacity: .08; }
+    .lx-form::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: linear-gradient(90deg, #1f9a3a, #5cbf3f 30%, #f3b22c 55%, #f07c12 78%, #e8650c); }
+    .lx-topo-cel { display: block; color: #fff; padding: calc(30px + env(safe-area-inset-top)) 24px 30px; }
+    .lx-tc-selo { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 99px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.18); font-size: .76rem; font-weight: 700; color: #e4f1e7; }
+    .lx-tc-selo i { color: #ffb36b; }
+    .lx-tc-tit { font-family: var(--titulo); font-size: 2rem; font-weight: 800; letter-spacing: -.035em; line-height: 1.05; margin: 14px 0 16px; }
+    .lx-tc-ics { display: flex; gap: 8px; flex-wrap: wrap; }
+    .lx-tc-ics span { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 12px; background: rgba(255,255,255,.08); font-size: .8rem; font-weight: 600; color: #d6e8da; }
+    .lx-tc-ics i { color: #7fd38f; }
+    .lx-caixa { flex: 1; width: 100%; max-width: none !important; margin: 0 !important; background: #fff; border-radius: 30px 30px 0 0; padding: 28px 22px calc(26px + env(safe-area-inset-bottom)) !important;
+                box-shadow: 0 -20px 40px -20px rgba(0,0,0,.45); position: relative; }
+    .lx-caixa::before { content: ""; position: absolute; left: 50%; top: 10px; width: 44px; height: 5px; border-radius: 5px; background: #e1e7e2; transform: translateX(-50%); }
+    .lx-logo { height: 52px !important; margin: 6px auto 18px !important; }
+    .lx-caixa h2 { font-size: 1.7rem !important; text-align: center; }
+    .lx-sub { text-align: center; font-size: .9rem; margin-bottom: 22px !important; }
+    #telaEsqueci .lx-icone { margin-inline: auto; }
+}
+@media (max-width: 900px) and (max-height: 700px) { .lx-tc-ics { display: none; } .lx-tc-tit { font-size: 1.6rem; margin-bottom: 4px; } .lx-topo-cel { padding-bottom: 22px; } }
+/* v46 · divisória "ou" antes do botão do Google */
+.lx-ou { display: flex; align-items: center; gap: 12px; margin: 18px 0 0; color: #8a978e; font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+.lx-ou::before, .lx-ou::after { content: ""; flex: 1; height: 1px; background: #e3e9e4; }
+.lx-ou + .lx-google { margin-top: 12px; }
+
+/* =====================================================================
+   v71 · celular: login mais profissional (logo no topo, sem brasão por trás do texto)
+   ===================================================================== */
+.lx-tc-logo { display: none; }
+@media (max-width: 900px) {
+    .lx-form::before { display: none; }
+    .lx-form { background: radial-gradient(rgba(255,255,255,.07) 1.3px, transparent 1.6px) 0 0 / 16px 16px, radial-gradient(420px 260px at 100% 0, rgba(240,124,18,.30), transparent 70%), linear-gradient(170deg, #0d5226 0%, #08381a 55%, #052414 100%) !important; }
+    .lx-topo-cel { padding: calc(26px + env(safe-area-inset-top)) 24px 34px; }
+    .lx-tc-logo { display: block; height: 44px; width: auto; margin-bottom: 22px; filter: drop-shadow(0 4px 10px rgba(0,0,0,.35)); }
+    .lx-tc-tit { font-size: 1.85rem; margin: 14px 0 0; }
+    .lx-tc-ics { display: none; }
+    .lx-caixa { border-radius: 28px 28px 0 0; padding: 30px 22px calc(24px + env(safe-area-inset-bottom)) !important; }
+    .lx-caixa::before { top: 10px; }
+    .lx-logo { display: none !important; }
+    .lx-caixa h2 { text-align: left !important; font-size: 1.6rem !important; letter-spacing: -.03em; margin: 6px 0 4px; }
+    .lx-sub { text-align: left !important; font-size: .88rem; color: #6a786f; margin-bottom: 20px !important; }
+    .lx-caixa label { font-size: .82rem; font-weight: 800; color: #24352a; margin-bottom: 6px; }
+    .lx-campo { height: 54px; border-radius: 14px; border: 1.5px solid #e1e8e3; background: #f8faf9; transition: border-color .15s, box-shadow .15s, background .15s; }
+    .lx-campo:focus-within { border-color: #13692a; background: #fff; box-shadow: 0 0 0 4px rgba(19,105,42,.12); }
+    .lx-campo > i { color: #13692a; }
+    .lx-campo input { font-size: 1rem; background: transparent !important; }
+    .lx-campo input:-webkit-autofill { -webkit-box-shadow: 0 0 0 40px #f8faf9 inset; }
+    .lx-linha { margin: 10px 0 18px; }
+    .lx-linha a { font-weight: 700; color: #b45f06; }
+    .lx-entrar { height: 54px; border-radius: 14px; font-size: 1rem; background: linear-gradient(120deg, #0f5427, #13692a 55%, #1f8a3a); box-shadow: 0 14px 26px -14px rgba(19,105,42,.9); }
+    .lx-google { height: 52px; border-radius: 14px; border: 1.5px solid #e1e8e3; }
+    .lx-ou { margin: 18px 0; }
+    .lx-nota { font-size: .76rem; text-align: center; }
+    .lx-voltar { justify-content: center; margin-top: 14px; }
+    .lx-aviso { border-radius: 12px; }
+}
+/* v71b · celular no estilo pedido: marca no topo, cantos, brasão de fundo, Google logo abaixo do Entrar */
+.lx-tc-marca, .lx-tc-c { display: none; }
+@media (max-width: 900px) {
+    .lx-topo-cel { position: relative; overflow: hidden; padding: calc(22px + env(safe-area-inset-top)) 26px 40px; }
+    .lx-tc-logo, .lx-tc-selo { display: none !important; }
+    .lx-tc-c { display: block; position: absolute; width: 26px; height: 26px; border: 2px solid rgba(255,255,255,.4); }
+    .lx-tc-c.c1 { left: 12px; top: 12px; border-right: 0; border-bottom: 0; } .lx-tc-c.c2 { right: 12px; top: 12px; border-left: 0; border-bottom: 0; }
+    .lx-tc-c.c3 { left: 12px; bottom: 12px; border-right: 0; border-top: 0; } .lx-tc-c.c4 { right: 12px; bottom: 12px; border-left: 0; border-top: 0; }
+    .lx-tc-marca { display: flex; align-items: center; gap: 12px; position: relative; z-index: 1; }
+    .lx-tc-marca img { width: auto; height: 46px; filter: drop-shadow(0 4px 10px rgba(0,0,0,.35)); }
+    .lx-tc-marca b { display: block; font-family: var(--titulo); font-size: 1.12rem; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; }
+    .lx-tc-marca b em { font-style: normal; color: #8fe0a2; }
+    .lx-tc-marca small { display: block; font-size: .74rem; color: #cfe3d4; }
+    .lx-tc-tit { position: relative; z-index: 1; font-size: 1.95rem; margin: 26px 0 0; }
+    .lx-ou { display: none; }
+    .lx-google { margin-top: 12px; }
+    .lx-voltar { border-top: 0; }
+}

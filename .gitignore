@@ -1,0 +1,8 @@
+# Senhas e chaves do servidor: nunca vão para o GitHub
+includes/config.php
+# Dados enviados pela escola (fotos, documentos, planilhas de alunos)
+dados/
+# Arquivos do sistema
+.DS_Store
+Thumbs.db
+*.log
