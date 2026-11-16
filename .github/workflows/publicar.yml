@@ -25,9 +25,8 @@ jobs:
           server: ${{ secrets.FTP_SERVIDOR }}
           username: ${{ secrets.FTP_USUARIO }}
           password: ${{ secrets.FTP_SENHA }}
-          protocol: ftps
+          protocol: ftp     # o FTPS da Hostinger derruba o canal de dados (ECONNRESET); FTP comum funciona
           port: 21
-          security: loose   # o FTP da Hostinger é acessado pelo IP; a conexão continua criptografada
           server-dir: ${{ secrets.FTP_PASTA }}
           dangerous-clean-slate: false
           exclude: |
