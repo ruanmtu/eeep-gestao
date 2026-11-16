@@ -1,0 +1,37 @@
+# Publica o código na Hostinger por FTP sempre que algo entra na branch main
+# (ou manualmente, em Actions › Publicar na Hostinger › Run workflow).
+# Envia só os arquivos que mudaram. NUNCA apaga nada no servidor e NUNCA toca
+# em includes/config.php nem na pasta dados/ (fotos e documentos da escola).
+name: Publicar na Hostinger
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: publicar-hostinger
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Enviar por FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVIDOR }}
+          username: ${{ secrets.FTP_USUARIO }}
+          password: ${{ secrets.FTP_SENHA }}
+          protocol: ftps
+          server-dir: ${{ secrets.FTP_PASTA }}
+          dangerous-clean-slate: false
+          exclude: |
+            **/.git*
+            **/.git*/**
+            .github/**
+            LEIA-ME.md
+            dados/**
+            includes/config.php
