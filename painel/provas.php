@@ -62,7 +62,6 @@ if (eh_post() && ($_POST['acao'] ?? '') === 'criar') {
 }
 
 $w = 'p.ano_letivo = ?'; $p = [ANO_LETIVO];
-if ($professor) { $w .= ' AND p.criado_por = ?'; $p[] = uid(); }
 $provas = q_todos("SELECT p.*, d.nome AS disciplina, u.nome AS autor,
                           (SELECT COUNT(*) FROM prova_resultados r WHERE r.prova_id = p.id) AS corrigidas,
                           (SELECT COUNT(*) FROM alunos a JOIN turmas t ON t.id = a.turma_id
@@ -91,7 +90,7 @@ require __DIR__ . '/../includes/layout_topo.php';
                 <?php foreach ($provas as $pr): $pronto = $pr['gabarito'] && strlen($pr['gabarito']) === (int)$pr['num_questoes'] && !str_contains($pr['gabarito'], '-'); ?>
                     <tr>
                         <td><a class="nome-link" href="prova.php?id=<?= $pr['id'] ?>"><?= e($pr['titulo']) ?></a><br>
-                            <?php if (count($partes_de[(int)$pr['id']] ?? []) > 1): ?><span class="etiqueta azul mt-1"><i class="bi bi-collection me-1"></i>Bloco · <?= count($partes_de[(int)$pr['id']]) ?> disciplinas</span><br><small class="text-secondary"><?= e(implode(' · ', $partes_de[(int)$pr['id']])) ?></small><?php else: ?><small class="text-secondary"><?= e($pr['disciplina']) ?></small><?php endif; ?><?= $professor ? '' : '<br><small class="text-secondary"><i class="bi bi-person me-1"></i>' . e($pr['autor'] ?? '—') . '</small>' ?></td>
+                            <?php if (count($partes_de[(int)$pr['id']] ?? []) > 1): ?><span class="etiqueta azul mt-1"><i class="bi bi-collection me-1"></i>Bloco · <?= count($partes_de[(int)$pr['id']]) ?> disciplinas</span><br><small class="text-secondary"><?= e(implode(' · ', $partes_de[(int)$pr['id']])) ?></small><?php else: ?><small class="text-secondary"><?= e($pr['disciplina']) ?></small><?php endif; ?><br><small class="text-secondary"><i class="bi bi-person me-1"></i><?= e($pr['autor'] ?? '—') ?></small></td>
                         <td class="text-nowrap"><?= $pr['serie'] ?>º ano · <?= $pr['bimestre'] ?>º bim.</td>
                         <td class="num"><?= $pr['num_questoes'] ?></td>
                         <td><?= $pronto ? '<span class="etiqueta">Pronto</span>' : '<span class="etiqueta ambar">Falta preencher</span>' ?></td>

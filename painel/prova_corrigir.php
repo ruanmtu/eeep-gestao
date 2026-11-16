@@ -206,11 +206,8 @@ $script_pagina = '<script src="' . RAIZ . 'assets/vendor/jsqr/jsQR.js"></script>
     [[f.x, f.y], [f.x + f.w, f.y], [f.x + f.w, f.y + f.h], [f.x, f.y + f.h]].forEach(([x, y], i) => {
       sp[i].style.cssText = `left:${x - t / 2}px;top:${y - t / 2}px;width:${t}px;height:${t}px`;
     });
-    /* desenho da folha do sistema: contorno da grade, posição do QR code e do quadradinho de orientação */
-    const peca = cls => g.querySelector("i." + cls) || g.appendChild(Object.assign(document.createElement("i"), { className: cls }));
-    peca("sg-cartao").style.cssText = `left:${f.x}px;top:${f.y}px;width:${f.w}px;height:${f.h}px`;
-    if (L.qr) { const [qx, qy, ql] = L.qr, [a, b] = px(qx, qy); peca("sg-qr").style.cssText = `left:${a}px;top:${b}px;width:${ql * f.k}px;height:${ql * f.k}px`; }
-    if (L.orientacao) { const ot = Math.max(8, (L.orientacao_tam || 3.5) * f.k), [a, b] = px(L.orientacao[0], L.orientacao[1]); peca("sg-orient").style.cssText = `left:${a - ot / 2}px;top:${b - ot / 2}px;width:${ot}px;height:${ot}px`; }
+    /* v73: só os quatro quadrados de canto (sem o desenho da folha por cima da câmera) */
+    g.querySelectorAll("i.sg-cartao, i.sg-qr, i.sg-orient").forEach(x => x.remove());
   }
   /* o palco toma a proporção do vídeo (sem cortar a imagem), até 80% da altura da tela */
   function ajustarPalco() {

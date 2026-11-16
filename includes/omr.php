@@ -191,10 +191,11 @@ function prova_buscar(int $id): ?array
     return $p;
 }
 
-/** Professor só mexe nas provas que criou; gestão mexe em todas */
+/** v73: toda pessoa com acesso a "Correção de provas" vê e corrige qualquer prova lançada.
+ *  Excluir prova ou nota corrigida continua só com quem tem "provas.excluir" (gestão). */
 function pode_prova(array $p): bool
 {
-    return !restrito_a_atribuicoes() || (int)$p['criado_por'] === uid();
+    return pode('provas');
 }
 
 function prova_nome(array $p): string

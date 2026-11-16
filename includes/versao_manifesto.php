@@ -1,6 +1,6 @@
 <?php
 /* Gerado junto com o pacote: lista dos arquivos da versão e o código (md5) de cada um. Usado por versao.php. */
-return ['versao' => '72', 'arquivos' => [
+return ['versao' => '73', 'arquivos' => [
     'album.php' => '73a1be8e345a10d8a2e463ae81646e69',
     'ambiente.php' => 'cb665635230a1398d218ac6b593ceb52',
     'anexo_site.php' => '353a3253444f72ad0fe8b01abc84c77e',
@@ -40,7 +40,7 @@ return ['versao' => '72', 'arquivos' => [
     'google_entrar.php' => '836ed48c3b776f760c598d95778e722e',
     'google_retorno.php' => '186db351639714b19368320297691d39',
     'includes/agenda.php' => 'a4b73966646a12ca3c12c1503a1581c9',
-    'includes/app.php' => '49b394c7278a85492917099ffca91a2e',
+    'includes/app.php' => '97ff2facddf9a2c964bc08a6e6027d6f',
     'includes/arquivos.php' => '0a160fb057760e62c47adf0b282fb664',
     'includes/autorizacoes.php' => '7048b6ad5d84e76a380e2e69162b2139',
     'includes/avaliacoes.php' => 'cdc61dd8c71e4f69fecfd2ab51ba45bc',
@@ -66,7 +66,7 @@ return ['versao' => '72', 'arquivos' => [
     'includes/nota_conceitual.php' => '9bb4968151b86920d4e1ac50d3a17d94',
     'includes/notificacoes.php' => '064e5c1cfd78519cb1c625fe8cf76701',
     'includes/ocorrencias.php' => '72e53111395863e8eae3d8825f5ffcf7',
-    'includes/omr.php' => 'b7304538cf62113b8ff4bcd8d9fd642e',
+    'includes/omr.php' => '5107acae4f45d33d9503a815be1ca91c',
     'includes/reservas.php' => '69796d5b32fc9e2cb394ecff6298ad21',
     'includes/resultados.php' => '1b6d06015b397e40bd5d92cad3f26693',
     'includes/rodape_padrao.php' => 'abbb46a6b5a70fdfee76322dbcc8684f',
@@ -132,9 +132,9 @@ return ['versao' => '72', 'arquivos' => [
     'painel/perfil.php' => 'e769ce9c3a4815c20429f280b6112db2',
     'painel/professores.php' => '0c3706769134617002c4c1bb835fd2d6',
     'painel/prova.php' => '9fdda434203af4c853be252a3af75caf',
-    'painel/prova_corrigir.php' => 'e86aa975f159a4467da2596480c338c3',
+    'painel/prova_corrigir.php' => 'cc6068b9a4c99f78c798ab60f78e23dd',
     'painel/prova_folhas.php' => 'ebb5d53abd7c6ef7d4d3c14033af83d7',
-    'painel/provas.php' => '3a85d9c11f13ab42c75bd0aba95e1d77',
+    'painel/provas.php' => 'c7c03a068699579b67d821c955701a03',
     'painel/relatorios.php' => '52af4b67c21e64b0db56a3004eb3716d',
     'painel/reservas.php' => 'e5ab26f904df3933899771c65b55fd54',
     'painel/resultados.php' => 'dfead047cd83c1c355fd110816ccaa38',

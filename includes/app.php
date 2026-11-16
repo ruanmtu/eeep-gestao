@@ -51,7 +51,7 @@ if (session_status() === PHP_SESSION_NONE) {
 /* ------------------------------------------------------------------ */
 /*  Banco de dados                                                     */
 /* ------------------------------------------------------------------ */
-const SISTEMA_VERSAO = '72';
+const SISTEMA_VERSAO = '73';
 
 function db(): PDO
 {
