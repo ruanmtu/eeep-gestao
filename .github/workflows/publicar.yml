@@ -2,6 +2,7 @@
 # (ou manualmente, em Actions › Publicar na Hostinger › Run workflow).
 # Envia só os arquivos que mudaram. NUNCA apaga nada no servidor e NUNCA toca
 # em includes/config.php nem na pasta dados/ (fotos e documentos da escola).
+# Imagens, fontes e PDFs também não são enviados: só o código muda.
 name: Publicar na Hostinger
 
 on:
@@ -27,7 +28,8 @@ jobs:
           password: ${{ secrets.FTP_SENHA }}
           protocol: ftp     # o FTPS da Hostinger derruba o canal de dados (ECONNRESET); FTP comum funciona
           port: 21
-          server-dir: ${{ secrets.FTP_PASTA }}
+          # pasta real do site na Hostinger (a public_html da raiz do FTP NÃO é a do site)
+          server-dir: domains/eeepvenceslau.com.br/public_html/
           dangerous-clean-slate: false
           exclude: |
             **/.git*
@@ -36,3 +38,14 @@ jobs:
             LEIA-ME.md
             dados/**
             includes/config.php
+            **/*.png
+            **/*.jpg
+            **/*.jpeg
+            **/*.gif
+            **/*.webp
+            **/*.ico
+            **/*.pdf
+            **/*.woff
+            **/*.woff2
+            **/*.ttf
+            **/*.otf
