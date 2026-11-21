@@ -12,8 +12,12 @@ jobs:
           P: ${{ secrets.FTP_SENHA }}
           D: ${{ secrets.FTP_PASTA }}
         run: |
-          echo "FTP_PASTA = [$(echo "$D" | sed 's/./& /g')]"
-          lftp -u "$U","$P" -e "set ftp:ssl-allow no; set net:max-retries 2; pwd; echo '--- raiz'; cls -1a /; echo '--- busca versao.php e app.php'; find --maxdepth=5 / | grep -E '(versao\.php|includes/app\.php|ftp-deploy-sync-state)$'; bye" "$S" 2>&1 | head -150
-          for f in $(lftp -u "$U","$P" -e "set ftp:ssl-allow no; find --maxdepth=5 / | grep -E 'includes/app\.php$'; bye" "$S" 2>/dev/null); do
-            echo "== $f"; lftp -u "$U","$P" -e "set ftp:ssl-allow no; cat $f; bye" "$S" 2>/dev/null | grep -m1 "SISTEMA_VERSAO"
+          L() { lftp -u "$U","$P" -e "set ftp:ssl-allow no; set net:max-retries 2; $1; bye" "$S" 2>&1; }
+          echo "--- /domains"; L "cls -1 /domains/" | sed 's/./& /g'
+          echo "--- tipo de public_html na raiz"; L "cls -l /" | grep -i public | sed 's/./& /g'
+          for d in $(L "cls -1 /domains/"); do
+            echo "== $d" | sed 's/./& /g'
+            L "cls -1 ${d}public_html/" | head -40 | sed 's/./& /g'
+            L "cat ${d}public_html/includes/app.php" | grep -m1 SISTEMA_VERSAO
           done
+          echo "== raiz public_html"; L "cat /public_html/includes/app.php" | grep -m1 SISTEMA_VERSAO
