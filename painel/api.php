@@ -32,6 +32,28 @@ switch ($acao) {
             'quando' => quando($n['criado_em']), 'lida' => (bool)$n['lida_em'], 'link' => $n['link'], 'importante' => (bool)$n['importante'], 'autor' => primeiro_ultimo((string)$n['autor_nome'])];
         responder(['ok' => true, 'nao_lidas' => notificacoes_nao_lidas(), 'pendentes' => pode('saidas.autorizar') ? saidas_pendentes() : null, 'itens' => $itens]);
 
+    /* v74: anotações do professor no livro didático (cada um vê só as suas) */
+    case 'livro_anot':
+        if (!pode('livros_didaticos')) responder(['ok' => false], 403);
+        $pags = [];
+        try { foreach (q_todos('SELECT pagina, dados FROM livro_anotacoes WHERE usuario_id = ? AND livro_id = ?', [uid(), (int)($_GET['livro'] ?? 0)]) as $r) $pags[(int)$r['pagina']] = json_decode($r['dados'], true) ?: []; }
+        catch (PDOException $e) {}
+        responder(['ok' => true, 'paginas' => (object)$pags]);
+    case 'livro_anot_salvar':
+        if (!pode('livros_didaticos')) responder(['ok' => false], 403);
+        $lv = (int)($_POST['livro'] ?? 0); $pg = (int)($_POST['pagina'] ?? 0); $dados = (string)($_POST['dados'] ?? '[]');
+        if (!$lv || $pg < 1 || !livro_didatico_buscar($lv)) responder(['ok' => false, 'msg' => 'Livro não encontrado.'], 404);
+        if (strlen($dados) > 3000000) responder(['ok' => false, 'msg' => 'Muitas marcações nesta página. Apague algumas.'], 400);
+        $traços = json_decode($dados, true);
+        if (!is_array($traços)) responder(['ok' => false, 'msg' => 'Marcação inválida.'], 400);
+        try {
+            if (!$traços) q('DELETE FROM livro_anotacoes WHERE usuario_id = ? AND livro_id = ? AND pagina = ?', [uid(), $lv, $pg]);
+            elseif (q_valor('SELECT id FROM livro_anotacoes WHERE usuario_id = ? AND livro_id = ? AND pagina = ?', [uid(), $lv, $pg]))
+                q('UPDATE livro_anotacoes SET dados = ?, atualizado_em = ? WHERE usuario_id = ? AND livro_id = ? AND pagina = ?', [$dados, date('Y-m-d H:i:s'), uid(), $lv, $pg]);
+            else q('INSERT INTO livro_anotacoes (usuario_id, livro_id, pagina, dados, atualizado_em) VALUES (?, ?, ?, ?, ?)', [uid(), $lv, $pg, $dados, date('Y-m-d H:i:s')]);
+        } catch (PDOException $e) { responder(['ok' => false, 'msg' => 'Não foi possível salvar agora.'], 500); }
+        responder(['ok' => true]);
+
     /* Agenda do professor: salva a página do dia (só do próprio usuário) */
     case 'agenda_salvar':
         $d = (string)($_POST['data'] ?? '');
@@ -78,10 +100,14 @@ switch ($acao) {
         $termos = preg_split('/\s+/', $q);
         $w = []; $p = [];
         foreach ($termos as $t) { $w[] = 'a.nome LIKE ?'; $p[] = '%' . $t . '%'; }
+        if (!empty($_GET['saida']) && (usuario()['perfil'] ?? '') !== 'admin') {   // v74: liberação de saída só para os alunos das turmas do DT / do curso do coordenador
+            $tp = saida_turmas_permitidas();
+            $so_turmas = $tp ? ' AND a.turma_id IN (' . implode(',', $tp) . ')' : ' AND 0 = 1';
+        }
         $linhas = q_todos('SELECT a.id, a.nome, a.matricula, a.foto, t.serie, t.letra, c.nome AS curso,
                                   (SELECT COUNT(*) FROM faltas f WHERE f.aluno_id = a.id AND f.data_falta = ?) AS ja
                              FROM alunos a LEFT JOIN turmas t ON t.id = a.turma_id LEFT JOIN cursos c ON c.id = t.curso_id
-                            WHERE a.situacao = \'ativo\' AND ((' . implode(' AND ', $w) . ') OR a.matricula = ?)
+                            WHERE a.situacao = \'ativo\'' . ($so_turmas ?? '') . ' AND ((' . implode(' AND ', $w) . ') OR a.matricula = ?)
                             ORDER BY a.nome LIMIT 12', [$data, ...$p, $q]);
         responder(['ok' => true, 'alunos' => array_map(fn($a) => [
             'id' => (int)$a['id'], 'nome' => nome_proprio($a['nome']), 'turma' => turma_nome($a), 'ja' => (bool)$a['ja'], 'foto' => foto_url('aluno', (int)$a['id'], $a['foto']),

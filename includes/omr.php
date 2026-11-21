@@ -191,11 +191,15 @@ function prova_buscar(int $id): ?array
     return $p;
 }
 
-/** v73: toda pessoa com acesso a "Correção de provas" vê e corrige qualquer prova lançada.
- *  Excluir prova ou nota corrigida continua só com quem tem "provas.excluir" (gestão). */
+/** v74: quem criou a prova escolhe quem vê: todos, professores escolhidos ou só ele (a gestão vê todas).
+ *  Excluir prova ou nota corrigida continua só com quem tem "provas.excluir". */
 function pode_prova(array $p): bool
 {
-    return pode('provas');
+    if (!pode('provas')) return false;
+    if (!restrito_a_atribuicoes() || (int)$p['criado_por'] === uid()) return true;
+    $vis = $p['visibilidade'] ?? 'todos';
+    if ($vis === 'todos') return true;
+    return $vis === 'selecionados' && in_array(uid(), prova_acesso_lista((int)$p['id']), true);
 }
 
 function prova_nome(array $p): string

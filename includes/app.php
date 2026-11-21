@@ -51,7 +51,7 @@ if (session_status() === PHP_SESSION_NONE) {
 /* ------------------------------------------------------------------ */
 /*  Banco de dados                                                     */
 /* ------------------------------------------------------------------ */
-const SISTEMA_VERSAO = '73';
+const SISTEMA_VERSAO = '74';
 
 function db(): PDO
 {
@@ -550,6 +550,8 @@ site_aplicar_contato($ESCOLA);
 require_once __DIR__ . '/janela.php';
 require_once __DIR__ . '/nota_conceitual.php';
 nc_migrar_auto();
+require_once __DIR__ . '/v74.php';
+v74_migrar();
 require_once __DIR__ . '/google_login.php';
 require __DIR__ . '/resultados.php';
 require_once __DIR__ . '/livros_didaticos.php';

@@ -11,7 +11,7 @@
 const TIPOS_AUTORIZACAO = [
     'saida'  => ['Saída da escola', 'box-arrow-right', 'AUTORIZAÇÃO DE SAÍDA'],
     'tablet' => ['Porte de tablet', 'tablet', 'AUTORIZAÇÃO DE PORTE DE TABLET'],
-    'outra'  => ['Outra autorização', 'patch-check', 'AUTORIZAÇÃO'],
+    'outra'  => ['Autorização interna', 'door-open', 'AUTORIZAÇÃO INTERNA'],   // v74: aluno sai da sala (laboratório, biblioteca…), emitida por qualquer professor
 ];
 const MOTIVOS_SAIDA = ['Mal-estar / doença', 'Consulta médica ou odontológica', 'Problema familiar', 'Solicitação do responsável', 'Compromisso documentado', 'Outro'];
 const FINALIDADES_TABLET = ['Estudo e revisão de conteúdo', 'Pesquisa para trabalho escolar', 'Leitura (livros digitais)', 'Preparação para o ENEM', 'Atividade do curso técnico', 'Outra atividade de estudo'];

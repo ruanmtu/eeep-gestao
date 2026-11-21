@@ -13,6 +13,7 @@ if (eh_post() && ($_POST['acao'] ?? '') === 'emitir') {
     $par = trim((string)($_POST['responsavel_parentesco'] ?? ''));
     $titulo = $item = $local = $horario = $validade = null;
     if (!$aluno) $erro = 'Escolha o aluno.';
+    elseif ($tipo === 'saida' && !pode_emitir_saida($aluno)) $erro = 'A liberação de saída de ' . nome_proprio($aluno['nome']) . ' só pode ser emitida pelo(a) diretor(a) da turma (' . turma_nome($aluno) . ') ou pelo(a) coordenador(a) do curso.';
     elseif ($tipo === 'saida') {
         $motivo = trim((string)($_POST['motivo'] ?? ''));
         $detalhe = trim((string)($_POST['detalhe'] ?? ''));
@@ -47,8 +48,9 @@ if (eh_post() && ($_POST['acao'] ?? '') === 'emitir') {
         } else {
             $titulo = trim((string)($_POST['titulo'] ?? ''));
             $texto = trim((string)($_POST['descricao'] ?? ''));
-            if (!$erro && mb_strlen($titulo) < 4) $erro = 'Dê um nome à autorização (ex.: Participação em evento externo).';
-            elseif (!$erro && mb_strlen($texto) < 4) $erro = 'Descreva o que está sendo autorizado.';
+            if (!$erro && mb_strlen($titulo) < 4) $erro = 'Diga para onde o aluno vai (ex.: Laboratório de Informática).';
+            if (!$erro && mb_strlen($texto) < 3) $texto = $titulo;
+            $local = $local ?: ($titulo ? mb_substr($titulo, 0, 60) : null);
         }
     }
     if ($erro) {
@@ -57,6 +59,9 @@ if (eh_post() && ($_POST['acao'] ?? '') === 'emitir') {
         redirecionar('saidas.php?novo=' . $tipo);
     }
     $u = usuario();
+    /* v74: saída (DT ou coordenador do curso) e autorização interna (qualquer professor) já saem autorizadas;
+       o tablet continua indo para a coordenação quando quem pede não confirma autorizações */
+    $autoriza = $tipo !== 'tablet' || $autoriza;
     $codigo = strtoupper(bin2hex(random_bytes(6)));
     $agora = date('Y-m-d H:i:s');
     q('INSERT INTO saidas (aluno_id, data_hora, motivo, responsavel_nome, responsavel_parentesco, autorizado_por, autorizado_nome, autorizado_cargo, codigo, tipo, titulo, item, local, horario, validade_fim, criado_em, status, solicitado_por, solicitado_nome, solicitado_em)
@@ -76,6 +81,18 @@ if (eh_post() && ($_POST['acao'] ?? '') === 'emitir') {
         redirecionar('saidas.php?ver=' . $id . '#meus');
     }
     registrar_log('autorizacao', TIPOS_AUTORIZACAO[$tipo][0] . ': ' . $texto, (int)$aluno['id']);
+    if ($tipo === 'outra') {
+        /* autorização interna: todos os professores ficam sabendo, sem passar pela coordenação */
+        $profs = array_map('intval', array_column(q_todos("SELECT DISTINCT u.id FROM usuarios u LEFT JOIN atribuicoes at ON at.usuario_id = u.id
+                                                           WHERE u.ativo = 1 AND (u.perfil = 'professor' OR at.id IS NOT NULL)"), 'id'));
+        $profs = array_values(array_diff($profs, [uid()]));
+        if ($profs) notificar(['usuarios' => $profs],
+            'Autorização interna: ' . nome_proprio($aluno['nome']) . ' (' . turma_nome($aluno) . ')',
+            nome_proprio($aluno['nome']) . ' está autorizado(a) a sair da sala para ' . $titulo . ($horario ? ' · ' . $horario : '') . '. Autorizado por ' . primeiro_ultimo($u['nome']) . '.',
+            'autorizacao', 'saidas.php?ver=' . $id);
+        flash('success', 'Autorização interna registrada. Todos os professores foram avisados no painel.');
+        redirecionar('saidas.php?ver=' . $id);
+    }
     redirecionar('saida_cupom.php?id=' . $id . '&imprimir=1');
 }
 
@@ -149,6 +166,7 @@ $horario_almoco = 'Horário do almoço (' . ($aulas[5][1] ?? '11:50') . ' às ' 
 $fim_periodo = periodo_atual()['bimestre'] ? periodo_atual()['fim'] : '';
 $qs = fn(array $m) => http_build_query(array_filter(array_merge(['semana' => $seg, 'tipo' => $f_tipo, 'aluno' => $f_aluno ?: null, 'q' => $f_busca ?: null], $m), fn($v) => $v !== null && $v !== ''));
 
+$pode_saida = pode_emitir_saida();
 $titulo = 'Autorizações';
 $subtitulo = 'Saída da escola, porte de tablet pessoal para estudo e outras autorizações, com cupom assinado digitalmente.';
 $menu = 'saidas';
@@ -181,8 +199,15 @@ $assina = $autoriza
         <?php foreach ([
             'saida'  => ['Saída da escola', 'O responsável autorizou o aluno a sair antes do horário.', $saidas_hoje . ' hoje'],
             'tablet' => ['Porte de tablet', 'O aluno traz o próprio tablet para estudar no horário do almoço.', count($tablets_hoje) . ' autorizado(s)'],
-            'outra'  => ['Outra autorização', 'Evento externo, laboratório no contraturno, entrada tardia…', ''],
-        ] as $k => [$rot, $desc, $info]): [, $ic] = TIPOS_AUTORIZACAO[$k]; ?>
+            'outra'  => ['Autorização interna', 'O aluno sai da sala para o laboratório, biblioteca ou outro setor. Todos os professores são avisados.', ''],
+        ] as $k => [$rot, $desc, $info]): [, $ic] = TIPOS_AUTORIZACAO[$k];
+            if ($k === 'saida' && !$pode_saida): ?>
+            <div class="aut-novo aut-saida aut-bloqueado" title="Só o(a) diretor(a) de turma ou o(a) coordenador(a) do curso">
+                <span class="an-ic"><i class="bi bi-<?= $ic ?>"></i></span>
+                <span class="an-txt"><strong><?= e($rot) ?></strong><small>Emitida pelo(a) diretor(a) de turma ou pelo(a) coordenador(a) do curso do aluno.</small></span>
+                <span class="an-rodape"><span class="an-info"><?= e($info) ?></span><span class="an-mais"><i class="bi bi-lock"></i> Restrita</span></span>
+            </div>
+            <?php continue; endif; ?>
             <button type="button" class="aut-novo aut-<?= $k ?>" data-bs-toggle="modal" data-bs-target="#modal_<?= $k ?>">
                 <span class="an-ic"><i class="bi bi-<?= $ic ?>"></i></span>
                 <span class="an-txt"><strong><?= e($rot) ?></strong><small><?= e($desc) ?></small></span>
@@ -274,7 +299,7 @@ $assina = $autoriza
         <div class="aut-barra mb-3">
             <div class="segmentado" role="tablist">
                 <a class="<?= !$f_tipo ? 'ativo' : '' ?>" href="?<?= $qs(['tipo' => '']) ?>">Todas <span><?= array_sum($cont_tipos) ?></span></a>
-                <?php foreach (TIPOS_AUTORIZACAO as $k => [$rot, $ic]): ?><a class="<?= $f_tipo === $k ? 'ativo' : '' ?>" href="?<?= $qs(['tipo' => $k]) ?>"><i class="bi bi-<?= $ic ?>"></i><?= e(['saida' => 'Saídas', 'tablet' => 'Tablets', 'outra' => 'Outras'][$k]) ?> <span><?= $cont_tipos[$k] ?></span></a><?php endforeach; ?>
+                <?php foreach (TIPOS_AUTORIZACAO as $k => [$rot, $ic]): ?><a class="<?= $f_tipo === $k ? 'ativo' : '' ?>" href="?<?= $qs(['tipo' => $k]) ?>"><i class="bi bi-<?= $ic ?>"></i><?= e(['saida' => 'Saídas', 'tablet' => 'Tablets', 'outra' => 'Internas'][$k]) ?> <span><?= $cont_tipos[$k] ?></span></a><?php endforeach; ?>
             </div>
             <?php if (!$aluno_f && $f_busca === '' && !$busca_codigo): ?>
             <div class="semana-nav">
@@ -359,13 +384,16 @@ $assina = $autoriza
 </div>
 
 <!-- ============ Formulários ============ -->
-<?php foreach (['saida', 'tablet', 'outra'] as $k): [$rot_k, $ic_k] = TIPOS_AUTORIZACAO[$k]; $fv = ($form['tipo'] ?? '') === $k ? $form : []; ?>
+<?php foreach (['saida', 'tablet', 'outra'] as $k): if ($k === 'saida' && !$pode_saida) continue; [$rot_k, $ic_k] = TIPOS_AUTORIZACAO[$k]; $fv = ($form['tipo'] ?? '') === $k ? $form : [];
+    $direto = $k !== 'tablet' || $autoriza; ?>
 <div class="modal fade aut-modal" id="modal_<?= $k ?>" tabindex="-1" aria-labelledby="titulo_<?= $k ?>" aria-hidden="true">
 <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable modal-fullscreen-sm-down"><form class="modal-content aut-form aut-<?= $k ?>" method="post" autocomplete="off">
     <?= csrf_campo() ?><input type="hidden" name="acao" value="emitir"><input type="hidden" name="tipo" value="<?= $k ?>">
     <div class="modal-header"><span class="an-ic me-2"><i class="bi bi-<?= $ic_k ?>"></i></span><h5 class="modal-title" id="titulo_<?= $k ?>">Nova autorização · <?= e($rot_k) ?></h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button></div>
     <div class="modal-body">
         <?php if ($erro_form && $fv): ?><div class="alert alert-warning d-flex gap-2 mt-3 mb-0"><i class="bi bi-exclamation-triangle-fill"></i><span><?= e($erro_form) ?></span></div><?php endif; ?>
+        <?php if ($k === 'saida' && (usuario()['perfil'] ?? '') !== 'admin'): ?><div class="aut-aviso"><i class="bi bi-shield-lock"></i><span>Você pode liberar os alunos <?= e(implode(' e ', array_filter([turmas_dirigidas() ? 'da(s) turma(s) que dirige' : '', cursos_coordenados() ? 'do(s) curso(s) que coordena' : '']))) ?>.</span></div><?php endif; ?>
+        <?php if ($k === 'outra'): ?><div class="aut-aviso"><i class="bi bi-bell"></i><span>Vale na hora, sem passar pela coordenação. <strong>Todos os professores</strong> recebem o aviso no painel de que o aluno está fora da sala com a sua autorização.</span></div><?php endif; ?>
         <div class="aut-bloco"><span class="aut-n">1</span><div class="flex-grow-1"><label class="form-label obrigatorio" for="<?= $k ?>_busca">Aluno</label><?= campo_aluno($k) ?></div></div>
 
         <?php if ($k === 'saida'): ?>
@@ -393,11 +421,11 @@ $assina = $autoriza
         </div></div>
         <?php else: ?>
         <div class="aut-bloco"><span class="aut-n">2</span><div class="flex-grow-1">
-            <label class="form-label obrigatorio" for="o_tit">Autorização para</label>
-            <input class="form-control" id="o_tit" name="titulo" maxlength="80" value="<?= e($fv['titulo'] ?? '') ?>" required placeholder="Ex.: Participação em evento externo">
-            <div class="sugestoes mt-2"><?php foreach (['Participação em evento externo', 'Uso do laboratório no contraturno', 'Entrada após o horário', 'Permanência após o horário', 'Saída antecipada recorrente (tratamento de saúde)'] as $sg): ?><button type="button" class="sugestao" data-alvo="o_tit"><?= e($sg) ?></button><?php endforeach; ?></div>
-            <label class="form-label obrigatorio mt-3" for="o_desc">Descrição</label>
-            <textarea class="form-control" id="o_desc" name="descricao" rows="2" maxlength="255" required placeholder="O que está sendo autorizado, em que condições"><?= e($fv['descricao'] ?? '') ?></textarea>
+            <label class="form-label obrigatorio" for="o_tit">Para onde o aluno vai</label>
+            <input class="form-control" id="o_tit" name="titulo" maxlength="80" value="<?= e($fv['titulo'] ?? '') ?>" required placeholder="Ex.: Laboratório de Informática">
+            <div class="sugestoes mt-2"><?php foreach (['Laboratório de Informática', 'Laboratório de Ciências', 'Laboratório de Enfermagem', 'Centro de Multimeios', 'Secretaria', 'Coordenação', 'Enfermaria'] as $sg): ?><button type="button" class="sugestao" data-alvo="o_tit"><?= e($sg) ?></button><?php endforeach; ?></div>
+            <label class="form-label mt-3" for="o_desc">O que vai fazer</label>
+            <textarea class="form-control" id="o_desc" name="descricao" rows="2" maxlength="255" placeholder="Ex.: terminar a atividade prática da disciplina de Redes"><?= e($fv['descricao'] ?? '') ?></textarea>
         </div></div>
         <?php endif; ?>
 
@@ -414,7 +442,7 @@ $assina = $autoriza
                 <div class="col-6"><label class="form-label small" for="<?= $k ?>_dia">De</label><input class="form-control" type="date" id="<?= $k ?>_dia" name="data" value="<?= e($fv['data'] ?? date('Y-m-d')) ?>"></div>
                 <div class="col-6"><label class="form-label small" for="<?= $k ?>_ate">Até</label><input class="form-control" type="date" id="<?= $k ?>_ate" name="validade_fim" value="<?= e($fv['validade_fim'] ?? ($k === 'tablet' ? $fim_periodo : '')) ?>"></div>
             </div>
-            <details class="mt-2 ajuste"<?= $k === 'outra' ? ' open' : '' ?>><summary><?= $k === 'tablet' ? 'Uso permitido: ' . e('Centro de Multimeios · ' . $horario_almoco) : 'Local e horário (opcional)' ?></summary>
+            <details class="mt-2 ajuste"<?= $k === 'outra' ? ' open' : '' ?>><summary><?= $k === 'tablet' ? 'Uso permitido: ' . e('Centro de Multimeios · ' . $horario_almoco) : 'Horário (opcional)' ?></summary>
                 <div class="row g-2 mt-1">
                     <div class="col-sm-6"><input class="form-control" name="local" maxlength="60" value="<?= e($fv['local'] ?? ($k === 'tablet' ? 'Centro de Multimeios' : '')) ?>" placeholder="Local" aria-label="Local"></div>
                     <div class="col-sm-6"><input class="form-control" name="horario" maxlength="60" value="<?= e($fv['horario'] ?? ($k === 'tablet' ? $horario_almoco : '')) ?>" placeholder="Horário" aria-label="Horário"></div>
@@ -429,8 +457,8 @@ $assina = $autoriza
         <?php endif; ?>
     </div>
     <div class="modal-footer">
-        <?= $assina ?>
-        <button class="btn btn-primary btn-lg ms-auto" type="submit"><?= $autoriza ? '<i class="bi bi-printer me-2"></i>Emitir e imprimir' : '<i class="bi bi-send me-2"></i>Enviar para a coordenação' ?></button>
+        <?= $direto ? '<div class="aut-assina"><span class="aut-selo"><i class="bi bi-patch-check-fill"></i></span><div><small>Será assinada digitalmente por</small><strong>' . e(usuario()['nome']) . '</strong><span>' . e(cargo_usuario()) . '</span></div></div>' : $assina ?>
+        <button class="btn btn-primary btn-lg ms-auto" type="submit"><?= $k === 'outra' ? '<i class="bi bi-check2-circle me-2"></i>Autorizar e avisar os professores' : ($direto ? '<i class="bi bi-printer me-2"></i>Emitir e imprimir' : '<i class="bi bi-send me-2"></i>Enviar para a coordenação') ?></button>
     </div>
 </form></div></div>
 <?php endforeach; ?>
@@ -465,7 +493,8 @@ $script_pagina = '<script>
       if (p && !p.value && form.classList.contains("aut-saida")) p.value = al.responsavel_parentesco || "";
     }
     form._escolher = escolher;
-    comboBusca({ input: busca, lista, url: q => "api.php?acao=buscar&q=" + encodeURIComponent(q), vazio: "Nenhum aluno ativo encontrado.",
+    const soSaida = form.classList.contains("aut-saida") ? "&saida=1" : "";
+    comboBusca({ input: busca, lista, url: q => "api.php?acao=buscar&q=" + encodeURIComponent(q) + soSaida, vazio: soSaida ? "Nenhum aluno das suas turmas ou do seu curso com esse nome." : "Nenhum aluno ativo encontrado.",
       item: a => `${a.foto ? `<img class="avatar avatar-xs" src="${a.foto}" alt="">` : "<i class=\\"bi bi-person\\"></i>"}<span>${esc(a.nome)}</span><span class="turma">${esc(a.turma)}</span>`, escolher });
     /* validade */
     const datas = form.querySelector(".val-datas");

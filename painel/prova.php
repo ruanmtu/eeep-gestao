@@ -72,6 +72,15 @@ if (eh_post()) {
               [$dt, $hi . ':00', $hf . ':00', mb_substr(trim((string)($_POST['aplicador'] ?? '')), 0, 160) ?: null, $modelo, $id]);
             flash('success', 'Dados da folha salvos. Imprima as folhas de novo para sair com as informações atualizadas.');
             redirecionar("prova.php?id=$id#folhas");
+        case 'visibilidade':
+            if ((int)$prova['criado_por'] !== uid() && restrito_a_atribuicoes()) { flash('warning', 'Só quem criou a prova muda quem pode ver.'); break; }
+            $antes = prova_acesso_lista($id);
+            prova_acesso_gravar($id, (string)($_POST['visibilidade'] ?? 'todos'), (array)($_POST['acesso'] ?? []));
+            if ($novos = array_values(array_diff(prova_acesso_lista($id), $antes)))
+                notificar(['usuarios' => $novos], 'Gabarito compartilhado: ' . $prova['titulo'], primeiro_ultimo(usuario()['nome']) . ' deixou você ver, editar e corrigir esta prova.', 'aviso', 'prova.php?id=' . $id);
+            registrar_log('prova_visibilidade', $prova['titulo'] . ': ' . ($_POST['visibilidade'] ?? 'todos'));
+            flash('success', 'Pronto: ' . mb_strtolower(VISIBILIDADE_PROVA[$_POST['visibilidade'] ?? 'todos'][0] ?? 'todos') . ' podem ver esta prova.');
+            redirecionar("prova.php?id=$id");
         case 'excluir_prova':
             if (!pode('provas.excluir')) { flash('warning', 'Só a gestão pode excluir provas.'); redirecionar("prova.php?id=$id"); }
             q('DELETE FROM provas WHERE id = ?', [$id]);
@@ -145,6 +154,8 @@ require __DIR__ . '/../includes/layout_topo.php';
 
 <div class="d-flex gap-2 mb-3 flex-wrap nao-imprimir">
     <a class="btn btn-light" href="provas.php"><i class="bi bi-arrow-left me-1"></i>Provas</a>
+    <?php $vis_p = $prova['visibilidade'] ?? 'todos'; [$vr, $vi] = VISIBILIDADE_PROVA[$vis_p] ?? VISIBILIDADE_PROVA['todos']; $dono = (int)$prova['criado_por'] === uid() || !restrito_a_atribuicoes(); ?>
+    <button class="btn btn-light pv-bt" type="button" <?= $dono ? 'data-bs-toggle="modal" data-bs-target="#modalVis"' : 'disabled' ?> title="Quem pode ver este gabarito"><i class="bi bi-<?= $vi ?> me-1"></i><?= e($vr) ?><?= $vis_p === 'selecionados' ? ' (' . count(prova_acesso_lista($id)) . ')' : '' ?></button>
     <div class="ms-auto d-flex gap-2">
         <?php if ($pronto): ?><a class="btn btn-primary" href="prova_corrigir.php?id=<?= $id ?>"><i class="bi bi-camera me-1"></i>Corrigir com a câmera</a><?php endif; ?>
 <?php if (pode('provas.excluir')): ?>
@@ -155,6 +166,15 @@ require __DIR__ . '/../includes/layout_topo.php';
         <?php endif; ?>
     </div>
 </div>
+
+<?php if ($dono): ?>
+<div class="modal fade" id="modalVis" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><form class="modal-content" method="post">
+    <?= csrf_campo() ?><input type="hidden" name="acao" value="visibilidade"><input type="hidden" name="id" value="<?= $id ?>">
+    <div class="modal-header"><h5 class="modal-title"><i class="bi bi-people me-2"></i>Quem pode ver este gabarito</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button></div>
+    <div class="modal-body"><?= prova_visibilidade_campos($vis_p, prova_acesso_lista($id)) ?></div>
+    <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button><button class="btn btn-primary" type="submit">Salvar</button></div>
+</form></div></div>
+<?php endif; ?>
 
 <ul class="nav nav-abas mb-3" role="tablist">
     <li class="nav-item"><button class="nav-link <?= $pronto ? '' : 'active' ?>" data-bs-toggle="tab" data-bs-target="#t-gab" data-aba="gabarito" type="button">1. Gabarito<?= $pronto ? ' <i class="bi bi-check-circle-fill text-success"></i>' : '' ?></button></li>
@@ -405,4 +425,5 @@ $script_pagina = ($script_pagina ?? '') . '<script>
   b.addEventListener("input", f); if (t) t.addEventListener("change", f);
 })();
 </script>';
+$script_pagina .= prova_visibilidade_script();
 require __DIR__ . '/../includes/layout_rodape.php';

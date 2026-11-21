@@ -5,12 +5,9 @@ exigir('provas');
 $professor = restrito_a_atribuicoes();
 
 /* Disciplinas que o usuário pode usar */
-if ($professor) {
-    $disciplinas = q_todos('SELECT DISTINCT d.id, d.nome, d.tipo FROM atribuicoes a JOIN disciplinas d ON d.id = a.disciplina_id
-                             JOIN turmas t ON t.id = a.turma_id WHERE a.usuario_id = ? AND t.ano_letivo = ? ORDER BY d.tipo, d.nome', [uid(), ANO_LETIVO]);
-} else {
-    $disciplinas = q_todos('SELECT d.id, d.nome, d.tipo, c.nome AS curso FROM disciplinas d LEFT JOIN cursos c ON c.id = d.curso_id WHERE d.ativo = 1 ORDER BY d.tipo, c.nome, d.nome');
-}
+/* v74: no bloco de provas / simulado o professor pode juntar disciplinas dos colegas (as dele aparecem primeiro) */
+$disciplinas = q_todos('SELECT d.id, d.nome, d.tipo, c.nome AS curso FROM disciplinas d LEFT JOIN cursos c ON c.id = d.curso_id WHERE d.ativo = 1 ORDER BY d.tipo, c.nome, d.nome');
+$minhas_disc = $professor ? array_map('intval', array_column(q_todos('SELECT DISTINCT a.disciplina_id FROM atribuicoes a JOIN turmas t ON t.id = a.turma_id WHERE a.usuario_id = ? AND t.ano_letivo = ?', [uid(), ANO_LETIVO]), 'disciplina_id')) : [];
 $ids_disc = array_map('intval', array_column($disciplinas, 'id'));
 
 /* Criar prova (uma disciplina ou um bloco com várias) */
@@ -54,6 +51,9 @@ if (eh_post() && ($_POST['acao'] ?? '') === 'criar') {
            $total, $nalt, count($partes) === 1 ? $partes[0][2] : 10, uid()]);
         $id = (int)db()->lastInsertId();
         foreach ($partes as $o => [$d, $nq, $val]) q('INSERT INTO prova_partes (prova_id, ordem, disciplina_id, nome, num_questoes, valor) VALUES (?, ?, ?, ?, ?, ?)', [$id, $o + 1, $d, $nomes_disc[$d], $nq, $val]);
+        prova_acesso_gravar($id, (string)($_POST['visibilidade'] ?? 'todos'), (array)($_POST['acesso'] ?? []));
+        if (($_POST['visibilidade'] ?? '') === 'selecionados' && ($quem = prova_acesso_lista($id)))
+            notificar(['usuarios' => $quem], 'Gabarito compartilhado: ' . $titulo, primeiro_ultimo(usuario()['nome']) . ' deixou você ver, editar e corrigir esta prova.', 'aviso', 'prova.php?id=' . $id);
         registrar_log('prova_criada', $titulo);
         flash('success', 'Prova criada. Agora marque as respostas certas do gabarito.');
         redirecionar('prova.php?id=' . $id);
@@ -62,6 +62,7 @@ if (eh_post() && ($_POST['acao'] ?? '') === 'criar') {
 }
 
 $w = 'p.ano_letivo = ?'; $p = [ANO_LETIVO];
+[$wv, $pv] = provas_filtro_visiveis(); $w .= ' AND ' . $wv; $p = array_merge($p, $pv);
 $provas = q_todos("SELECT p.*, d.nome AS disciplina, u.nome AS autor,
                           (SELECT COUNT(*) FROM prova_resultados r WHERE r.prova_id = p.id) AS corrigidas,
                           (SELECT COUNT(*) FROM alunos a JOIN turmas t ON t.id = a.turma_id
@@ -90,7 +91,8 @@ require __DIR__ . '/../includes/layout_topo.php';
                 <?php foreach ($provas as $pr): $pronto = $pr['gabarito'] && strlen($pr['gabarito']) === (int)$pr['num_questoes'] && !str_contains($pr['gabarito'], '-'); ?>
                     <tr>
                         <td><a class="nome-link" href="prova.php?id=<?= $pr['id'] ?>"><?= e($pr['titulo']) ?></a><br>
-                            <?php if (count($partes_de[(int)$pr['id']] ?? []) > 1): ?><span class="etiqueta azul mt-1"><i class="bi bi-collection me-1"></i>Bloco · <?= count($partes_de[(int)$pr['id']]) ?> disciplinas</span><br><small class="text-secondary"><?= e(implode(' · ', $partes_de[(int)$pr['id']])) ?></small><?php else: ?><small class="text-secondary"><?= e($pr['disciplina']) ?></small><?php endif; ?><br><small class="text-secondary"><i class="bi bi-person me-1"></i><?= e($pr['autor'] ?? '—') ?></small></td>
+                            <?php if (count($partes_de[(int)$pr['id']] ?? []) > 1): ?><span class="etiqueta azul mt-1"><i class="bi bi-collection me-1"></i>Bloco · <?= count($partes_de[(int)$pr['id']]) ?> disciplinas</span><br><small class="text-secondary"><?= e(implode(' · ', $partes_de[(int)$pr['id']])) ?></small><?php else: ?><small class="text-secondary"><?= e($pr['disciplina']) ?></small><?php endif; ?><br><small class="text-secondary"><i class="bi bi-person me-1"></i><?= e($pr['autor'] ?? '—') ?></small>
+                            <?php [$vr, $vi] = VISIBILIDADE_PROVA[$pr['visibilidade'] ?? 'todos'] ?? VISIBILIDADE_PROVA['todos']; ?><small class="pv-selo pv-<?= e($pr['visibilidade'] ?? 'todos') ?>" title="Quem vê este gabarito"><i class="bi bi-<?= $vi ?>"></i><?= e($vr) ?></small></td>
                         <td class="text-nowrap"><?= $pr['serie'] ?>º ano · <?= $pr['bimestre'] ?>º bim.</td>
                         <td class="num"><?= $pr['num_questoes'] ?></td>
                         <td><?= $pronto ? '<span class="etiqueta">Pronto</span>' : '<span class="etiqueta ambar">Falta preencher</span>' ?></td>
@@ -159,7 +161,10 @@ require __DIR__ . '/../includes/layout_topo.php';
                             <span class="parte-cor"></span>
                             <select class="form-select form-select-sm" name="parte_disc[]" aria-label="Disciplina" required>
                                 <option value="">Escolha a disciplina</option>
-                                <?php foreach ($disciplinas as $d): ?><option value="<?= $d['id'] ?>"><?= e($d['nome']) ?><?= !empty($d['curso']) ? ' (' . e($d['curso']) . ')' : '' ?></option><?php endforeach; ?>
+                                <?php $op_d = fn($d) => '<option value="' . $d['id'] . '">' . e($d['nome']) . (!empty($d['curso']) ? ' (' . e($d['curso']) . ')' : '') . '</option>';
+                                if ($minhas_disc): ?><optgroup label="Minhas disciplinas"><?php foreach ($disciplinas as $d) if (in_array((int)$d['id'], $minhas_disc, true)) echo $op_d($d); ?></optgroup>
+                                <optgroup label="Outras disciplinas (bloco ou simulado)"><?php foreach ($disciplinas as $d) if (!in_array((int)$d['id'], $minhas_disc, true)) echo $op_d($d); ?></optgroup>
+                                <?php else: foreach ($disciplinas as $d) echo $op_d($d); endif; ?>
                             </select>
                             <button class="btn btn-sm btn-light parte-tirar" type="button" aria-label="Tirar disciplina"><i class="bi bi-x-lg"></i></button>
                             <span></span>
@@ -169,6 +174,9 @@ require __DIR__ . '/../includes/layout_topo.php';
                             </div>
                         </div>
                     </template>
+                    <div class="col-12"><label class="form-label obrigatorio">Quem pode ver este gabarito</label>
+                        <?= prova_visibilidade_campos('todos') ?>
+                        <div class="form-text">Num bloco de provas ou simulado, um gabarito só serve para todos: quem você escolher vê, edita e corrige.</div></div>
                     <div class="col-12"><button class="btn btn-primary w-100" type="submit">Criar e preencher gabarito</button>
                         <div class="form-text">A prova vale para todas as turmas da série<?= $professor ? ' que você leciona' : '' ?>.</div></div>
                 </form>
@@ -200,4 +208,5 @@ $script_pagina = '<script>
   nova();
 })();
 </script>';
+$script_pagina .= prova_visibilidade_script();
 require __DIR__ . '/../includes/layout_rodape.php';

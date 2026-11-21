@@ -1,9 +1,11 @@
 <?php
 require __DIR__ . '/../includes/app.php';
-exigir('alunos.ver');
+exigir_login();
 
 $id = (int)($_GET['id'] ?? $_POST['aluno_id'] ?? 0);
 $aluno = aluno_buscar($id);
+/* v74: o(a) diretor(a) de turma sempre abre a ficha dos alunos da turma dele(a) (para registrar a busca ativa) */
+if (!pode('alunos.ver') && !($aluno && dt_do_aluno($aluno))) exigir('alunos.ver');
 if (!$aluno) { flash('warning', 'Aluno não encontrado.'); redirecionar('alunos.php'); }
 
 /* ------------------------- Ações ------------------------- */
@@ -46,7 +48,7 @@ if (eh_post()) {
             break;
         case 'busca_add':
             if (!pode('busca_ativa') && !dt_do_aluno($aluno)) break;
-            [$t, $m] = busca_salvar($id, array_merge($_POST, ['acao' => $_POST['acao_busca'] ?? '']));
+            [$t, $m] = busca_salvar($id, array_merge($_POST, ['acao' => $_POST['acao_busca'] ?? '']), $_FILES['comprovante'] ?? null);
             flash($t, $m); $volta .= '#busca';
             break;
         case 'obs_add':

@@ -20,8 +20,8 @@ require __DIR__ . '/../includes/layout_topo.php';
     <a class="btn btn-light" href="livro_arquivo.php?id=<?= $l['id'] ?>" target="_blank" rel="noopener" title="Abrir no leitor do navegador"><i class="bi bi-box-arrow-up-right"></i></a>
 </div>
 <?php if ($l['descricao']): ?><p class="mb-3"><?= nl2br(e($l['descricao'])) ?></p><?php endif; ?>
-<div class="visualizador-pdf alto livro" data-url="livro_arquivo.php?id=<?= $l['id'] ?>" data-memoria="livro<?= $l['id'] ?>" data-leve="1"></div>
+<div class="visualizador-pdf alto livro" data-url="livro_arquivo.php?id=<?= $l['id'] ?>" data-memoria="livro<?= $l['id'] ?>" data-leve="1" data-anotar="<?= (int)$l['id'] ?>"></div>
 <p class="small text-secondary mt-2"><i class="bi bi-bookmark me-1"></i>O sistema lembra a página em que você parou neste aparelho.</p>
 <?php
-$script_pagina = '<script type="module" src="../assets/js/visualizador.js?v=10"></script>';
+$script_pagina = '<script type="module" src="../assets/js/visualizador.js?v=11"></script>';
 require __DIR__ . '/../includes/layout_rodape.php';

@@ -49,7 +49,7 @@ function busca_lista(string $where, array $p = [], int $limite = 300): array
 }
 
 /** Grava uma providência. Devolve [tipo do aviso, mensagem] */
-function busca_salvar(int $aluno_id, array $d): array
+function busca_salvar(int $aluno_id, array $d, ?array $arquivo = null): array
 {
     $acao = isset(ACOES_BUSCA[$d['acao'] ?? '']) ? $d['acao'] : '';
     $res = isset(RESULTADOS_BUSCA[$d['resultado'] ?? '']) ? $d['resultado'] : '';
@@ -62,11 +62,14 @@ function busca_salvar(int $aluno_id, array $d): array
     $ret = data_valida((string)($d['retorno_previsto'] ?? '')) ? $d['retorno_previsto'] : null;
     $fi = ($d['faltas_informadas'] ?? '') !== '' ? max(0, min(999, (int)$d['faltas_informadas'])) : null;
     $txt = fn($k, $n) => ($v = trim((string)($d[$k] ?? ''))) !== '' ? mb_substr($v, 0, $n) : null;
+    /* v74: a providência só é registrada com o comprovante do contato (print, foto, áudio, ofício…) */
+    try { [$comp, $comp_nome] = busca_comprovante_receber($arquivo ?? [], $aluno_id); }
+    catch (RuntimeException $e) { return ['warning', $e->getMessage()]; }
     $u = usuario();
-    q('INSERT INTO busca_ativa (aluno_id, data_acao, hora, acao, contato_nome, contato_parentesco, contato_telefone, motivo, faltas_informadas, resultado, descricao, documento, retorno_previsto, registrado_por, registrado_nome, criado_em)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    q('INSERT INTO busca_ativa (aluno_id, data_acao, hora, acao, contato_nome, contato_parentesco, contato_telefone, motivo, faltas_informadas, resultado, descricao, documento, retorno_previsto, registrado_por, registrado_nome, criado_em, comprovante, comprovante_nome)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [$aluno_id, $data, $hora, $acao, $txt('contato_nome', 150), $txt('contato_parentesco', 40), $txt('contato_telefone', 30), $motivo, $fi, $res,
-       $txt('descricao', 4000), $txt('documento', 80), $ret, $u['id'] ?? null, $u['nome'] ?? null, date('Y-m-d H:i:s')]);
+       $txt('descricao', 4000), $txt('documento', 80), $ret, $u['id'] ?? null, $u['nome'] ?? null, date('Y-m-d H:i:s'), $comp, $comp_nome]);
     registrar_log('busca_ativa', ACOES_BUSCA[$acao][0] . ' · ' . RESULTADOS_BUSCA[$res][0], $aluno_id);
     /* se o aluno estava no alerta de faltas seguidas, o alerta é dado como tratado */
     foreach (alertas_sequencia(true) as $al) {
@@ -105,6 +108,7 @@ function busca_cartao(array $b, bool $mostrar_aluno = false): string
     if ($quem !== '') $h .= '<div class="ba-meta"><i class="bi bi-person me-1"></i>Falou com ' . e($quem) . '</div>';
     if ($b['descricao']) $h .= '<p class="ba-desc">' . nl2br(e($b['descricao'])) . '</p>';
     $extra = [];
+    if (!empty($b['comprovante'])) $extra[] = '<a class="ba-comp" href="busca_comprovante.php?id=' . (int)$b['id'] . '" target="_blank" rel="noopener"><i class="bi bi-paperclip me-1"></i>Comprovante' . (!empty($b['comprovante_nome']) ? ': ' . e(mb_strimwidth($b['comprovante_nome'], 0, 40, '…')) : '') . '</a>';
     if ($b['documento']) $extra[] = '<i class="bi bi-file-earmark-text me-1"></i>Documento ' . e($b['documento']);
     if ($b['retorno_previsto']) $extra[] = '<i class="bi bi-calendar-check me-1"></i>Retorno previsto: ' . data_br($b['retorno_previsto']);
     $extra[] = '<i class="bi bi-pen me-1"></i>' . e(primeiro_ultimo((string)$b['registrado_nome']));
@@ -118,7 +122,7 @@ function busca_formulario(array $aluno, int $faltas_recentes = 0): string
     $op = fn(array $lista, ?string $sel = null) => implode('', array_map(fn($k, $v) => '<option value="' . $k . '"' . ($k === $sel ? ' selected' : '') . '>' . e(is_array($v) ? $v[0] : $v) . '</option>', array_keys($lista), $lista));
     $resp = $aluno['responsavel_nome'] ?? ($aluno['nome_mae'] ?? '');
     $par = !empty($aluno['responsavel_nome']) ? ($aluno['responsavel_parentesco'] ?? '') : (!empty($aluno['nome_mae']) ? 'Mãe' : '');
-    return '<form method="post" class="row g-2 ba-form">' . csrf_campo() . '<input type="hidden" name="acao" value="busca_add"><input type="hidden" name="aluno_id" value="' . (int)$aluno['id'] . '">
+    return '<form method="post" class="row g-2 ba-form" enctype="multipart/form-data">' . csrf_campo() . '<input type="hidden" name="acao" value="busca_add"><input type="hidden" name="aluno_id" value="' . (int)$aluno['id'] . '">
         <div class="col-12"><label class="form-label obrigatorio">Providência tomada</label><div class="ba-acoes">'
         . implode('', array_map(fn($k, $v) => '<label class="ba-op"><input type="radio" name="acao_busca" value="' . $k . '" required' . ($k === 'ligacao' ? ' checked' : '') . '><span><i class="bi bi-' . $v[1] . '"></i>' . e($v[0]) . '</span></label>', array_keys(ACOES_BUSCA), ACOES_BUSCA))
         . '</div></div>
@@ -132,6 +136,11 @@ function busca_formulario(array $aluno, int $faltas_recentes = 0): string
         <div class="col-sm-3"><label class="form-label" for="ba_fi">Faltas informadas</label><input class="form-control" type="number" min="0" max="999" id="ba_fi" name="faltas_informadas" value="' . ($faltas_recentes ?: '') . '"></div>
         <div class="col-sm-3"><label class="form-label" for="ba_rp">Retorno previsto</label><input class="form-control" type="date" id="ba_rp" name="retorno_previsto"></div>
         <div class="col-12"><label class="form-label" for="ba_desc">O que foi informado e combinado</label><textarea class="form-control" id="ba_desc" name="descricao" rows="3" maxlength="4000" placeholder="Ex.: Informei à mãe as 4 faltas da semana. Ela relatou que o aluno estava doente e se comprometeu a enviar o atestado e garantir o retorno na segunda."></textarea></div>
+        <div class="col-12"><label class="form-label obrigatorio" for="ba_comp">Comprovante do contato</label>
+            <label class="ba-anexo" for="ba_comp"><i class="bi bi-cloud-arrow-up"></i><span><b>Anexar comprovante</b><small>Print da conversa, foto da ligação, áudio, ofício ou termo assinado (PDF, imagem, áudio ou Word · até 25 MB)</small></span></label>
+            <input class="visually-hidden ba-anexo-in" type="file" id="ba_comp" name="comprovante" required accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.doc,.docx,.mp3,.m4a,.ogg,.opus,image/*,audio/*,application/pdf"
+                   onchange="const l=this.previousElementSibling,f=this.files[0];l.classList.toggle(\'ok\',!!f);l.querySelector(\'b\').textContent=f?f.name:\'Anexar comprovante\';l.querySelector(\'small\').textContent=f?(f.size/1048576).toFixed(1).replace(\'.\',\',\')+\' MB · toque para trocar\':\'\'">
+            <div class="form-text">Sem o comprovante a providência não é registrada.</div></div>
         <div class="col-sm-6"><label class="form-label" for="ba_doc">Nº do ofício / protocolo</label><input class="form-control" id="ba_doc" name="documento" maxlength="80" placeholder="Se houver documento"></div>
         <div class="col-sm-6 d-flex align-items-end"><button class="btn btn-primary w-100" type="submit"><i class="bi bi-check2-circle me-1"></i>Registrar providência</button></div>
         <datalist id="parentescos_ba"><option>Mãe</option><option>Pai</option><option>Avó</option><option>Avô</option><option>Tia</option><option>Tio</option><option>Responsável legal</option><option>O próprio aluno</option></datalist>

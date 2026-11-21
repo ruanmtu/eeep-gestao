@@ -37,6 +37,13 @@ if (eh_post()) {
                 q('INSERT INTO cursos (nome, sigla) VALUES (?, ?)', [$nome, mb_substr($sigla, 0, 10)]);
                 flash('success', "Curso $nome cadastrado.");
                 break;
+            case 'curso_coord':
+                $co = (int)($_POST['coordenador_id'] ?? 0);
+                if ($co && !q_valor('SELECT id FROM usuarios WHERE id = ? AND ativo = 1', [$co])) { flash('warning', 'Usuário não encontrado.'); break; }
+                q('UPDATE cursos SET coordenador_id = ? WHERE id = ?', [$co ?: null, (int)$_POST['id']]);
+                registrar_log('curso_coordenador', $co ? 'Coordenador(a) de curso definido(a)' : 'Coordenador(a) de curso retirado(a)');
+                flash('success', $co ? 'Coordenador(a) do curso salvo(a). Essa pessoa pode emitir a liberação de saída dos alunos do curso.' : 'O curso ficou sem coordenador(a).');
+                break;
             case 'curso_editar':
                 q('UPDATE cursos SET nome = ?, sigla = ?, ativo = ? WHERE id = ?',
                   [trim((string)$_POST['nome']), mb_substr(mb_strtoupper(trim((string)$_POST['sigla'])), 0, 10), !empty($_POST['ativo']) ? 1 : 0, (int)$_POST['id']]);
@@ -136,18 +143,36 @@ require __DIR__ . '/../includes/layout_topo.php';
             <div class="col-12"><button class="btn btn-primary w-100" type="submit">Cadastrar curso</button></div>
         </form>
 <?= janela_fecha() ?>
-<div class="row g-3">
-    <div class="col-12"><div class="card"><div class="card-header"><h2>Cursos técnicos</h2></div>
-        <div class="table-responsive"><table class="table"><thead><tr><th>Nome</th><th>Sigla</th><th>Ativo</th><th></th></tr></thead><tbody>
-        <?php foreach ($cursos as $c): ?><tr><td colspan="4">
-            <form method="post" class="row g-2 align-items-center"><?= csrf_campo() ?><input type="hidden" name="acao" value="curso_editar"><input type="hidden" name="id" value="<?= $c['id'] ?>">
-                <div class="col-md-6"><input class="form-control form-control-sm" name="nome" value="<?= e($c['nome']) ?>" aria-label="Nome do curso"></div>
-                <div class="col-md-2"><input class="form-control form-control-sm" name="sigla" value="<?= e($c['sigla']) ?>" aria-label="Sigla"></div>
-                <div class="col-md-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="ativo" value="1" id="ca<?= $c['id'] ?>"<?= $c['ativo'] ? ' checked' : '' ?>><label class="form-check-label" for="ca<?= $c['id'] ?>">Ativo</label></div></div>
-                <div class="col-md-2"><button class="btn btn-sm btn-light w-100" type="submit">Salvar</button></div>
-            </form></td></tr><?php endforeach; ?>
-        </tbody></table></div></div></div>
+<?php $usuarios_co = q_todos("SELECT id, nome, foto, perfil FROM usuarios WHERE ativo = 1 AND perfil <> 'admin' ORDER BY nome"); $uc_por_id = array_column($usuarios_co, null, 'id');
+    $n_turmas = []; foreach (q_todos('SELECT curso_id, COUNT(*) AS n FROM turmas WHERE ano_letivo = ? GROUP BY curso_id', [ANO_LETIVO]) as $r) $n_turmas[(int)$r['curso_id']] = (int)$r['n']; ?>
+<div class="tc-grade">
+    <?php foreach ($cursos as $c): $co = $uc_por_id[(int)($c['coordenador_id'] ?? 0)] ?? null; ?>
+    <article class="tc-card<?= $c['ativo'] ? '' : ' inativa' ?>" style="--tc:<?= cor_curso($c['nome']) ?>">
+        <header class="tc-cab">
+            <span class="tc-serie cc-sigla"><?= e($c['sigla']) ?></span>
+            <div class="min-w-0"><strong><?= e($c['nome']) ?></strong><small><?= $n_turmas[(int)$c['id']] ?? 0 ?> turma(s) em <?= ANO_LETIVO ?></small></div>
+            <span class="tc-status"><?= $c['ativo'] ? 'Ativo' : 'Inativo' ?></span>
+        </header>
+        <form method="post" class="tc-dt<?= $co ? '' : ' vazio-dt' ?>"><?= csrf_campo() ?><input type="hidden" name="acao" value="curso_coord"><input type="hidden" name="id" value="<?= $c['id'] ?>">
+            <span class="tc-dt-av"><?= $co ? avatar($co, 'usuario', 'avatar-sm') : '<i class="bi bi-person-plus"></i>' ?></span>
+            <div class="min-w-0 flex-grow-1"><small>Coordenador(a) do curso</small>
+                <select class="tc-select" name="coordenador_id" onchange="this.form.submit()" aria-label="Coordenador(a) do curso <?= e($c['nome']) ?>">
+                    <option value=""><?= $co ? '— retirar —' : 'Escolher pessoa…' ?></option>
+                    <?php foreach ($usuarios_co as $uc): ?><option value="<?= $uc['id'] ?>"<?= $co && (int)$co['id'] === (int)$uc['id'] ? ' selected' : '' ?>><?= e(primeiro_ultimo($uc['nome'])) ?></option><?php endforeach; ?>
+                </select></div>
+            <i class="bi bi-chevron-expand tc-seta"></i>
+        </form>
+        <details class="cc-editar"><summary><i class="bi bi-pencil me-1"></i>Editar nome e sigla</summary>
+            <form method="post" class="row g-2 align-items-center mt-1"><?= csrf_campo() ?><input type="hidden" name="acao" value="curso_editar"><input type="hidden" name="id" value="<?= $c['id'] ?>">
+                <div class="col-8"><input class="form-control form-control-sm" name="nome" value="<?= e($c['nome']) ?>" aria-label="Nome do curso"></div>
+                <div class="col-4"><input class="form-control form-control-sm" name="sigla" value="<?= e($c['sigla']) ?>" aria-label="Sigla"></div>
+                <div class="col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="ativo" value="1" id="ca<?= $c['id'] ?>"<?= $c['ativo'] ? ' checked' : '' ?>><label class="form-check-label" for="ca<?= $c['id'] ?>">Ativo</label></div></div>
+                <div class="col-6"><button class="btn btn-sm btn-light w-100" type="submit">Salvar</button></div>
+            </form></details>
+    </article>
+    <?php endforeach; ?>
 </div>
+<p class="form-text mt-3"><i class="bi bi-info-circle me-1"></i>O(a) <strong>coordenador(a) do curso</strong> pode emitir a liberação de saída dos alunos daquele curso. O(a) diretor(a) de turma emite a dos alunos da turma dele(a).</p>
 
 <?php endif; ?>
 
