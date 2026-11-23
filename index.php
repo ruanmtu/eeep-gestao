@@ -35,7 +35,7 @@ $galeria_fixa = array_values(array_filter($GALERIA, fn($g) => img_existe($g['ima
 $icones_cursos = ['Informática' => 'pc-display', 'Desenvolvimento de Sistemas' => 'code-slash', 'Enfermagem' => 'heart-pulse', 'Administração' => 'briefcase'];
 $insta = $ESCOLA['instagram'] ? 'https://instagram.com/' . rawurlencode($ESCOLA['instagram']) : '';
 $mapa_link = 'https://www.google.com/maps/search/?api=1&query=' . rawurlencode($ESCOLA['mapa']);
-$ano_inicio = 1976;
+$ano_inicio = 2009;   // começou como EEEP David Vieira da Silva
 
 /* Banners do topo e atalhos */
 $banners = site_banners_para_mostrar();

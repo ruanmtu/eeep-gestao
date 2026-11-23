@@ -55,7 +55,7 @@ $paginas = [
     ['mortarboard', 'Cursos técnicos', 'Informática, Desenvolvimento de Sistemas, Enfermagem e Administração.', 'index.php#cursos', 'curso cursos tecnico tecnicos profissao profissional informatica sistemas enfermagem administracao ds adm enf'],
     ['megaphone', 'Informes', 'Avisos, eventos e conquistas da escola.', 'index.php#informes', 'informe informes aviso avisos noticia noticias evento eventos comunicado'],
     ['building', 'A escola', 'Estrutura, laboratórios, tempo integral e estágio.', 'index.php#escola', 'escola estrutura laboratorio laboratorios biblioteca quadra refeitorio tempo integral estagio sobre'],
-    ['clock-history', 'Nossa história', 'De 1976 até hoje.', 'index.php#historia', 'historia 1976 2009 fundacao inauguracao formatura trajetoria'],
+    ['clock-history', 'Nossa história', 'De 2009 até hoje.', 'index.php#historia', 'historia 2009 david vieira da silva fundacao inauguracao formatura trajetoria'],
     ['people', 'Gestão escolar', 'Diretor e coordenadores da escola.', 'index.php#gestao', 'gestao diretor diretora coordenador coordenadora coordenacao direcao'],
     ['person-vcard', 'Nossa equipe', 'Professores e funcionários.', 'index.php#equipe', 'equipe professores professor professora funcionarios servidores'],
     ['geo-alt', 'Endereço e como chegar', $ESCOLA['endereco'] . ' · ' . $ESCOLA['cidade'], 'index.php#contato', 'endereco localizacao mapa chegar onde fica rua boa viagem'],

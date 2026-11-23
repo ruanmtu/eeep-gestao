@@ -91,13 +91,12 @@ $HERO = [
 ];
 
 /* História: cada item vira um marco na linha do tempo (em ordem) */
-$HISTORIA_INTRO = 'Nossa história começou em 1976, com a Escola David Vieira da Silva, e ganhou um novo capítulo em 2009, quando passamos a oferecer o ensino médio integrado à educação profissional em tempo integral. '
-                . 'Hoje somos a EEEP Venceslau Vieira Batista, em Boa Viagem, no Sertão Central, formando jovens nas áreas de gestão, saúde e tecnologia.';
+$HISTORIA_INTRO = 'Nossa história começou em 2009, com a EEEP David Vieira da Silva, oferecendo o ensino médio integrado à educação profissional em tempo integral. '
+                . 'Em 2014 ganhamos uma nova sede e um novo nome: hoje somos a EEEP Venceslau Vieira Batista, em Boa Viagem, no Sertão Central, formando jovens nas áreas de gestão, saúde e tecnologia.';
 
 /* História: cada item vira um cartão na linha do tempo (em ordem). "icone" = ícone do Bootstrap Icons */
 $HISTORIA = [
-    ['ano' => '1976', 'icone' => 'flag',            'titulo' => 'Onde tudo começou',             'texto' => 'É inaugurada a Escola David Vieira da Silva, em 25 de março, dando início a uma trajetória de formação educacional em Boa Viagem.'],
-    ['ano' => '2009', 'icone' => 'building-check',  'titulo' => 'Nasce a Escola Profissional',   'texto' => 'Em 16 de março, a instituição inicia o ensino médio integrado à educação profissional, com aulas em tempo integral.'],
+    ['ano' => '2009', 'icone' => 'flag',            'titulo' => 'Onde tudo começou',             'texto' => 'Em 16 de março, nasce a EEEP David Vieira da Silva, com o ensino médio integrado à educação profissional e aulas em tempo integral.'],
     ['ano' => '2009', 'icone' => 'mortarboard',     'titulo' => 'Primeiros cursos técnicos',     'texto' => 'São abertas as primeiras turmas dos cursos técnicos de Enfermagem, Informática e Finanças.'],
     ['ano' => '2010', 'icone' => 'shop',            'titulo' => 'Novas oportunidades',           'texto' => 'O curso técnico em Finanças é substituído por Comércio, ampliando a formação na área de gestão e negócios.'],
     ['ano' => '2011', 'icone' => 'briefcase',       'titulo' => 'Chegada da Administração',      'texto' => 'O curso técnico em Administração substitui Comércio, consolidando uma nova área de formação profissional.'],
