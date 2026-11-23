@@ -4174,3 +4174,8 @@ html[data-ms-modo="ver"][data-ms-mudou="0"] .ms-salvar { display: none; }
 .scan-guia .sg-puxa { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .scan-guia .sg-puxa polygon { fill: rgba(61,220,88,.10); stroke: #3ddc58; stroke-width: 2.5; stroke-dasharray: 8 6; stroke-linejoin: round; opacity: 0; transition: opacity .2s; }
 .scan-guia.puxando .sg-puxa polygon { opacity: 1; }
+
+/* v76 — horários: aulas atribuídas quando o horário ainda está vazio */
+.hz-atrib { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 12px; max-width: 760px; margin-left: auto; margin-right: auto; }
+.hz-atrib small { width: 100%; text-align: center; color: var(--texto-2, #5b6b60); }
+.hz-atrib span { background: #eef6f0; border: 1px solid #d3e8d9; color: #0b5a31; border-radius: 999px; padding: 3px 10px; font-size: .8rem; font-weight: 600; }

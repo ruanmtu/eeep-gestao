@@ -54,9 +54,14 @@ if (eh_post()) {
     }
 }
 
-$professores = $ver_todos ? q_todos("SELECT u.id, u.nome, u.foto, u.cargo, u.perfil, (SELECT COUNT(*) FROM horarios h WHERE h.usuario_id = u.id) AS aulas_sem
+$professores = $ver_todos ? q_todos("SELECT u.id, u.nome, u.foto, u.cargo, u.perfil, (SELECT COUNT(*) FROM horarios h WHERE h.usuario_id = u.id) AS aulas_sem,
+                                      (SELECT COUNT(*) FROM atribuicoes a WHERE a.usuario_id = u.id) AS atribuidas
                                       FROM usuarios u WHERE u.ativo = 1 AND (u.perfil = 'professor' OR EXISTS (SELECT 1 FROM horarios h WHERE h.usuario_id = u.id) OR EXISTS (SELECT 1 FROM atribuicoes a WHERE a.usuario_id = u.id))
                                      ORDER BY u.nome") : [];
+/* Gestão sem aulas próprias: abre no primeiro professor que tem aulas atribuídas (e não no próprio usuário, vazio) */
+if ($ver_todos && empty($_GET['professor']) && !q_valor('SELECT COUNT(*) FROM atribuicoes WHERE usuario_id = ?', [uid()]) && !q_valor('SELECT COUNT(*) FROM horarios WHERE usuario_id = ?', [uid()])) {
+    foreach ($professores as $p) if ($p['atribuidas'] || $p['aulas_sem']) { $prof_id = (int)$p['id']; break; }
+}
 
 $titulo = 'Horários';
 $subtitulo = $ver_todos ? 'Horário de aulas de todos os professores, por professor, por turma ou por dia.' : 'Seu horário de aulas da semana.';
@@ -106,8 +111,15 @@ $hz_script = true;
     $total = array_sum(array_map('count', $grade));
     $hoje_lista = $grade[$hoje_dow] ?? [];
     ksort($hoje_lista);
-    $atribs = $modo_edicao ? q_todos('SELECT a.turma_id, a.disciplina_id, d.nome AS disciplina, t.serie, t.letra, c.sigla FROM atribuicoes a JOIN disciplinas d ON d.id = a.disciplina_id
-                                       JOIN turmas t ON t.id = a.turma_id JOIN cursos c ON c.id = t.curso_id WHERE a.usuario_id = ? AND t.ano_letivo = ? ORDER BY t.serie, t.letra, d.nome', [$prof['id'], ANO_VER]) : []; ?>
+    /* Aulas atribuídas (Professores › Atribuições). Se não houver no ano atual, usa as de outro ano e avisa. */
+    $sql_atr = 'SELECT DISTINCT a.turma_id, a.disciplina_id, d.nome AS disciplina, t.serie, t.letra, t.ano_letivo, c.sigla FROM atribuicoes a JOIN disciplinas d ON d.id = a.disciplina_id
+                JOIN turmas t ON t.id = a.turma_id JOIN cursos c ON c.id = t.curso_id WHERE a.usuario_id = ?';
+    $atribs = q_todos($sql_atr . ' AND t.ano_letivo = ? ORDER BY t.serie, t.letra, d.nome', [$prof['id'], ANO_VER]);
+    $atribs_outro = '';
+    if (!$atribs) {
+        $atribs = q_todos($sql_atr . ' ORDER BY t.ano_letivo DESC, t.serie, t.letra, d.nome', [$prof['id']]);
+        if ($atribs) $atribs_outro = implode(', ', array_unique(array_column($atribs, 'ano_letivo')));
+    } ?>
     <?php
     $turmas_p = []; $discs_p = [];
     foreach ($grade as $dd) foreach ($dd as $c) if ($c['turma_id']) { $turmas_p[$c['turma_id']] = 1; $discs_p[$c['disciplina_id']] = 1; }
@@ -121,8 +133,9 @@ $hz_script = true;
         </div>
         <div class="hz-nums">
             <div><b><?= $total ?></b><small>aulas na semana</small></div>
-            <div><b><?= count($turmas_p) ?></b><small>turmas</small></div>
-            <div><b><?= count($discs_p) ?></b><small>disciplinas</small></div>
+            <?php if (!$total && $atribs): $turmas_p = array_flip(array_column($atribs, 'turma_id')); $discs_p = array_flip(array_column($atribs, 'disciplina_id')); endif; ?>
+            <div><b><?= count($turmas_p) ?></b><small><?= !$total && $atribs ? 'turmas atribuídas' : 'turmas' ?></small></div>
+            <div><b><?= count($discs_p) ?></b><small><?= !$total && $atribs ? 'disciplinas atribuídas' : 'disciplinas' ?></small></div>
         </div>
         <div class="hz-agora<?= $atual_c ? ' em-aula' : '' ?>">
             <?php if ($hoje_dow > 5): ?><small>Fim de semana</small><b>Sem aulas hoje</b>
@@ -135,7 +148,7 @@ $hz_script = true;
         <?php if ($ver_todos): ?>
         <form method="get" class="hz-sel"><input type="hidden" name="ver" value="professor"><i class="bi bi-person-video3"></i>
             <select class="form-select" name="professor" onchange="this.form.submit()" aria-label="Professor">
-                <?php foreach ($professores as $p): ?><option value="<?= $p['id'] ?>"<?= (int)$p['id'] === (int)$prof['id'] ? ' selected' : '' ?>><?= e($p['nome']) ?> · <?= (int)$p['aulas_sem'] ?> aula(s)</option><?php endforeach; ?>
+                <?php foreach ($professores as $p): ?><option value="<?= $p['id'] ?>"<?= (int)$p['id'] === (int)$prof['id'] ? ' selected' : '' ?>><?= e($p['nome']) ?> · <?= (int)$p['atribuidas'] ?> atribuída(s) · <?= (int)$p['aulas_sem'] ?> no horário</option><?php endforeach; ?>
             </select></form>
         <?php endif; ?>
         <div class="ms-auto d-flex gap-2">
@@ -158,7 +171,8 @@ $hz_script = true;
     <form method="post" class="card hz-card">
         <?= csrf_campo() ?><input type="hidden" name="acao" value="grade"><input type="hidden" name="professor" value="<?= $prof['id'] ?>">
         <div class="card-header"><h2>Montar horário</h2><span class="small text-secondary">Escolha, em cada aula, a turma e a disciplina. As opções vêm das aulas atribuídas ao professor em Cursos e turmas.</span></div>
-        <?php if (!$atribs): ?><div class="alert alert-warning m-3">Este professor ainda não tem aulas atribuídas. Cadastre em <a href="configuracoes.php?aba=atribuicoes">Cursos e turmas › Atribuições</a>.</div><?php endif; ?>
+        <?php if (!$atribs): ?><div class="alert alert-warning m-3">Este professor ainda não tem aulas atribuídas. Cadastre em <a href="professores.php?aba=atribuicoes">Professores › Atribuições</a>.</div>
+        <?php elseif ($atribs_outro): ?><div class="alert alert-warning m-3">As aulas deste professor estão atribuídas em turmas de <b><?= e($atribs_outro) ?></b>, não de <?= ANO_VER ?>. Elas aparecem abaixo, mas confira o ano das turmas em Cursos e turmas.</div><?php endif; ?>
         <?= grade_semana($aulas, function ($d, $a) use ($grade, $atribs) {
             $c = $grade[$d][$a] ?? null;
             $atual = $c ? ($c['turma_id'] ? $c['turma_id'] . ':' . $c['disciplina_id'] : 'pl') : '';
@@ -176,7 +190,9 @@ $hz_script = true;
             if (!$c['turma_id']) return '<div class="aula-cel pl"><i class="bi bi-journal-text"></i>' . e($c['sala'] ?: 'Planejamento') . '</div>';
             return '<div class="aula-cel ' . $cor_disc($c['disciplina_id']) . '"><strong>' . e($c['serie'] . 'º ' . $c['letra']) . ' <span>' . e($c['sigla']) . '</span></strong><small title="' . e($c['disciplina']) . '">' . e($c['disciplina']) . '</small></div>';
         }, $hoje_dow) ?>
-        <?php if (!$total): ?><div class="vazio py-4 hz-sem"><i class="bi bi-calendar3-week"></i><strong>Horário ainda não cadastrado</strong><?= $editar ? 'Clique em “Montar horário”.' : 'A coordenação cadastra o horário de cada professor.' ?></div><?php endif; ?>
+        <?php if (!$total): ?><div class="vazio py-4 hz-sem"><i class="bi bi-calendar3-week"></i><strong>Horário ainda não cadastrado</strong><?= $editar ? 'Clique em “Montar horário” e escolha, em cada aula, uma das aulas atribuídas abaixo.' : 'A coordenação cadastra o horário de cada professor.' ?>
+            <?php if ($atribs): ?><div class="hz-atrib"><small><?= count($atribs) ?> aula(s) atribuída(s)<?= $atribs_outro ? ' (turmas de ' . e($atribs_outro) . ')' : '' ?>:</small><?php foreach ($atribs as $x): ?><span><?= e($x['serie'] . 'º ' . $x['letra'] . ' ' . $x['sigla'] . ' · ' . $x['disciplina']) ?></span><?php endforeach; ?></div>
+            <?php elseif ($editar): ?><div class="hz-atrib"><small>Nenhuma aula atribuída a este professor ainda. Atribua em <a href="professores.php?aba=atribuicoes">Professores › Atribuições</a>.</small></div><?php endif; ?></div><?php endif; ?>
     </div>
     <?php endif; ?>
 
