@@ -28,8 +28,9 @@ jobs:
           password: ${{ secrets.FTP_SENHA }}
           protocol: ftp     # o FTPS da Hostinger derruba o canal de dados (ECONNRESET); FTP comum funciona
           port: 21
-          # pasta real do site na Hostinger (a public_html da raiz do FTP NÃO é a do site)
-          server-dir: domains/eeepvenceslau.com.br/public_html/
+          # pasta real do site, com a barra no início: o FTP já entra dentro de /public_html,
+          # então um caminho sem "/" iria para uma cópia errada dentro dela
+          server-dir: /domains/eeepvenceslau.com.br/public_html/
           dangerous-clean-slate: false
           exclude: |
             **/.git*
