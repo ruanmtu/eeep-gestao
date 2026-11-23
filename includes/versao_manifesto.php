@@ -1,6 +1,6 @@
 <?php
 /* Gerado junto com o pacote: lista dos arquivos da versão e o código (md5) de cada um. Usado por versao.php. */
-return ['versao' => '75', 'arquivos' => [
+return ['versao' => '76', 'arquivos' => [
     'album.php' => '73a1be8e345a10d8a2e463ae81646e69',
     'ambiente.php' => 'cb665635230a1398d218ac6b593ceb52',
     'anexo_site.php' => '353a3253444f72ad0fe8b01abc84c77e',
@@ -10,7 +10,7 @@ return ['versao' => '75', 'arquivos' => [
     'assets/css/inicio.css' => '666cd1c67d1f065b8ddd98b428bd2682',
     'assets/css/login.css' => '5c90a9c0bcef5a9146d655ea1072f069',
     'assets/css/padrao.css' => 'ea95bd4b395e6f9d2229b5e2f749f59b',
-    'assets/css/painel.css' => 'ea3c22bf279821e2e66201b0f33c035f',
+    'assets/css/painel.css' => 'bd5d7779cc83efd7559d0465e52e80aa',
     'assets/css/site.css' => '06756e0793853e7c94c1ea0866742b48',
     'assets/css/topo.css' => 'eb202a6ff25334f422f7f2f7dcd0a994',
     'assets/js/editor.js' => '5df722e4510cd2dbdc9c238243ac97b7',
@@ -18,7 +18,7 @@ return ['versao' => '75', 'arquivos' => [
     'assets/js/janela.js' => '7ed406cefb055e316867144186065454',
     'assets/js/lote.js' => 'c217ebc4d8209bfcf40b37cef795444e',
     'assets/js/mapa_sala.js' => '21724abcbed5bc279301e65b50f6d5eb',
-    'assets/js/omr.js' => 'a5a24c2a773c53e7bc1cdbf1c88912c3',
+    'assets/js/omr.js' => '7f99a4f578e17f03615c17cb61c42db3',
     'assets/js/painel.js' => '2b754268575b5d5cf39591e5cd735091',
     'assets/js/recorte.js' => '58d8305ff2d9abc358b96929a94f95d7',
     'assets/js/resultados.js' => '0d6db55c64968a2baabebf0037060468',
@@ -40,7 +40,7 @@ return ['versao' => '75', 'arquivos' => [
     'google_entrar.php' => '836ed48c3b776f760c598d95778e722e',
     'google_retorno.php' => '186db351639714b19368320297691d39',
     'includes/agenda.php' => 'a4b73966646a12ca3c12c1503a1581c9',
-    'includes/app.php' => '0f744c853e67a87499eab575a9467a14',
+    'includes/app.php' => 'c7838941da6e3e5f09d4bc2f62904d0e',
     'includes/arquivos.php' => '8d57a3fc1e67fc7d9e04921b3eebf0c3',
     'includes/autorizacoes.php' => '6d94aa34a541cf63ea8ad3f750c95e19',
     'includes/avaliacoes.php' => '3bebb8ba8dfb538fa299451f636e6dfe',
@@ -60,7 +60,7 @@ return ['versao' => '75', 'arquivos' => [
     'includes/importacao.php' => '1226706c5f5d0556e215ac7124848148',
     'includes/janela.php' => 'c001dfa0e537a1a27710049ef1b6e47c',
     'includes/layout_rodape.php' => '5bec750b6a17131d707c6ca20f491686',
-    'includes/layout_topo.php' => '4a0fc46c49606e5e61904a9fccc89f71',
+    'includes/layout_topo.php' => '987689d61bf38a186c27450149e12a0d',
     'includes/lib/qrcode.php' => '3b22c07aa48bb1376b0237570609a8cc',
     'includes/livros_didaticos.php' => '2684809cf0dcedbae676ef1367c21106',
     'includes/nota_conceitual.php' => '607c1854c29e9f9eb27d2dfc1dd52413',
@@ -135,7 +135,7 @@ return ['versao' => '75', 'arquivos' => [
     'painel/perfil.php' => 'e769ce9c3a4815c20429f280b6112db2',
     'painel/professores.php' => '38efd6f9661b5180642c61a148d08fc2',
     'painel/prova.php' => 'f36f7d9c663965f84fbf2d7f74ee874c',
-    'painel/prova_corrigir.php' => '09d14df9a427c7cad76401e84031e490',
+    'painel/prova_corrigir.php' => '2f9ef48ed203d8e86862781bcb07be41',
     'painel/prova_folhas.php' => 'f89298d2d01e8ce9ad0262ba3e40a6b8',
     'painel/provas.php' => '95687f35e55e4b0c437bbfa21055c3a2',
     'painel/relatorios.php' => '6a9f660a3b6435840448f2cf92edfa0f',

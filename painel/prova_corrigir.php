@@ -38,13 +38,13 @@ require __DIR__ . '/../includes/layout_topo.php';
     <section class="scan-palco" id="palco" aria-label="Câmera">
         <video id="video" playsinline muted autoplay></video>
         <canvas id="congelado" hidden></canvas>
-        <div class="scan-guia" id="guia" hidden><span></span><span></span><span></span><span></span></div>
+        <div class="scan-guia" id="guia" hidden><svg class="sg-puxa" aria-hidden="true"><polygon points=""/></svg><span></span><span></span><span></span><span></span></div>
         <div class="scan-status" id="status" hidden>Aponte a câmera para a folha</div>
 
         <div class="scan-inicio" id="inicio">
             <span class="si-ic"><i class="bi bi-camera"></i></span>
             <strong>Correção pela câmera</strong>
-            <p>Use o <b>gabarito gerado pelo sistema</b> para esta prova. Coloque a folha numa mesa bem iluminada e encaixe os <b>4 quadrados pretos</b> da grade de respostas nos 4 quadrados da tela, com o <b>QR code</b> no tracejado laranja. A leitura é automática.</p>
+            <p>Use o <b>gabarito gerado pelo sistema</b> para esta prova. Coloque a folha numa mesa bem iluminada e aponte a câmera para os <b>4 quadrados pretos</b> da grade de respostas. Não precisa alinhar certinho: mesmo com a folha torta ou de lado, o sistema acha os quadrados e “puxa” a folha. A leitura é automática.</p>
             <button class="btn btn-primary btn-lg" type="button" id="abrirCamera"><i class="bi bi-camera-video me-2"></i>Abrir câmera</button>
             <label class="btn btn-link text-white-50 mt-1" for="arquivoFoto"><i class="bi bi-image me-1"></i>Ou envie uma foto</label>
         </div>
@@ -160,7 +160,7 @@ require __DIR__ . '/../includes/layout_topo.php';
 
 <?php
 $script_pagina = '<script src="' . RAIZ . 'assets/vendor/jsqr/jsQR.js"></script>
-<script src="' . RAIZ . 'assets/js/omr.js?v=15"></script>
+<script src="' . RAIZ . 'assets/js/omr.js?v=16"></script>
 <script>
 (function () {
   "use strict";
@@ -203,6 +203,7 @@ $script_pagina = '<script src="' . RAIZ . 'assets/vendor/jsqr/jsQR.js"></script>
     const f = quadro(), t = Math.max(22, f.k * L.marcador * 1.45);            // quadrado da guia ≈ 1,45× o quadrado impresso
     const px = (x, y) => [f.x + (x - MM.x0) * f.k, f.y + (y - MM.y0) * f.k];
     const g = $("guia"), sp = g.querySelectorAll("span");
+    g.classList.remove("puxando"); g.querySelector(".sg-puxa polygon").setAttribute("points", "");
     [[f.x, f.y], [f.x + f.w, f.y], [f.x + f.w, f.y + f.h], [f.x, f.y + f.h]].forEach(([x, y], i) => {
       sp[i].style.cssText = `left:${x - t / 2}px;top:${y - t / 2}px;width:${t}px;height:${t}px`;
     });
@@ -225,7 +226,22 @@ $script_pagina = '<script src="' . RAIZ . 'assets/vendor/jsqr/jsQR.js"></script>
       return { x0, y0, x1, y1, ladoMin: lm * 0.45, ladoMax: lm * 2.4 };
     });
   }
-  function marcarGuias(pts) { [...$("guia").children].forEach((s, i) => s.classList.toggle("ok", !!pts[i])); }
+  function marcarGuias(pts) { $("guia").querySelectorAll("span").forEach((s, i) => s.classList.toggle("ok", !!pts[i])); }
+  /* v76: ponto da imagem analisada -> ponto na tela (o vídeo é exibido com object-fit: cover) */
+  function naTela(p, img) {
+    const sw = palco.clientWidth, sh = palco.clientHeight, vw = video.videoWidth, vh = video.videoHeight;
+    const s = Math.max(sw / vw, sh / vh), dx = (sw - vw * s) / 2, dy = (sh - vh * s) / 2, k = img.W / vw;
+    return [p.x / k * s + dx, p.y / k * s + dy, (p.lado || 10) / k * s];
+  }
+  /* v76: a folha não está nos quadrados da tela -> os quadrados da tela vão até os da folha ("puxam" a folha) */
+  let puxando = false;
+  function puxarGuias(pts, img) {
+    const g = $("guia"), sp = g.querySelectorAll("span"), tela = pts.map(p => naTela(p, img));
+    tela.forEach(([x, y, l], i) => { const t = Math.max(26, l * 1.6); sp[i].style.cssText = `left:${x - t / 2}px;top:${y - t / 2}px;width:${t}px;height:${t}px`; sp[i].classList.add("ok"); });
+    g.querySelector(".sg-puxa polygon").setAttribute("points", tela.map(([x, y]) => x.toFixed(1) + "," + y.toFixed(1)).join(" "));
+    g.classList.add("puxando"); puxando = true;
+  }
+  function soltarGuias() { if (puxando) { puxando = false; posicionarGuia(); } }
   function status(txt, tipo) { const s = $("status"); s.hidden = !txt; s.textContent = txt || ""; s.className = "scan-status" + (tipo ? " " + tipo : ""); }
 
   /* ---------------- Câmera ---------------- */
@@ -270,7 +286,7 @@ $script_pagina = '<script src="' . RAIZ . 'assets/vendor/jsqr/jsQR.js"></script>
   function procurar() {
     st.estado = "procurando"; st.estaveis = 0; st.ultimos = null;
     $("congelado").hidden = true; $("resultado").hidden = true;
-    status("Encaixe os 4 quadrados pretos da folha nos 4 quadrados da tela");
+    status("Aponte para a folha: os 4 quadrados pretos precisam aparecer"); soltarGuias();
   }
   function esperarSaida() { st.estado = "aguardando_saida"; st.ausente = 0; }
 
@@ -278,22 +294,27 @@ $script_pagina = '<script src="' . RAIZ . 'assets/vendor/jsqr/jsQR.js"></script>
     if (!st.stream) return;
     if ((st.estado === "procurando" || st.estado === "aguardando_saida") && video.videoWidth) {
       const img = OMR.prepararImagem(video, 520);
-      const pts = OMR.detectarCantos(img, regioes(img));
+      let pts = OMR.detectarCantos(img, regioes(img)), livre = false;
+      /* v76: fora dos quadrados da tela? procura os 4 quadrados na imagem toda (torta, de lado, em ângulo) */
+      if (!pts.every(Boolean)) {
+        const achados = OMR.acharFolha(img, st.modo === "escola" ? L : null);
+        if (achados) { pts = achados; livre = true; }
+      }
       const todos = pts.every(Boolean);
       if (st.estado === "aguardando_saida") {
         st.ausente = todos ? 0 : st.ausente + 1;
         if (st.ausente >= 4) procurar();
       } else {
-        marcarGuias(pts);
+        if (livre) puxarGuias(pts, img); else { soltarGuias(); marcarGuias(pts); }
         if (todos) {
           const mov = st.ultimos ? Math.max(...pts.map((p, i) => Math.hypot(p.x - st.ultimos[i].x, p.y - st.ultimos[i].y))) : 1e9;
           st.estaveis = mov < img.W * 0.015 ? st.estaveis + 1 : 1; st.ultimos = pts;
-          status(st.estaveis >= 2 ? "Segure firme…" : "Folha encontrada", "ok");
+          status(st.estaveis >= 2 ? "Segure firme…" : (livre ? "Folha encontrada: puxando pelos quadrados" : "Folha encontrada"), "ok");
           if (st.estaveis >= 3) { capturar(pts, img); }
         } else {
           st.estaveis = 0; st.ultimos = null;
           const n = pts.filter(Boolean).length;
-          status(n ? `Quase lá: ${n} de 4 quadrados encaixados` : "Encaixe os 4 quadrados pretos da folha nos 4 quadrados da tela");
+          status(n ? `Quase lá: ${n} de 4 quadrados encaixados` : "Aponte para a folha: os 4 quadrados pretos precisam aparecer");
         }
       }
     }

@@ -82,7 +82,7 @@ window.OMR = (function () {
     }
 
     /* Binarização adaptativa (imagem inteira) -> manchas escuras */
-    function manchasEscuras(W, H, g) {
+    function manchasEscuras(W, H, g, erodir) {
         const I = new Float64Array((W + 1) * (H + 1));
         for (let y = 0; y < H; y++) {
             let s = 0;
@@ -98,6 +98,16 @@ window.OMR = (function () {
                 const v = g[y * W + x];
                 bin[y * W + x] = v < soma / ((x1 - x0) * (y1 - y0)) * 0.72 && v < 150 ? 1 : 0;
             }
+        }
+        if (erodir) {
+            /* v76: tira 1 px da borda de tudo: some a linha fina da moldura que encosta
+               no quadrado quando a folha está torta (o quadrado continua lá) */
+            const e = new Uint8Array(W * H);
+            for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) {
+                const i = y * W + x;
+                e[i] = bin[i] & bin[i - 1] & bin[i + 1] & bin[i - W] & bin[i + W];
+            }
+            return componentes(W, H, e).map(c => Object.assign(c, { n: c.n + 2 * (c.w + c.h) + 4, w: c.w + 2, h: c.h + 2 }));
         }
         return componentes(W, H, bin);
     }
@@ -132,7 +142,7 @@ window.OMR = (function () {
         for (const c of componentes(w, h, bin)) {
             const asp = c.w / c.h;
             if (c.w < ladoMin || c.h < ladoMin || c.w > ladoMax || c.h > ladoMax) continue;
-            if (asp < 0.55 || asp > 1.8 || c.preench < 0.62) continue;
+            if (asp < 0.55 || asp > 1.8 || c.preench < 0.47) continue;   // v76: quadrado girado
             if (c.minX === 0 || c.minY === 0 || c.minX + c.w >= w || c.minY + c.h >= h) continue; // cortado na borda
             if (!achou || c.n > achou.n) achou = c;
         }
@@ -214,32 +224,67 @@ window.OMR = (function () {
             const anti = Math.max(...L.anti.map(([x, y]) => s.fracao(x, y, ro, lim, ro / 4)));
             if (ori < 0.55 || anti > 0.3) continue;
             const nota = ori - anti;
-            if (!melhor || nota > melhor.nota) melhor = { nota, M, pts: p };
+            if (!melhor || nota > melhor.nota) melhor = { nota, M, pts: p, rot };
         }
         return melhor;
     }
 
+    /* v76: o quadrado impresso fica no meio do papel branco. Uma mancha escura na borda
+       da folha (a mesa aparecendo) não tem papel em volta e é descartada. */
+    function nivelPapel(img) {
+        if (img._papel) return img._papel;
+        const h = new Uint32Array(256), g = img.g, passo = Math.max(1, Math.floor(g.length / 60000));
+        let n = 0; for (let i = 0; i < g.length; i += passo) { h[g[i]]++; n++; }
+        let a = 0, t = 255; for (; t > 0; t--) { a += h[t]; if (a >= n * 0.1) break; }
+        return img._papel = t;
+    }
+    function cercadoDePapel(img, c) {
+        const { W, H, g } = img, lim = nivelPapel(img) * 0.7, r = Math.max(c.w, c.h) * 0.85 + 1.5;
+        let claros = 0, tot = 0;
+        for (let a = 0; a < 32; a++) {
+            const t = a / 32 * Math.PI * 2, x = Math.round(c.cx + Math.cos(t) * r), y = Math.round(c.cy + Math.sin(t) * r);
+            tot++; if (x >= 0 && y >= 0 && x < W && y < H && g[y * W + x] > lim) claros++;
+        }
+        return claros / tot >= 0.55;
+    }
+
+    /* v76: os 4 cantos de um grupo de quadrados, em qualquer rotação: pega os pontos
+       extremos em 8 direções, escolhe os 4 que formam o maior quadrilátero e põe em
+       ordem de giro (sentido horário na imagem) */
+    function quatroCantos(grupo) {
+        const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
+        const cand = [...new Set(dirs.map(([a, b]) => grupo.reduce((m, c) => a * c.cx + b * c.cy > a * m.cx + b * m.cy ? c : m)))];
+        if (cand.length < 4) return null;
+        const area = q => { let s = 0; for (let i = 0; i < 4; i++) { const p = q[i], r = q[(i + 1) % 4]; s += p.cx * r.cy - r.cx * p.cy; } return Math.abs(s) / 2; };
+        const ordenar = q => { const mx = q.reduce((t, c) => t + c.cx, 0) / 4, my = q.reduce((t, c) => t + c.cy, 0) / 4; return [...q].sort((p, r) => Math.atan2(p.cy - my, p.cx - mx) - Math.atan2(r.cy - my, r.cx - mx)); };
+        let melhor = null, ma = 0;
+        for (let a = 0; a < cand.length; a++) for (let b = a + 1; b < cand.length; b++) for (let c = b + 1; c < cand.length; c++) for (let d = c + 1; d < cand.length; d++) {
+            const q = ordenar([cand[a], cand[b], cand[c], cand[d]]), ar = area(q);
+            if (ar > ma) { ma = ar; melhor = q; }
+        }
+        if (!melhor) return null;
+        // começa pelo de cima à esquerda (menor x+y) para a ordem ficar parecida com a da tela
+        const i0 = melhor.reduce((k, c, i) => c.cx + c.cy < melhor[k].cx + melhor[k].cy ? i : k, 0);
+        return [0, 1, 2, 3].map(i => melhor[(i0 + i) % 4]);
+    }
+
     /* Foto inteira (sem guia): procura os quadradinhos pretos, agrupa os de
        tamanho parecido e testa os 4 da ponta de cada grupo */
-    function acharCantos(img, L) {
+    function acharCantos(img, L, erodir) {
+        if (erodir === undefined) return acharCantos(img, L, false) || acharCantos(img, L, true);
         const { W, H } = img, N = W * H;
-        const comps = manchasEscuras(W, H, img.g).filter(c =>
-            c.w >= 5 && c.h >= 5 && c.w / c.h > 0.55 && c.w / c.h < 1.8 && c.preench > 0.68 && c.n > N * 0.00002 && c.n < N * 0.02);
+        const comps = manchasEscuras(W, H, img.g, erodir).filter(c =>
+            c.w >= 5 && c.h >= 5 && c.w / c.h > 0.55 && c.w / c.h < 1.8 && c.preench > 0.47 && c.n > N * 0.00002 && c.n < N * 0.02).filter(c => cercadoDePapel(img, c));
         comps.sort((a, b) => b.n - a.n);
         const vistos = new Set();
         let melhor = null;
         for (const ref of comps.slice(0, 40)) {
-            const grupo = comps.filter(c => c.n > ref.n * 0.6 && c.n < ref.n * 1.6);
+            const grupo = comps.filter(c => c.n > ref.n * 0.12 && c.n < ref.n * 3.5);   // v76: em perspectiva o quadrado de longe fica menor
             const chave = grupo.map(c => c.cx | 0).join(',');
             if (grupo.length < 4 || vistos.has(chave)) continue;
             vistos.add(chave);
-            const ext = [
-                grupo.reduce((a, c) => c.cx + c.cy < a.cx + a.cy ? c : a),   // sup. esq.
-                grupo.reduce((a, c) => c.cx - c.cy > a.cx - a.cy ? c : a),   // sup. dir.
-                grupo.reduce((a, c) => c.cx + c.cy > a.cx + a.cy ? c : a),   // inf. dir.
-                grupo.reduce((a, c) => c.cy - c.cx > a.cy - a.cx ? c : a),   // inf. esq.
-            ];
-            if (new Set(ext).size < 4) continue;
+            const ext = quatroCantos(grupo);
+            if (!ext) continue;
             let area = 0;
             for (let i = 0; i < 4; i++) { const p = ext[i], r = ext[(i + 1) % 4]; area += p.cx * r.cy - r.cx * p.cy; }
             area = Math.abs(area) / 2;
@@ -247,9 +292,35 @@ window.OMR = (function () {
             const o = orientar(img, L, ext.map(p => ({ x: p.cx, y: p.cy })));
             if (!o) continue;
             const nota = o.nota * 2 + area / N;
-            if (!melhor || nota > melhor.nota) melhor = Object.assign(o, { nota });
+            // v76: os 4 quadrados achados, já na ordem da folha (para a câmera "puxar" a folha por eles)
+            const cantos = [0, 1, 2, 3].map(i => { const c = ext[(i + o.rot) % 4]; return { x: c.cx, y: c.cy, lado: Math.sqrt(c.n) }; });
+            if (!melhor || nota > melhor.nota) melhor = Object.assign(o, { nota, cantos });
         }
         return melhor;
+    }
+
+    /* v76: câmera — acha os 4 quadrados em qualquer lugar da imagem (folha torta,
+       de lado, em ângulo). Na folha da escola confere pelo quadradinho de orientação;
+       devolve os cantos na ordem sup. esq., sup. dir., inf. dir., inf. esq. da folha. */
+    function acharFolha(img, L) {
+        if (L) { const o = acharCantos(img, L, true) || acharCantos(img, L, false); return o ? o.cantos : null; }
+        const { W, H } = img, N = W * H;
+        const comps = manchasEscuras(W, H, img.g, true).filter(c =>
+            c.w >= 5 && c.h >= 5 && c.w / c.h > 0.55 && c.w / c.h < 1.8 && c.preench > 0.47 && c.n > N * 0.00004 && c.n < N * 0.02).filter(c => cercadoDePapel(img, c));
+        comps.sort((a, b) => b.n - a.n);
+        let melhor = null;
+        for (const ref of comps.slice(0, 12)) {
+            const grupo = comps.filter(c => c.n > ref.n * 0.12 && c.n < ref.n * 3.5);   // v76: em perspectiva o quadrado de longe fica menor
+            if (grupo.length < 4) continue;
+            const ext = quatroCantos(grupo);
+            if (!ext) continue;
+            let area = 0;
+            for (let i = 0; i < 4; i++) { const p = ext[i], r = ext[(i + 1) % 4]; area += p.cx * r.cy - r.cx * p.cy; }
+            area = Math.abs(area) / 2;
+            if (area < N * 0.08) continue;
+            if (!melhor || area > melhor.area) melhor = { area, ext };
+        }
+        return melhor ? melhor.ext.map(c => ({ x: c.cx, y: c.cy, lado: Math.sqrt(c.n) })) : null;
     }
 
     /* Lê o QR code (a identificação do aluno é o mais importante da folha).
@@ -453,5 +524,6 @@ window.OMR = (function () {
         });
     }
 
-    return { LETRAS, homografia, prepararImagem, detectarCantos, refinarCantos, cantosNaFoto, ler, lerComCantos, lerExterno, posicoesExterno, retificar, desenhar, carregarArquivo, interpretarQR };
+
+    return { LETRAS, homografia, prepararImagem, detectarCantos, acharFolha, refinarCantos, cantosNaFoto, ler, lerComCantos, lerExterno, posicoesExterno, retificar, desenhar, carregarArquivo, interpretarQR };
 })();

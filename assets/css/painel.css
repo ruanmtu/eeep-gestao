@@ -4167,3 +4167,10 @@ html[data-ms-modo="ver"][data-ms-mudou="0"] .ms-salvar { display: none; }
 .ano-campo a { font-size: .82rem; font-weight: 700; color: #5b4300; }
 .ano-nota { font-size: .84rem; color: #5b4300; display: inline-flex; align-items: center; gap: 6px; }
 @media (max-width: 575.98px) { .ano-nota { display: none; } .ano-faixa { margin-bottom: 10px; } }
+
+/* v76 — câmera da correção: só os 4 quadrados; quando a folha está torta, eles "puxam" a folha */
+.scan-guia .sg-cartao, .scan-guia .sg-qr, .scan-guia .sg-orient { display: none !important; }
+.scan-guia span { transition: left .18s ease-out, top .18s ease-out, width .18s ease-out, height .18s ease-out, border-color .15s, background .15s; }
+.scan-guia .sg-puxa { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.scan-guia .sg-puxa polygon { fill: rgba(61,220,88,.10); stroke: #3ddc58; stroke-width: 2.5; stroke-dasharray: 8 6; stroke-linejoin: round; opacity: 0; transition: opacity .2s; }
+.scan-guia.puxando .sg-puxa polygon { opacity: 1; }
