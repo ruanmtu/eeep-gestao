@@ -1,0 +1,30 @@
+# Diagnóstico manual (só leitura): onde estão as cópias do sistema no FTP e qual versão cada uma tem
+name: Diagnóstico do FTP
+on: workflow_dispatch
+jobs:
+  ver:
+    runs-on: ubuntu-latest
+    steps:
+      - run: sudo apt-get install -y -qq lftp >/dev/null
+      - env:
+          S: ${{ secrets.FTP_SERVIDOR }}
+          U: ${{ secrets.FTP_USUARIO }}
+          P: ${{ secrets.FTP_SENHA }}
+        run: |
+          set +e
+          L() { lftp -u "$U","$P" -e "set ftp:ssl-allow no; set net:max-retries 2; $1; bye" "$S" 2>&1; }
+          o() { sed 's/./& /g'; }
+          echo "### todas as cópias de includes/app.php (até 6 níveis)"
+          L "find --maxdepth=6 /domains/" > lista.txt
+          L "find --maxdepth=3 /public_html/" >> lista.txt
+          grep -E 'includes/app\.php$' lista.txt | o
+          for f in $(grep -E 'includes/app\.php$' lista.txt); do
+            echo "== $f" | o
+            L "cat $f" | grep -m1 SISTEMA_VERSAO
+            L "cls -l $f" | o
+          done
+          echo "### .htaccess e index da pasta do site"
+          L "cls -la /domains/eeepvenceslau.com.br/public_html/" | head -60 | o
+          L "cat /domains/eeepvenceslau.com.br/public_html/.htaccess" | head -40
+          echo "### versao.php"
+          grep -E 'versao\.php$' lista.txt | o
