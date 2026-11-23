@@ -57,7 +57,7 @@ function nc_disciplinas_turma(int $turma_id): array
 
 function nc_alunos(int $turma_id): array
 {
-    $al = q_todos("SELECT id, nome, foto FROM alunos WHERE turma_id = ? AND situacao = 'ativo' ORDER BY nome", [$turma_id]);
+    $al = q_todos("SELECT id, nome, foto FROM alunos WHERE id IN (SELECT xt.aluno_id FROM aluno_turmas xt WHERE xt.turma_id = ? AND xt.situacao IN ('ativo','concluido')) ORDER BY nome", [$turma_id]);
     if (class_exists('Collator')) { $col = new Collator('pt_BR'); usort($al, fn($x, $y) => $col->compare($x['nome'], $y['nome'])); }
     return $al;
 }
@@ -66,8 +66,8 @@ function nc_alunos(int $turma_id): array
 function nc_notas_turma(int $turma_id, int $bimestre, ?int $disciplina_id = null): array
 {
     $sql = 'SELECT n.* FROM nota_conceitual n JOIN alunos a ON a.id = n.aluno_id
-             WHERE a.turma_id = ? AND n.ano_letivo = ? AND n.bimestre = ?';
-    $p = [$turma_id, ANO_LETIVO, $bimestre];
+             WHERE a.id IN (SELECT xt.aluno_id FROM aluno_turmas xt WHERE xt.turma_id = ?) AND n.ano_letivo = ? AND n.bimestre = ?';
+    $p = [$turma_id, ANO_VER, $bimestre];
     if ($disciplina_id) { $sql .= ' AND n.disciplina_id = ?'; $p[] = $disciplina_id; }
     $out = [];
     foreach (q_todos($sql, $p) as $r) $out[(int)$r['aluno_id']][(int)$r['disciplina_id']] = $r;
@@ -126,7 +126,7 @@ function nc_salvar(int $turma_id, array $disciplinas, int $bimestre, array $linh
             $vazias = count(array_filter($vals, fn($x) => $x === null));
             if ($vazias === 3) {
                 $ap = 0;
-                foreach ($disciplinas as $disciplina_id) $ap += q('DELETE FROM nota_conceitual WHERE aluno_id = ? AND disciplina_id = ? AND ano_letivo = ? AND bimestre = ?', [$aid, $disciplina_id, ANO_LETIVO, $bimestre])->rowCount();
+                foreach ($disciplinas as $disciplina_id) $ap += q('DELETE FROM nota_conceitual WHERE aluno_id = ? AND disciplina_id = ? AND ano_letivo = ? AND bimestre = ?', [$aid, $disciplina_id, ANO_VER, $bimestre])->rowCount();
                 if ($ap) $apagadas++;
                 continue;
             }
@@ -137,10 +137,10 @@ function nc_salvar(int $turma_id, array $disciplinas, int $bimestre, array $linh
             if (!$ok) continue;
             $total = round(array_sum($vals), 2);
             foreach ($disciplinas as $disciplina_id) {
-            $ja = q_valor('SELECT id FROM nota_conceitual WHERE aluno_id = ? AND disciplina_id = ? AND ano_letivo = ? AND bimestre = ?', [$aid, $disciplina_id, ANO_LETIVO, $bimestre]);
+            $ja = q_valor('SELECT id FROM nota_conceitual WHERE aluno_id = ? AND disciplina_id = ? AND ano_letivo = ? AND bimestre = ?', [$aid, $disciplina_id, ANO_VER, $bimestre]);
             if ($ja) q('UPDATE nota_conceitual SET c1 = ?, c2 = ?, c3 = ?, total = ?, turma_id = ?, lancado_por = ?, atualizado_em = ? WHERE id = ?', [$vals[0], $vals[1], $vals[2], $total, $turma_id, uid(), $agora, $ja]);
             else q('INSERT INTO nota_conceitual (aluno_id, turma_id, disciplina_id, ano_letivo, bimestre, c1, c2, c3, total, lancado_por, atualizado_em) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                   [$aid, $turma_id, $disciplina_id, ANO_LETIVO, $bimestre, $vals[0], $vals[1], $vals[2], $total, uid(), $agora]);
+                   [$aid, $turma_id, $disciplina_id, ANO_VER, $bimestre, $vals[0], $vals[1], $vals[2], $total, uid(), $agora]);
             }
             $salvas++;
         }

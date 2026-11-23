@@ -72,8 +72,8 @@ require __DIR__ . '/../includes/layout_topo.php';
 <?php if ($aba === 'turmas'):
     $usuarios_dt = q_todos("SELECT id, nome, foto, perfil FROM usuarios WHERE ativo = 1 AND perfil <> 'admin' ORDER BY nome");
     $ud_por_id = array_column($usuarios_dt, null, 'id');
-    $ano_ver = (int)($_GET['ano'] ?? ANO_LETIVO);
-    $turmas = q_todos("SELECT t.*, c.nome AS curso, c.sigla, (SELECT COUNT(*) FROM alunos a WHERE a.turma_id = t.id AND a.situacao = 'ativo') AS alunos
+    $ano_ver = ANO_VER;   // escolhido no seletor de ano do topo
+    $turmas = q_todos("SELECT t.*, c.nome AS curso, c.sigla, (SELECT COUNT(*) FROM aluno_turmas xt WHERE xt.turma_id = t.id AND xt.situacao IN ('ativo','concluido')) AS alunos
                          FROM turmas t JOIN cursos c ON c.id = t.curso_id WHERE t.ano_letivo = ? ORDER BY t.serie, t.letra", [$ano_ver]);
     $cor_curso = []; foreach ($cursos as $c) $cor_curso[$c['id']] = cor_curso($c['nome']);
     $sem_dt = count(array_filter($turmas, fn($t) => $t['ativo'] && empty($t['diretor_turma_id']))); ?>
@@ -83,10 +83,7 @@ require __DIR__ . '/../includes/layout_topo.php';
         <span><b><?= array_sum(array_column($turmas, 'alunos')) ?></b> alunos</span>
         <span class="<?= $sem_dt ? 'ambar' : 'ok' ?>"><b><?= $sem_dt ?></b> sem diretor(a) de turma</span>
     </div>
-    <form class="d-flex gap-2 align-items-center ms-auto" method="get"><input type="hidden" name="aba" value="turmas">
-        <label class="small text-secondary" for="anoVer">Ano letivo</label>
-        <select class="form-select form-select-sm" id="anoVer" name="ano" onchange="this.form.submit()" style="width:auto">
-            <?php for ($a = ANO_LETIVO + 1; $a >= ANO_LETIVO - 4; $a--): ?><option<?= $a === $ano_ver ? ' selected' : '' ?>><?= $a ?></option><?php endfor; ?></select></form>
+    <span class="cf-ano ms-auto"><i class="bi bi-calendar3"></i> Turmas de <b><?= $ano_ver ?></b> <small>(troque o ano no topo da página)</small></span>
     <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#novaTurma"><i class="bi bi-plus-lg me-1"></i>Nova turma</button>
 </div>
 
@@ -100,7 +97,7 @@ require __DIR__ . '/../includes/layout_topo.php';
         <div class="col-md-2"><label class="form-label">Turno</label><input class="form-control" name="turno" value="Integral"></div>
         <div class="col-md-1"><button class="btn btn-primary w-100" type="submit">Criar</button></div>
     </form>
-    <p class="form-text mt-3 mb-0">Na virada do ano, crie as turmas do novo ano letivo, mude <code>ANO_LETIVO</code> em <code>includes/config.php</code> e atualize a turma dos alunos.</p>
+    <p class="form-text mt-3 mb-0">Na virada do ano: escolha o novo ano no seletor do topo, crie as turmas dele e depois atualize a turma dos alunos. O histórico (notas, faltas, turma de cada aluno) do ano anterior continua guardado.</p>
 </div></div></div>
 
 <?php if ($turmas): ?>
@@ -144,13 +141,13 @@ require __DIR__ . '/../includes/layout_topo.php';
         </form>
 <?= janela_fecha() ?>
 <?php $usuarios_co = q_todos("SELECT id, nome, foto, perfil FROM usuarios WHERE ativo = 1 AND perfil <> 'admin' ORDER BY nome"); $uc_por_id = array_column($usuarios_co, null, 'id');
-    $n_turmas = []; foreach (q_todos('SELECT curso_id, COUNT(*) AS n FROM turmas WHERE ano_letivo = ? GROUP BY curso_id', [ANO_LETIVO]) as $r) $n_turmas[(int)$r['curso_id']] = (int)$r['n']; ?>
+    $n_turmas = []; foreach (q_todos('SELECT curso_id, COUNT(*) AS n FROM turmas WHERE ano_letivo = ? GROUP BY curso_id', [ANO_VER]) as $r) $n_turmas[(int)$r['curso_id']] = (int)$r['n']; ?>
 <div class="tc-grade">
     <?php foreach ($cursos as $c): $co = $uc_por_id[(int)($c['coordenador_id'] ?? 0)] ?? null; ?>
     <article class="tc-card<?= $c['ativo'] ? '' : ' inativa' ?>" style="--tc:<?= cor_curso($c['nome']) ?>">
         <header class="tc-cab">
             <span class="tc-serie cc-sigla"><?= e($c['sigla']) ?></span>
-            <div class="min-w-0"><strong><?= e($c['nome']) ?></strong><small><?= $n_turmas[(int)$c['id']] ?? 0 ?> turma(s) em <?= ANO_LETIVO ?></small></div>
+            <div class="min-w-0"><strong><?= e($c['nome']) ?></strong><small><?= $n_turmas[(int)$c['id']] ?? 0 ?> turma(s) em <?= ANO_VER ?></small></div>
             <span class="tc-status"><?= $c['ativo'] ? 'Ativo' : 'Inativo' ?></span>
         </header>
         <form method="post" class="tc-dt<?= $co ? '' : ' vazio-dt' ?>"><?= csrf_campo() ?><input type="hidden" name="acao" value="curso_coord"><input type="hidden" name="id" value="<?= $c['id'] ?>">

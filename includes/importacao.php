@@ -508,7 +508,7 @@ function faltas_planilha_por_turma(int $ano): array
 {
     try {
         $r = [];
-        foreach (q_todos('SELECT a.turma_id, SUM(fb.faltas) AS n FROM faltas_bimestre fb JOIN alunos a ON a.id = fb.aluno_id WHERE fb.ano_letivo = ? GROUP BY a.turma_id', [$ano]) as $l) $r[(int)$l['turma_id']] = (int)$l['n'];
+        foreach (q_todos('SELECT xt.turma_id, SUM(fb.faltas) AS n FROM faltas_bimestre fb JOIN aluno_turmas xt ON xt.aluno_id = fb.aluno_id AND xt.ano_letivo = fb.ano_letivo WHERE fb.ano_letivo = ? GROUP BY xt.turma_id', [$ano]) as $l) $r[(int)$l['turma_id']] = (int)$l['n'];
         return $r;
     } catch (PDOException $e) { return []; }
 }

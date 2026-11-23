@@ -29,7 +29,7 @@ function disciplinas_do_usuario(?array $turma = null): array
     if (restrito_a_atribuicoes()) {
         $sql = 'SELECT DISTINCT d.id, d.nome, d.tipo, d.curso_id FROM atribuicoes a JOIN disciplinas d ON d.id = a.disciplina_id WHERE a.usuario_id = ?';
         $p = [uid()];
-        if ($turma) { $sql .= ' AND a.turma_id = ?'; $p[] = $turma['id']; }
+        if ($turma) { $sql .= ' AND a.id IN (SELECT xt.aluno_id FROM aluno_turmas xt WHERE xt.turma_id = ?)'; $p[] = $turma['id']; }
         return q_todos($sql . ' ORDER BY d.tipo, d.nome', $p);
     }
     $sql = 'SELECT d.id, d.nome, d.tipo, d.curso_id, c.nome AS curso FROM disciplinas d LEFT JOIN cursos c ON c.id = d.curso_id WHERE d.ativo = 1';
@@ -79,7 +79,7 @@ function recalcular_media(int $aluno_id, int $disciplina_id, int $ano, int $bime
 /** Grava as notas de uma avaliação (vazio apaga) e atualiza as médias. Devolve [salvas, apagadas, inválidas] */
 function salvar_notas_avaliacao(array $av, array $notas): array
 {
-    $alunos = array_map('intval', array_column(q_todos("SELECT id FROM alunos WHERE turma_id = ? AND situacao = 'ativo'", [$av['turma_id']]), 'id'));
+    $alunos = array_map('intval', array_column(q_todos("SELECT id FROM alunos WHERE id IN (SELECT xt.aluno_id FROM aluno_turmas xt WHERE xt.turma_id = ? AND xt.situacao IN ('ativo','concluido'))", [$av['turma_id']]), 'id'));
     $salvas = $apagadas = $invalidas = 0;
     db()->beginTransaction();
     foreach ($notas as $aid => $v) {
@@ -116,9 +116,9 @@ function criar_avaliacoes(array $turma_ids, int $disciplina_id, string $tipo, st
             $puladas[] = turma_nome($t) . ' (não atribuída a você)'; continue;
         }
         if (q_valor('SELECT id FROM avaliacoes WHERE turma_id = ? AND disciplina_id = ? AND ano_letivo = ? AND bimestre = ? AND tipo = ? AND titulo = ?',
-                    [$t['id'], $disciplina_id, ANO_LETIVO, $bimestre, $tipo, $titulo])) { $puladas[] = turma_nome($t) . ' (já existe)'; continue; }
+                    [$t['id'], $disciplina_id, ANO_VER, $bimestre, $tipo, $titulo])) { $puladas[] = turma_nome($t) . ' (já existe)'; continue; }
         q('INSERT INTO avaliacoes (turma_id, disciplina_id, ano_letivo, bimestre, tipo, titulo, data_aplicacao, lote, criado_por) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-          [$t['id'], $disciplina_id, ANO_LETIVO, $bimestre, $tipo, $titulo, $data ?: null, $lote, uid()]);
+          [$t['id'], $disciplina_id, ANO_VER, $bimestre, $tipo, $titulo, $data ?: null, $lote, uid()]);
         $criadas[] = (int)db()->lastInsertId();
     }
     if ($criadas) registrar_log('avaliacao_criada', TIPOS_AVALIACAO[$tipo] . ' · ' . $disc['nome'] . ' · ' . count($criadas) . ' turma(s)');

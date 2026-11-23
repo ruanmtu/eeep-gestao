@@ -11,7 +11,7 @@ if (eh_post()) {
         try {
             [$cam, $mime, $tam, $orig] = arquivo_receber($_FILES['pdf'] ?? [], ['pdf']);
             q("UPDATE arquivos SET especial = 'calendario_sige_antigo' WHERE especial = 'calendario_sige'");
-            $tit = trim((string)($_POST['titulo'] ?? '')) ?: 'Calendário letivo ' . ANO_LETIVO . ' · SIGE';
+            $tit = trim((string)($_POST['titulo'] ?? '')) ?: 'Calendário letivo ' . ANO_VER . ' · SIGE';
             q('INSERT INTO arquivos (titulo, descricao, categoria, especial, nome_original, caminho, mime, tamanho, enviado_por) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
               [mb_substr($tit, 0, 160), 'Calendário anual da escola (SIGE Escola).', 'Calendário', 'calendario_sige', $orig, $cam, $mime, $tam, uid()]);
             registrar_log('calendario', 'Novo PDF do calendário: ' . $orig);
@@ -33,7 +33,7 @@ if (eh_post()) {
     } elseif ($acao === 'periodos' && pode('config')) {
         foreach ([1, 2, 3, 4] as $n) foreach (['inicio', 'fim'] as $k) {
             $v = (string)($_POST["b{$n}_$k"] ?? '');
-            if (data_valida($v)) config_gravar('bimestre_' . ANO_LETIVO . "_{$n}_$k", $v);
+            if (data_valida($v)) config_gravar('bimestre_' . ANO_VER . "_{$n}_$k", $v);
         }
         flash('success', 'Datas dos períodos salvas.');
     }
@@ -44,13 +44,13 @@ $cal = q_um("SELECT a.*, u.nome AS por FROM arquivos a LEFT JOIN usuarios u ON u
 if ($cal && !is_file(PASTA_DADOS . '/' . $cal['caminho'])) $cal['ausente'] = true;
 $per = periodo_atual();
 $bims = bimestres();
-$eventos = eventos_entre(ANO_LETIVO . '-01-01', (ANO_LETIVO + 1) . '-01-31');
+$eventos = eventos_entre(ANO_VER . '-01-01', (ANO_VER + 1) . '-01-31');
 $por_mes = [];
 foreach ($eventos as $ev) $por_mes[substr($ev['data_inicio'], 0, 7)][] = $ev;
 $hoje = date('Y-m-d');
 
 $titulo = 'Calendário SIGE';
-$subtitulo = 'Calendário letivo ' . ANO_LETIVO . ' da escola: períodos, feriados, recessos, sábados letivos e reuniões.';
+$subtitulo = 'Calendário letivo ' . ANO_VER . ' da escola: períodos, feriados, recessos, sábados letivos e reuniões.';
 $menu = 'calendario';
 require __DIR__ . '/../includes/layout_topo.php';
 ?>
@@ -137,7 +137,7 @@ require __DIR__ . '/../includes/layout_topo.php';
         <div class="agenda-meses">
         <?php foreach ($por_mes as $ym => $evs): [$y, $m] = explode('-', $ym); ?>
             <div class="agenda-mes<?= $ym === date('Y-m') ? ' atual' : '' ?>">
-                <h3><?= MESES[(int)$m] ?><?= (int)$y !== ANO_LETIVO ? ' ' . $y : '' ?></h3>
+                <h3><?= MESES[(int)$m] ?><?= (int)$y !== ANO_VER ? ' ' . $y : '' ?></h3>
                 <ul><?php foreach ($evs as $ev): [$tr, $ti, $tc] = TIPOS_EVENTO[$ev['tipo']] ?? TIPOS_EVENTO['evento']; ?>
                     <li class="<?= ($ev['data_fim'] ?: $ev['data_inicio']) < $hoje ? 'passou' : '' ?>"><span class="ponto <?= $tc ?>" title="<?= $tr ?>"></span>
                         <b><?= date('d', strtotime($ev['data_inicio'])) ?><?= $ev['data_fim'] ? '–' . date('d/m', strtotime($ev['data_fim'])) : '' ?></b> <?= e($ev['titulo']) ?>

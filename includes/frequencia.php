@@ -24,7 +24,7 @@ function semana_rotulo(string $seg, string $sex): string
 /** Seletor de semana: devolve [segunda, sexta, valor do parâmetro] a partir de ?semana=AAAA-MM-DD */
 function semana_param(string $nome = 'semana'): array
 {
-    $v = (string)($_GET[$nome] ?? '');
+    $v = (string)($_GET[$nome] ?? (vendo_outro_ano() ? data_padrao() : ''));
     [$seg, $sex] = semana_de(data_valida($v) ? $v : null);
     return [$seg, $sex];
 }
@@ -37,9 +37,9 @@ function ranking_faltas(string $ini, string $fim): array
 {
     $turmas = [];
     foreach (q_todos("SELECT t.id, t.serie, t.letra, c.nome AS curso, c.sigla,
-                             (SELECT COUNT(*) FROM alunos a WHERE a.turma_id = t.id AND a.situacao = 'ativo') AS alunos
+                             (SELECT COUNT(*) FROM aluno_turmas xt WHERE xt.turma_id = t.id AND xt.situacao IN ('ativo','concluido')) AS alunos
                         FROM turmas t JOIN cursos c ON c.id = t.curso_id
-                       WHERE t.ano_letivo = ? AND t.ativo = 1 ORDER BY t.serie, t.letra", [ANO_LETIVO]) as $t) {
+                       WHERE t.ano_letivo = ? AND t.ativo = 1 ORDER BY t.serie, t.letra", [ANO_VER]) as $t) {
         $turmas[$t['id']] = $t + ['faltas' => 0, 'faltosos' => 0, 'detalhes' => []];
     }
     foreach (q_todos('SELECT a.turma_id, a.id, a.nome, f.data_falta FROM faltas f JOIN alunos a ON a.id = f.aluno_id
@@ -134,7 +134,7 @@ function alertas_sequencia(bool $so_pendentes = true, int $janela_dias = 45): ar
 
         $ids = implode(',', array_map('intval', array_keys($alertas)));
         foreach (q_todos("SELECT a.id, a.nome, a.responsavel_nome, a.responsavel_telefone, a.telefone, t.serie, t.letra, c.nome AS curso
-                            FROM alunos a LEFT JOIN turmas t ON t.id = a.turma_id LEFT JOIN cursos c ON c.id = t.curso_id
+                            FROM alunos a LEFT JOIN turmas t ON t.id = COALESCE((SELECT xa.turma_id FROM aluno_turmas xa WHERE xa.aluno_id = a.id AND xa.ano_letivo = @ano_ver), a.turma_id) LEFT JOIN cursos c ON c.id = t.curso_id
                            WHERE a.id IN ($ids)") as $a) {
             $alertas[$a['id']] += $a;
         }

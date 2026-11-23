@@ -4,7 +4,7 @@ exigir('biblioteca');
 
 $s = q_um('SELECT e.*, l.titulo, l.autor, l.localizacao, a.nome, t.serie, t.letra, c.nome AS curso, f.numero AS ficha, u.nome AS por_nome, u.cargo AS por_cargo, u.perfil AS por_perfil
              FROM emprestimos e JOIN livros l ON l.id = e.livro_id JOIN alunos a ON a.id = e.aluno_id
-             LEFT JOIN turmas t ON t.id = a.turma_id LEFT JOIN cursos c ON c.id = t.curso_id
+             LEFT JOIN turmas t ON t.id = COALESCE((SELECT xa.turma_id FROM aluno_turmas xa WHERE xa.aluno_id = a.id AND xa.ano_letivo = @ano_ver), a.turma_id) LEFT JOIN cursos c ON c.id = t.curso_id
              LEFT JOIN biblioteca_fichas f ON f.aluno_id = a.id LEFT JOIN usuarios u ON u.id = e.registrado_por WHERE e.id = ?', [(int)($_GET['id'] ?? 0)]);
 if (!$s) { flash('warning', 'Empréstimo não encontrado.'); redirecionar('biblioteca.php'); }
 $largura = (int)($_GET['largura'] ?? 80) === 58 ? 58 : 80;

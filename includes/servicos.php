@@ -8,7 +8,7 @@ function aluno_buscar(int $id): ?array
 {
     $a = q_um('SELECT a.*, t.serie, t.letra, t.ano_letivo, c.nome AS curso, c.id AS curso_id
                  FROM alunos a
-                 LEFT JOIN turmas t ON t.id = a.turma_id
+                 LEFT JOIN turmas t ON t.id = COALESCE((SELECT xa.turma_id FROM aluno_turmas xa WHERE xa.aluno_id = a.id AND xa.ano_letivo = @ano_ver), a.turma_id)
                  LEFT JOIN cursos c ON c.id = t.curso_id
                 WHERE a.id = ?', [$id]);
     return $a ?: null;
@@ -19,7 +19,7 @@ function alunos_por_turma(): array
 {
     $linhas = q_todos('SELECT a.id, a.nome, t.serie, t.letra, c.nome AS curso
                          FROM alunos a
-                         LEFT JOIN turmas t ON t.id = a.turma_id
+                         LEFT JOIN turmas t ON t.id = COALESCE((SELECT xa.turma_id FROM aluno_turmas xa WHERE xa.aluno_id = a.id AND xa.ano_letivo = @ano_ver), a.turma_id)
                          LEFT JOIN cursos c ON c.id = t.curso_id
                         WHERE a.situacao = \'ativo\'
                         ORDER BY t.serie, t.letra, a.nome');
@@ -70,7 +70,7 @@ function falta_registrar(int $aluno_id, string $data): array
 /*  Notas                                                              */
 /* ------------------------------------------------------------------ */
 /** Boletim: [disciplina_id => ['nome'=>..., 'tipo'=>..., 'b'=>[1=>nota,...], 'media'=>x]] */
-function boletim_aluno(int $aluno_id, int $ano = ANO_LETIVO): array
+function boletim_aluno(int $aluno_id, int $ano = ANO_VER): array
 {
     $linhas = q_todos('SELECT n.disciplina_id, n.bimestre, n.nota, d.nome, d.tipo
                          FROM notas n JOIN disciplinas d ON d.id = n.disciplina_id

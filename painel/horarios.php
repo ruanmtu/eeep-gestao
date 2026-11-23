@@ -107,7 +107,7 @@ $hz_script = true;
     $hoje_lista = $grade[$hoje_dow] ?? [];
     ksort($hoje_lista);
     $atribs = $modo_edicao ? q_todos('SELECT a.turma_id, a.disciplina_id, d.nome AS disciplina, t.serie, t.letra, c.sigla FROM atribuicoes a JOIN disciplinas d ON d.id = a.disciplina_id
-                                       JOIN turmas t ON t.id = a.turma_id JOIN cursos c ON c.id = t.curso_id WHERE a.usuario_id = ? AND t.ano_letivo = ? ORDER BY t.serie, t.letra, d.nome', [$prof['id'], ANO_LETIVO]) : []; ?>
+                                       JOIN turmas t ON t.id = a.turma_id JOIN cursos c ON c.id = t.curso_id WHERE a.usuario_id = ? AND t.ano_letivo = ? ORDER BY t.serie, t.letra, d.nome', [$prof['id'], ANO_VER]) : []; ?>
     <?php
     $turmas_p = []; $discs_p = [];
     foreach ($grade as $dd) foreach ($dd as $c) if ($c['turma_id']) { $turmas_p[$c['turma_id']] = 1; $discs_p[$c['disciplina_id']] = 1; }
@@ -143,7 +143,7 @@ $hz_script = true;
             <?php if ($editar && !$modo_edicao): ?><a class="btn btn-primary" href="?ver=professor&professor=<?= $prof['id'] ?>&editar=1"><i class="bi bi-pencil me-1"></i>Montar horário</a><?php endif; ?>
         </div>
     </div>
-    <?= cabecalho_impressao('Horário de ' . $prof['nome'], 'Ano letivo ' . ANO_LETIVO) ?>
+    <?= cabecalho_impressao('Horário de ' . $prof['nome'], 'Ano letivo ' . ANO_VER) ?>
 
     <?php if (!$modo_edicao && $hoje_dow <= 5 && $hoje_lista): ?>
     <div class="hz-hoje mb-3">
@@ -191,7 +191,7 @@ $hz_script = true;
             <?php foreach ($turmas as $t): ?><option value="<?= $t['id'] ?>"<?= (int)$t['id'] === $tid ? ' selected' : '' ?>><?= e(turma_nome($t)) ?></option><?php endforeach; ?></select></form>
         <button class="btn btn-light ms-auto" type="button" onclick="window.print()"><i class="bi bi-printer me-1"></i>Imprimir</button>
     </div>
-    <?= $tsel ? cabecalho_impressao('Horário da turma ' . turma_nome($tsel), 'Ano letivo ' . ANO_LETIVO) : '' ?>
+    <?= $tsel ? cabecalho_impressao('Horário da turma ' . turma_nome($tsel), 'Ano letivo ' . ANO_VER) : '' ?>
     <div class="card hz-card"><?= grade_semana($aulas, function ($d, $a) use ($g, $cor_disc) {
         $c = $g[$d][$a] ?? null;
         return $c ? '<div class="aula-cel ' . $cor_disc($c['disciplina_id']) . '"><strong>' . e($c['disciplina'] ?? '—') . '</strong><small>' . e(primeiro_ultimo($c['nome'])) . '</small></div>' : '';
@@ -208,7 +208,7 @@ $hz_script = true;
         <div class="chips-filtro"><?php foreach (DIAS_UTEIS as $d => $n): ?><a class="chip<?= $d === $dia ? ' ativo' : '' ?>" href="?ver=dia&dia=<?= $d ?>"><?= $n ?><?= $d === $hoje_dow ? ' · hoje' : '' ?></a><?php endforeach; ?></div>
         <button class="btn btn-light ms-auto" type="button" onclick="window.print()"><i class="bi bi-printer me-1"></i>Imprimir</button>
     </div>
-    <?= cabecalho_impressao('Horário de todos os professores · ' . DIAS_UTEIS[$dia], 'Ano letivo ' . ANO_LETIVO) ?>
+    <?= cabecalho_impressao('Horário de todos os professores · ' . DIAS_UTEIS[$dia], 'Ano letivo ' . ANO_VER) ?>
     <div class="card hz-card"><div class="table-responsive"><table class="table grade-horario grade-dia mb-0">
         <thead><tr><th>Professor</th><?php foreach ($aulas as $a => [$i]): ?><th class="text-center<?= $dia === $hoje_dow && aula_agora() === $a ? ' agora' : '' ?>"><?= $a ?>ª<small><?= $i ?></small></th><?php endforeach; ?></tr></thead>
         <tbody>

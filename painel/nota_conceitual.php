@@ -17,7 +17,7 @@ $bim_padrao = $bim_atual ?: max(1, min(4, (int)(($per['proximo'] ?? 5) - 1)));
 $bim = (int)($_GET['bimestre'] ?? $_POST['bimestre'] ?? $bim_padrao);
 if ($bim < 1 || $bim > 4) $bim = $bim_padrao;
 $editavel = nc_pode_editar($bim);
-$fim_bim = bimestres(ANO_LETIVO)[$bim][1] ?? null;
+$fim_bim = bimestres(ANO_VER)[$bim][1] ?? null;
 
 $turmas = nc_turmas();
 $ids_turmas = array_map('intval', array_column($turmas, 'id'));

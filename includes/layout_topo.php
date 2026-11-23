@@ -65,7 +65,7 @@ $itens_menu = [
     <link href="<?= RAIZ ?>assets/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
     <link href="<?= RAIZ ?>assets/css/fontes.css?v=3" rel="stylesheet">
     <link href="<?= RAIZ ?>assets/vendor/icons/bootstrap-icons.min.css" rel="stylesheet">
-    <link href="<?= RAIZ ?>assets/css/painel.css?v=69" rel="stylesheet">
+    <link href="<?= RAIZ ?>assets/css/painel.css?v=70" rel="stylesheet">
     <link href="<?= RAIZ ?>assets/css/padrao.css?v=4" rel="stylesheet">
     <link rel="icon" href="<?= RAIZ ?>assets/img/favicon.png" type="image/png">
     <link rel="apple-touch-icon" href="<?= RAIZ ?>assets/img/apple-touch-icon.png">
@@ -117,7 +117,18 @@ $itens_menu = [
                     <a href="<?= $h ?>" class="<?= $menu === $k ? 'ativo' : '' ?>"><i class="bi bi-<?= $ic ?>"></i><span><?= $r ?></span><?php if ($k === 'saidas' && $n_pend): ?><b class="pn-cont" data-contagem="saidas"><?= $n_pend ?></b><?php endif; ?></a>
                 <?php endforeach; ?>
             </nav>
-            <div class="dropdown ms-auto">
+            <div class="dropdown ms-auto ano-sel">
+                <button class="btn ano-btn<?= vendo_outro_ano() ? ' outro' : '' ?>" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Ano letivo" title="Ano letivo que você está vendo">
+                    <i class="bi bi-calendar3"></i><span><?= ANO_VER ?></span><i class="bi bi-chevron-down ano-seta"></i>
+                </button>
+                <div class="dropdown-menu dropdown-menu-end shadow ano-menu">
+                    <div class="ano-topo">Ano letivo</div>
+                    <?php foreach (anos_letivos() as $a): ?>
+                        <a class="dropdown-item<?= $a === ANO_VER ? ' active' : '' ?>" href="<?= e(url_ano($a)) ?>"><?= $a ?><?php if ($a === ano_hoje()): ?> <small>atual</small><?php elseif ($a > ano_hoje()): ?> <small>próximo</small><?php endif; ?></a>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <div class="dropdown">
                 <button class="btn sino-btn" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-label="Notificações" id="sinoBtn">
                     <i class="bi bi-bell"></i><span class="sino-cont" id="sinoCont"<?= $n_notif ? '' : ' hidden' ?>><?= $n_notif ?></span>
                 </button>
@@ -171,4 +182,5 @@ $itens_menu = [
     <?php endif; ?>
     <main class="area<?= !empty($classe_area) ? ' ' . e($classe_area) : '' ?>">
         <h1 class="visually-hidden"><?= e($titulo ?? 'Painel') ?></h1>
+        <?php if (vendo_outro_ano()): ?><div class="ano-aviso"><i class="bi bi-clock-history"></i><span>Você está vendo o ano letivo <b><?= ANO_VER ?></b>. Notas, faltas, ocorrências e os demais registros mostram só esse ano.</span><a href="<?= e(url_ano(ano_hoje())) ?>">Voltar para <?= ano_hoje() ?></a></div><?php endif; ?>
         <?= flash_exibir() ?>

@@ -164,7 +164,7 @@ if ($aba === 'leitores' && ($_GET['exportar'] ?? '') === 'csv') {
     $fx = q_todos("SELECT f.*, a.nome, t.serie, t.letra, c.nome AS curso,
                           (SELECT COUNT(*) FROM emprestimos e WHERE e.aluno_id = f.aluno_id) AS total,
                           (SELECT COUNT(*) FROM emprestimos e WHERE e.aluno_id = f.aluno_id AND e.devolvido_em IS NULL) AS abertos
-                     FROM biblioteca_fichas f JOIN alunos a ON a.id = f.aluno_id LEFT JOIN turmas t ON t.id = a.turma_id LEFT JOIN cursos c ON c.id = t.curso_id ORDER BY f.numero");
+                     FROM biblioteca_fichas f JOIN alunos a ON a.id = f.aluno_id LEFT JOIN turmas t ON t.id = COALESCE((SELECT xa.turma_id FROM aluno_turmas xa WHERE xa.aluno_id = a.id AND xa.ano_letivo = @ano_ver), a.turma_id) LEFT JOIN cursos c ON c.id = t.curso_id ORDER BY f.numero");
     enviar_csv('leitores-' . date('Y-m-d') . '.csv', ['Ficha', 'Aluno', 'Turma', 'Situação', 'Observação', 'Livros lidos', 'Com ele agora'],
         array_map(fn($f) => [$f['numero'], nome_proprio($f['nome']), turma_nome($f), $f['bloqueada'] ? 'Bloqueada' : 'Regular', $f['observacao'], $f['total'], $f['abertos']], $fx));
 }
@@ -231,15 +231,16 @@ function linha_emprestimo(array $e, string $volta, bool $compacto = false): stri
 <?php if ($bb_conf): include __DIR__ . '/../includes/biblioteca_conferir.php'; ?>
 <?php elseif ($aba === 'painel'): ?>
 <?php
-$ini_ano = ANO_LETIVO . '-01-01 00:00:00';
-$top_livros = q_todos('SELECT l.titulo, l.autor, COUNT(e.id) AS n FROM emprestimos e JOIN livros l ON l.id = e.livro_id WHERE e.retirada >= ? GROUP BY l.id, l.titulo, l.autor ORDER BY n DESC, l.titulo LIMIT 5', [$ini_ano]);
-$top_autores = q_todos("SELECT l.autor, COUNT(e.id) AS n, COUNT(DISTINCT l.id) AS obras FROM emprestimos e JOIN livros l ON l.id = e.livro_id WHERE e.retirada >= ? AND l.autor <> '' GROUP BY l.autor ORDER BY n DESC, l.autor LIMIT 5", [$ini_ano]);
-$top_leitores = q_todos('SELECT a.id, a.nome, t.serie, t.letra, c.nome AS curso, COUNT(e.id) AS n FROM emprestimos e JOIN alunos a ON a.id = e.aluno_id LEFT JOIN turmas t ON t.id = a.turma_id LEFT JOIN cursos c ON c.id = t.curso_id WHERE e.retirada >= ? GROUP BY a.id, a.nome, t.serie, t.letra, c.nome ORDER BY n DESC, a.nome LIMIT 5', [$ini_ano]);
-$top_turmas = q_todos('SELECT t.serie, t.letra, c.nome AS curso, COUNT(e.id) AS n FROM emprestimos e JOIN alunos a ON a.id = e.aluno_id JOIN turmas t ON t.id = a.turma_id JOIN cursos c ON c.id = t.curso_id WHERE e.retirada >= ? GROUP BY t.id, t.serie, t.letra, c.nome ORDER BY n DESC LIMIT 5', [$ini_ano]);
-$lidos_ano = (int)q_valor('SELECT COUNT(*) FROM emprestimos WHERE retirada >= ?', [$ini_ano]);
+$ini_ano = ANO_VER . '-01-01 00:00:00';
+$fim_ano = ANO_VER . '-12-31 23:59:59';
+$top_livros = q_todos('SELECT l.titulo, l.autor, COUNT(e.id) AS n FROM emprestimos e JOIN livros l ON l.id = e.livro_id WHERE e.retirada BETWEEN ? AND ? GROUP BY l.id, l.titulo, l.autor ORDER BY n DESC, l.titulo LIMIT 5', [$ini_ano, $fim_ano]);
+$top_autores = q_todos("SELECT l.autor, COUNT(e.id) AS n, COUNT(DISTINCT l.id) AS obras FROM emprestimos e JOIN livros l ON l.id = e.livro_id WHERE e.retirada BETWEEN ? AND ? AND l.autor <> '' GROUP BY l.autor ORDER BY n DESC, l.autor LIMIT 5", [$ini_ano, $fim_ano]);
+$top_leitores = q_todos('SELECT a.id, a.nome, t.serie, t.letra, c.nome AS curso, COUNT(e.id) AS n FROM emprestimos e JOIN alunos a ON a.id = e.aluno_id LEFT JOIN turmas t ON t.id = COALESCE((SELECT xa.turma_id FROM aluno_turmas xa WHERE xa.aluno_id = a.id AND xa.ano_letivo = @ano_ver), a.turma_id) LEFT JOIN cursos c ON c.id = t.curso_id WHERE e.retirada BETWEEN ? AND ? GROUP BY a.id, a.nome, t.serie, t.letra, c.nome ORDER BY n DESC, a.nome LIMIT 5', [$ini_ano, $fim_ano]);
+$top_turmas = q_todos('SELECT t.serie, t.letra, c.nome AS curso, COUNT(e.id) AS n FROM emprestimos e JOIN alunos a ON a.id = e.aluno_id JOIN turmas t ON t.id = COALESCE((SELECT xa.turma_id FROM aluno_turmas xa WHERE xa.aluno_id = a.id AND xa.ano_letivo = @ano_ver), a.turma_id) JOIN cursos c ON c.id = t.curso_id WHERE e.retirada BETWEEN ? AND ? GROUP BY t.id, t.serie, t.letra, c.nome ORDER BY n DESC LIMIT 5', [$ini_ano, $fim_ano]);
+$lidos_ano = (int)q_valor('SELECT COUNT(*) FROM emprestimos WHERE retirada BETWEEN ? AND ?', [$ini_ano, $fim_ano]);
 ?>
 <section class="bb-hero">
-    <div class="bb-hero-txt"><span><i class="bi bi-book-half"></i>Centro de Multimeios · <?= ANO_LETIVO ?></span>
+    <div class="bb-hero-txt"><span><i class="bi bi-book-half"></i>Centro de Multimeios · <?= ANO_VER ?></span>
         <h2><?= $lidos_ano ?> <small>empréstimo<?= $lidos_ano === 1 ? '' : 's' ?> no ano</small></h2>
         <p><?= $no_mes ?> em <?= mb_strtolower(MESES[(int)date('n')]) ?> · <?= $titulos ?> títulos e <?= $exemplares ?> exemplares no acervo</p></div>
     <div class="bb-kpis">
@@ -256,7 +257,7 @@ $lidos_ano = (int)q_valor('SELECT COUNT(*) FROM emprestimos WHERE retirada >= ?'
                     ['Alunos que mais leem', 'star', 'verde', $top_leitores, fn($r) => '<b><a href="?aba=leitores&aluno=' . $r['id'] . '">' . e(nome_proprio($r['nome'])) . '</a></b><small>' . e(turma_nome($r)) . '</small>', 'livro'],
                     ['Turmas que mais leem', 'people', 'azul', $top_turmas, fn($r) => '<b>' . e($r['serie'] . 'º Ano ' . $r['letra']) . '</b><small>' . e($r['curso']) . '</small>', 'livro']] as [$tit, $ic, $cor, $lista, $fmt, $un]): $max = $lista ? max(array_column($lista, 'n')) : 1; ?>
     <section class="bb-rank <?= $cor ?>">
-        <header><span><i class="bi bi-<?= $ic ?>"></i></span><h2><?= $tit ?></h2><small><?= ANO_LETIVO ?></small></header>
+        <header><span><i class="bi bi-<?= $ic ?>"></i></span><h2><?= $tit ?></h2><small><?= ANO_VER ?></small></header>
         <?php if ($lista): ?><ol><?php foreach ($lista as $i => $r): ?>
             <li class="p<?= $i + 1 ?>"><em><?= $i + 1 ?></em><div><?= $fmt($r) ?><i style="width:<?= round($r['n'] / $max * 100) ?>%"></i></div><strong><?= (int)$r['n'] ?><small><?= $r['n'] == 1 ? $un : $un . 's' ?></small></strong></li>
         <?php endforeach; ?></ol>
@@ -380,7 +381,7 @@ $lidos_ano = (int)q_valor('SELECT COUNT(*) FROM emprestimos WHERE retirada >= ?'
                                   (SELECT COUNT(*) FROM emprestimos e WHERE e.aluno_id = f.aluno_id) AS total,
                                   (SELECT COUNT(*) FROM emprestimos e WHERE e.aluno_id = f.aluno_id AND e.devolvido_em IS NULL) AS abertos,
                                   (SELECT COUNT(*) FROM emprestimos e WHERE e.aluno_id = f.aluno_id AND e.devolvido_em IS NULL AND e.prazo < ?) AS atrasados
-                             FROM biblioteca_fichas f JOIN alunos a ON a.id = f.aluno_id LEFT JOIN turmas t ON t.id = a.turma_id LEFT JOIN cursos c ON c.id = t.curso_id
+                             FROM biblioteca_fichas f JOIN alunos a ON a.id = f.aluno_id LEFT JOIN turmas t ON t.id = COALESCE((SELECT xa.turma_id FROM aluno_turmas xa WHERE xa.aluno_id = a.id AND xa.ano_letivo = @ano_ver), a.turma_id) LEFT JOIN cursos c ON c.id = t.curso_id
                             WHERE $w ORDER BY f.numero", [$hoje, ...$p]); ?>
         <div class="row g-3">
             <div class="col-12">

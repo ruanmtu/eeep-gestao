@@ -18,7 +18,7 @@ if (eh_post() && ($_POST['acao'] ?? '') === 'salvar') {
     csrf_verificar();
     if (!$editar) { flash('warning', 'Só a gestão e o(a) diretor(a) desta turma podem alterar o mapa.'); redirecionar('mapa_sala.php?turma=' . $tid); }
     $j = json_decode((string)($_POST['mapa'] ?? ''), true) ?: [];
-    $validos = array_flip(array_map('intval', array_column(q_todos("SELECT id FROM alunos WHERE turma_id = ? AND situacao = 'ativo'", [$tid]), 'id')));
+    $validos = array_flip(array_map('intval', array_column(q_todos("SELECT id FROM alunos WHERE id IN (SELECT xt.aluno_id FROM aluno_turmas xt WHERE xt.turma_id = ? AND xt.situacao IN ('ativo','concluido'))", [$tid]), 'id')));
     $cad = [];
     foreach ((array)($j['cadeiras'] ?? []) as $k)
         if (preg_match('/^(\d+)-(\d+)$/', (string)$k, $m) && $m[1] < MAPA_MAX && $m[2] < MAPA_MAX) $cad[$k] = true;
@@ -40,7 +40,7 @@ if (eh_post() && ($_POST['acao'] ?? '') === 'salvar') {
 }
 
 $mapa = mapa_sala_ler($tid);
-$alunos = q_todos("SELECT id, nome, foto FROM alunos WHERE turma_id = ? AND situacao = 'ativo' ORDER BY nome", [$tid]);
+$alunos = q_todos("SELECT id, nome, foto FROM alunos WHERE id IN (SELECT xt.aluno_id FROM aluno_turmas xt WHERE xt.turma_id = ? AND xt.situacao IN ('ativo','concluido')) ORDER BY nome", [$tid]);
 if (class_exists('Collator')) { $col = new Collator('pt_BR'); usort($alunos, fn($x, $y) => $col->compare($x['nome'], $y['nome'])); }
 $dados = [];
 foreach ($alunos as $i => $a) $dados[(int)$a['id']] = ['n' => $i + 1, 'nome' => nome_proprio($a['nome']), 'curto' => primeiro_ultimo(nome_proprio($a['nome'])), 'av' => avatar($a, 'aluno', 'avatar-md')];

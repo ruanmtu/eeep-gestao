@@ -9,7 +9,7 @@ function img_existe(?string $c): bool { return $c && is_file(__DIR__ . '/' . $c)
 $numeros = ['alunos' => null, 'turmas' => null];
 try {
     $numeros['alunos'] = (int)q_valor("SELECT COUNT(*) FROM alunos WHERE situacao = 'ativo'");
-    $numeros['turmas'] = (int)q_valor('SELECT COUNT(*) FROM turmas WHERE ativo = 1 AND ano_letivo = ?', [ANO_LETIVO]);
+    $numeros['turmas'] = (int)q_valor('SELECT COUNT(*) FROM turmas WHERE ativo = 1 AND ano_letivo = ?', [ano_hoje()]);
 } catch (Throwable $e) {}
 
 /* Conteúdo publicado pelo painel */

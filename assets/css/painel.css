@@ -4153,3 +4153,22 @@ html[data-ms-modo="ver"][data-ms-mudou="0"] .ms-salvar { display: none; }
 .vp-dedo { display: inline-flex; align-items: center; gap: 5px; margin-left: 4px; white-space: nowrap; cursor: pointer; }
 .vp-salvo { margin-left: auto; color: var(--texto-2, #5b6b60); font-size: .76rem; }
 @media (max-width: 576px) { .vp-btn.vp-marcar span { display: none; } .vp-paleta { gap: 5px; padding: 6px 8px; } .vp-salvo { width: 100%; margin: 0; } }
+
+/* v75 — ano letivo */
+.ano-btn { height: 42px; border-radius: 12px; border: 1px solid var(--linha); background: #fff; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; font-weight: 700; font-size: .92rem; margin-right: 8px; }
+.pn-barra .ano-btn { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.2); color: #fff; }
+.pn-barra .ano-btn:hover, .pn-barra .ano-btn.show { background: rgba(255,255,255,.22); color: #fff; }
+.pn-barra .ano-btn.outro { background: #ffd166; border-color: #ffd166; color: #4a3500; }
+.ano-btn .ano-seta { font-size: .7rem; opacity: .8; }
+.ano-menu { min-width: 170px; border: 0; border-radius: 14px; padding: 6px; }
+.ano-menu .ano-topo { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--texto-2, #5b6b60); padding: 6px 10px 4px; }
+.ano-menu .dropdown-item { border-radius: 9px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+.ano-menu .dropdown-item small { font-weight: 500; font-size: .72rem; opacity: .7; }
+.ano-menu .dropdown-item.active { background: var(--verde, #0b6b3a); }
+.ano-aviso { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: #fff7df; border: 1px solid #f3d27a; color: #5b4300; border-radius: 14px; padding: 10px 14px; margin-bottom: 14px; font-size: .9rem; }
+.ano-aviso > i { font-size: 1.15rem; }
+.ano-aviso span { flex: 1 1 260px; }
+.ano-aviso a { font-weight: 700; color: #5b4300; white-space: nowrap; }
+.cf-ano { font-size: .88rem; color: var(--texto-2, #5b6b60); }
+.cf-ano small { opacity: .8; }
+@media (max-width: 575.98px) { .ano-btn { padding: 0 9px; margin-right: 4px; gap: 4px; } .ano-btn .bi-calendar3 { display: none; } }

@@ -19,18 +19,18 @@ function cor_disciplina(string $nome): string
 }
 
 /** Bimestres que já têm nota lançada na turma (ou na escola, se turma = 0) */
-function bimestres_com_nota(int $turma_id = 0, int $ano = ANO_LETIVO): array
+function bimestres_com_nota(int $turma_id = 0, int $ano = ANO_VER): array
 {
-    $sql = 'SELECT DISTINCT n.bimestre FROM notas n' . ($turma_id ? ' JOIN alunos a ON a.id = n.aluno_id WHERE a.turma_id = ? AND' : ' WHERE') . ' n.ano_letivo = ? ORDER BY n.bimestre';
+    $sql = 'SELECT DISTINCT n.bimestre FROM notas n' . ($turma_id ? ' JOIN alunos a ON a.id = n.aluno_id WHERE a.id IN (SELECT xt.aluno_id FROM aluno_turmas xt WHERE xt.turma_id = ?) AND' : ' WHERE') . ' n.ano_letivo = ? ORDER BY n.bimestre';
     return array_map('intval', array_column(q_todos($sql, $turma_id ? [$turma_id, $ano] : [$ano]), 'bimestre'));
 }
 
 /** Notas da turma no período: [aluno_id => [disciplina_id => nota]] e os nomes */
-function notas_periodo_turma(int $turma_id, int $bim, int $ano = ANO_LETIVO): array
+function notas_periodo_turma(int $turma_id, int $bim, int $ano = ANO_VER): array
 {
     $linhas = q_todos("SELECT n.aluno_id, n.disciplina_id, n.bimestre, n.nota, d.nome AS disciplina
                          FROM notas n JOIN alunos a ON a.id = n.aluno_id JOIN disciplinas d ON d.id = n.disciplina_id
-                        WHERE a.turma_id = ? AND a.situacao = 'ativo' AND n.ano_letivo = ?" . ($bim ? ' AND n.bimestre = ' . (int)$bim : ''), [$turma_id, $ano]);
+                        WHERE a.id IN (SELECT xt.aluno_id FROM aluno_turmas xt WHERE xt.turma_id = ? AND xt.situacao IN ('ativo','concluido')) AND n.ano_letivo = ?" . ($bim ? ' AND n.bimestre = ' . (int)$bim : ''), [$turma_id, $ano]);
     $acc = []; $disc = [];
     foreach ($linhas as $l) {
         $acc[(int)$l['aluno_id']][(int)$l['disciplina_id']][] = (float)$l['nota'];
@@ -47,11 +47,11 @@ function notas_periodo_turma(int $turma_id, int $bim, int $ano = ANO_LETIVO): ar
  * MENOR nota (o ponto mais fraco) e, no empate, pela média. Assim quem tem 10 em
  * quase tudo mas uma nota baixa não passa na frente de quem vai bem em tudo.
  */
-function resultados_turma(int $turma_id, int $bim, int $ano = ANO_LETIVO): array
+function resultados_turma(int $turma_id, int $bim, int $ano = ANO_VER): array
 {
     [$notas, $disc] = notas_periodo_turma($turma_id, $bim, $ano);
     $alunos = [];
-    foreach (q_todos("SELECT id, nome, foto FROM alunos WHERE turma_id = ? AND situacao = 'ativo'", [$turma_id]) as $a) $alunos[(int)$a['id']] = $a;
+    foreach (q_todos("SELECT id, nome, foto FROM alunos WHERE id IN (SELECT xt.aluno_id FROM aluno_turmas xt WHERE xt.turma_id = ? AND xt.situacao IN ('ativo','concluido'))", [$turma_id]) as $a) $alunos[(int)$a['id']] = $a;
     $por_disc = []; $linhas = [];
     foreach ($notas as $aid => $ns) {
         if (!isset($alunos[$aid]) || !$ns) continue;
@@ -85,7 +85,7 @@ function resultados_turma(int $turma_id, int $bim, int $ano = ANO_LETIVO): array
 }
 
 /** Painel do aluno: por período, as notas por disciplina e a média da turma em cada uma */
-function resultados_aluno(int $aluno_id, int $ano = ANO_LETIVO): array
+function resultados_aluno(int $aluno_id, int $ano = ANO_VER): array
 {
     $a = q_um('SELECT id, turma_id FROM alunos WHERE id = ?', [$aluno_id]);
     if (!$a) return [];

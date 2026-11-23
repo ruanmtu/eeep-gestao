@@ -11,7 +11,7 @@ $turma = q_um('SELECT t.*, c.nome AS curso, c.sigla FROM turmas t JOIN cursos c 
 $mapa = mapa_sala_ler($tid);
 
 /* número de chamada (ordem alfabética), igual à tela do mapa */
-$alunos = q_todos("SELECT id, nome FROM alunos WHERE turma_id = ? AND situacao = 'ativo' ORDER BY nome", [$tid]);
+$alunos = q_todos("SELECT id, nome FROM alunos WHERE id IN (SELECT xt.aluno_id FROM aluno_turmas xt WHERE xt.turma_id = ? AND xt.situacao IN ('ativo','concluido')) ORDER BY nome", [$tid]);
 if (class_exists('Collator')) { $col = new Collator('pt_BR'); usort($alunos, fn($x, $y) => $col->compare($x['nome'], $y['nome'])); }
 $dados = [];
 foreach ($alunos as $i => $a) $dados[(int)$a['id']] = ['nome' => primeiro_ultimo(nome_proprio($a['nome']))];

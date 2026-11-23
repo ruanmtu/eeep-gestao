@@ -5,11 +5,11 @@ exigir('busca_ativa');
 /* Turmas que a pessoa acompanha (diretor de turma vê só as suas) */
 $turmas = eh_gestao() ? turmas_lista() : turmas_dirigidas();
 $ids_turmas = array_map('intval', array_column($turmas, 'id'));
-$filtro_turmas = $ids_turmas ? 'a.turma_id IN (' . implode(',', $ids_turmas) . ')' : '1 = 0';
+$filtro_turmas = $ids_turmas ? 'a.id IN (SELECT xt.aluno_id FROM aluno_turmas xt WHERE xt.turma_id IN (' . implode(',', $ids_turmas) . '))' : '1 = 0';
 
 $f_turma = in_array((int)($_GET['turma'] ?? 0), $ids_turmas, true) ? (int)$_GET['turma'] : 0;
 $f_acao = isset(ACOES_BUSCA[$_GET['acao'] ?? '']) ? $_GET['acao'] : '';
-$f_mes = preg_match('/^\d{4}-\d{2}$/', (string)($_GET['mes'] ?? '')) ? $_GET['mes'] : date('Y-m');
+$f_mes = preg_match('/^\d{4}-\d{2}$/', (string)($_GET['mes'] ?? '')) ? $_GET['mes'] : mes_padrao();
 $ini_mes = $f_mes . '-01'; $fim_mes = date('Y-m-t', strtotime($ini_mes));
 $hoje = date('Y-m-d');
 
@@ -28,8 +28,8 @@ if ($atencao) {
     $ultima = [];
     foreach (q_todos('SELECT aluno_id, MAX(data_acao) AS d FROM busca_ativa WHERE aluno_id IN (' . implode(',', array_keys($atencao)) . ') GROUP BY aluno_id') as $r) $ultima[(int)$r['aluno_id']] = $r['d'];
     foreach (q_todos("SELECT a.id, a.nome, a.foto, a.responsavel_nome, a.responsavel_telefone, a.nome_mae, t.serie, t.letra, c.nome AS curso, c.sigla
-                        FROM alunos a LEFT JOIN turmas t ON t.id = a.turma_id LEFT JOIN cursos c ON c.id = t.curso_id
-                       WHERE a.id IN (" . implode(',', array_keys($atencao)) . ") AND $filtro_turmas" . ($f_turma ? ' AND a.turma_id = ' . $f_turma : '')) as $a) {
+                        FROM alunos a LEFT JOIN turmas t ON t.id = COALESCE((SELECT xa.turma_id FROM aluno_turmas xa WHERE xa.aluno_id = a.id AND xa.ano_letivo = @ano_ver), a.turma_id) LEFT JOIN cursos c ON c.id = t.curso_id
+                       WHERE a.id IN (" . implode(',', array_keys($atencao)) . ") AND $filtro_turmas" . ($f_turma ? ' AND a.id IN (SELECT xt.aluno_id FROM aluno_turmas xt WHERE xt.turma_id = ' . (int)$f_turma . ')' : '')) as $a) {
         $ul = $ultima[(int)$a['id']] ?? null;
         if ($ul && $ul >= date('Y-m-d', strtotime('-7 days')) && $atencao[(int)$a['id']]['peso'] < 100) continue;   // já teve providência na última semana
         $lista_atencao[] = $a + $atencao[(int)$a['id']] + ['ultima' => $ul];
@@ -42,7 +42,7 @@ $retornos = busca_lista("b.retorno_previsto BETWEEN ? AND ? AND $filtro_turmas",
 
 /* 3. Providências do mês */
 $w = "b.data_acao BETWEEN ? AND ? AND $filtro_turmas"; $p = [$ini_mes, $fim_mes];
-if ($f_turma) { $w .= ' AND a.turma_id = ?'; $p[] = $f_turma; }
+if ($f_turma) { $w .= ' AND a.id IN (SELECT xt.aluno_id FROM aluno_turmas xt WHERE xt.turma_id = ?)'; $p[] = $f_turma; }
 if ($f_acao) { $w .= ' AND b.acao = ?'; $p[] = $f_acao; }
 $registros = busca_lista($w, $p, 500);
 $alunos_mes = count(array_unique(array_column($registros, 'aluno_id')));

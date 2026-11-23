@@ -51,7 +51,39 @@ if (session_status() === PHP_SESSION_NONE) {
 /* ------------------------------------------------------------------ */
 /*  Banco de dados                                                     */
 /* ------------------------------------------------------------------ */
-const SISTEMA_VERSAO = '74';
+const SISTEMA_VERSAO = '75';
+
+/* ------------------------------------------------------------------ */
+/*  Ano letivo (v75)                                                   */
+/*  O sistema começa em 2026; a lista cresce sozinha a cada ano e      */
+/*  sempre mostra também o ano seguinte (para preparar as turmas).     */
+/*  Abre no ano atual; quem escolher outro ano fica nele até trocar.  */
+/* ------------------------------------------------------------------ */
+const ANO_INICIAL = 2026;
+function ano_hoje(): int { return max(ANO_INICIAL, (int)date('Y')); }
+function anos_letivos(): array { return range(ano_hoje() + 1, ANO_INICIAL); }
+(function () {
+    $lista = anos_letivos();
+    if (isset($_GET['ano_letivo']) && session_status() === PHP_SESSION_ACTIVE) {
+        $a = (int)$_GET['ano_letivo'];
+        if (in_array($a, $lista, true)) { if ($a === ano_hoje()) unset($_SESSION['ano_ver']); else $_SESSION['ano_ver'] = $a; }
+    }
+    $a = (int)($_SESSION['ano_ver'] ?? 0);
+    define('ANO_VER', in_array($a, $lista, true) ? $a : ano_hoje());
+})();
+function vendo_outro_ano(): bool { return ANO_VER !== ano_hoje(); }
+/** Primeiro e último dia do ano escolhido (para filtrar registros que têm data) */
+function ano_inicio(): string { return ANO_VER . '-01-01'; }
+function ano_fim(): string { return ANO_VER . '-12-31'; }
+/** Data/mês que as telas abrem por padrão: hoje no ano atual; o fim do ano escolhido nos anos anteriores */
+function data_padrao(): string { return vendo_outro_ano() ? min(ano_fim(), date('Y-m-d', strtotime(ANO_VER . '-12-15'))) : date('Y-m-d'); }
+function mes_padrao(): string { return substr(data_padrao(), 0, 7); }
+/** Link da página atual trocando só o ano */
+function url_ano(int $a): string
+{
+    $q = $_GET; unset($q['ano_letivo'], $q['ano']); $q['ano_letivo'] = $a;
+    return strtok($_SERVER['REQUEST_URI'] ?? '', '?') . '?' . http_build_query($q);
+}
 
 function db(): PDO
 {
@@ -81,6 +113,7 @@ function db(): PDO
     try {
         $pdo = new PDO('mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4', DB_USER, DB_PASS, $opcoes);
         $pdo->exec("SET time_zone = '-03:00'");
+        $pdo->exec('SET @ano_ver = ' . (int)ANO_VER);   // v75: ano letivo escolhido, usado nas consultas
     } catch (PDOException $e) {
         error_log('[sistema-escola] Falha na conexão: ' . $e->getMessage());
         http_response_code(503);
@@ -94,6 +127,8 @@ function db(): PDO
 /** Executa uma consulta preparada e devolve o statement */
 function q(string $sql, array $params = []): PDOStatement
 {
+    // v75: @ano_ver = ano letivo escolhido (variável da conexão no MySQL; no SQLite de testes vira o número)
+    if (str_contains($sql, '@ano_ver') && db()->getAttribute(PDO::ATTR_DRIVER_NAME) !== 'mysql') $sql = str_replace('@ano_ver', (string)ANO_VER, $sql);
     $st = db()->prepare($sql);
     $st->execute($params);
     return $st;
@@ -468,7 +503,7 @@ function turmas_lista(bool $so_ativas = true, ?int $ano = null): array
            FROM turmas t JOIN cursos c ON c.id = t.curso_id
           WHERE t.ano_letivo = ?' . ($so_ativas ? ' AND t.ativo = 1' : '') . '
           ORDER BY t.serie, t.letra, c.nome',
-        [$ano ?? ANO_LETIVO]
+        [$ano ?? ANO_VER]
     );
 }
 
@@ -552,6 +587,7 @@ require_once __DIR__ . '/nota_conceitual.php';
 nc_migrar_auto();
 require_once __DIR__ . '/v74.php';
 v74_migrar();
+require_once __DIR__ . '/v75.php'; v75_migrar(); aluno_turmas_talvez();
 require_once __DIR__ . '/google_login.php';
 require __DIR__ . '/resultados.php';
 require_once __DIR__ . '/livros_didaticos.php';

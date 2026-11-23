@@ -49,7 +49,7 @@ function autorizacoes_lista(string $where, array $p, int $limite = 300): array
     if (!str_contains($where, 's.status')) $where = "($where) AND s.status = 'autorizada'";   // pedidos pendentes/recusados ficam de fora
     try {
         return q_todos('SELECT s.*, a.nome, a.foto, t.serie, t.letra, c.nome AS curso FROM saidas s JOIN alunos a ON a.id = s.aluno_id
-                          LEFT JOIN turmas t ON t.id = a.turma_id LEFT JOIN cursos c ON c.id = t.curso_id
+                          LEFT JOIN turmas t ON t.id = COALESCE((SELECT xa.turma_id FROM aluno_turmas xa WHERE xa.aluno_id = a.id AND xa.ano_letivo = @ano_ver), a.turma_id) LEFT JOIN cursos c ON c.id = t.curso_id
                          WHERE ' . $where . ' ORDER BY s.data_hora DESC, s.id DESC LIMIT ' . $limite, $p);
     } catch (PDOException $e) { return []; }
 }

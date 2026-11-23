@@ -3,7 +3,7 @@ require __DIR__ . '/../includes/app.php';
 exigir('saidas.autorizar');     // só a coordenação/direção imprime o cupom
 
 $s = q_um('SELECT s.*, a.nome, a.matricula, t.serie, t.letra, c.nome AS curso FROM saidas s JOIN alunos a ON a.id = s.aluno_id
-            LEFT JOIN turmas t ON t.id = a.turma_id LEFT JOIN cursos c ON c.id = t.curso_id WHERE s.id = ?', [(int)($_GET['id'] ?? 0)]);
+            LEFT JOIN turmas t ON t.id = COALESCE((SELECT xa.turma_id FROM aluno_turmas xa WHERE xa.aluno_id = a.id AND xa.ano_letivo = @ano_ver), a.turma_id) LEFT JOIN cursos c ON c.id = t.curso_id WHERE s.id = ?', [(int)($_GET['id'] ?? 0)]);
 if (!$s) { flash('warning', 'Autorização não encontrada.'); redirecionar('saidas.php'); }
 if (($s['status'] ?? 'autorizada') !== 'autorizada') { flash('warning', 'Este pedido ainda não foi autorizado. Confirme-o antes de imprimir.'); redirecionar('saidas.php?ver=' . $s['id'] . '#pendentes'); }
 $tipo = $s['tipo'] ?? 'saida';

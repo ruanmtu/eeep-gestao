@@ -41,6 +41,7 @@ if (eh_post()) {
                 registrar_log('aluno_cadastrado', 'Aluno inserido', $id);
                 flash('success', nome_proprio($d['nome']) . ' foi inserido(a) na turma.');
             }
+            aluno_turmas_sincronizar();   // v75: guarda a turma do ano
         } catch (PDOException $e) {
             flash('warning', 'Falta atualizar o banco para a ficha nova (observação médica). Rode atualizacao_banco_v59.sql.');
             redirecionar('aluno_form.php' . ($aluno ? '?id=' . $id : ''));

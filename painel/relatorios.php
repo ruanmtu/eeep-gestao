@@ -5,16 +5,16 @@ exigir('relatorios');
 $aba = in_array($_GET['aba'] ?? '', ['frequencia', 'turmas', 'alerta', 'notas'], true) ? $_GET['aba'] : 'frequencia';
 $curso_id = (int)($_GET['curso'] ?? 0);
 $mes = (int)($_GET['mes'] ?? 0);
-$ano = (int)($_GET['ano'] ?? ANO_LETIVO);
+$ano = ANO_VER;   // escolhido no seletor de ano do topo
 $ini = $mes ? sprintf('%04d-%02d-01', $ano, $mes) : "$ano-01-01";
 $fim = $mes ? date('Y-m-t', strtotime($ini)) : "$ano-12-31";
 $periodo_txt = $mes ? MESES[$mes] . ' de ' . $ano : 'ano de ' . $ano;
 
 $wc = $curso_id ? ' AND t.curso_id = ' . $curso_id : '';   // inteiro já validado
 $turmas_ano = q_todos("SELECT t.id, t.serie, t.letra, c.nome AS curso, c.sigla,
-                              (SELECT COUNT(*) FROM alunos a WHERE a.turma_id = t.id AND a.situacao = 'ativo') AS alunos,
-                              (SELECT COUNT(*) FROM faltas f JOIN alunos a ON a.id = f.aluno_id WHERE a.turma_id = t.id AND f.data_falta BETWEEN ? AND ?) AS faltas,
-                              (SELECT COUNT(*) FROM faltas f JOIN alunos a ON a.id = f.aluno_id WHERE a.turma_id = t.id AND f.justificada = 1 AND f.data_falta BETWEEN ? AND ?) AS justificadas
+                              (SELECT COUNT(*) FROM aluno_turmas xt WHERE xt.turma_id = t.id AND xt.situacao IN ('ativo','concluido')) AS alunos,
+                              (SELECT COUNT(*) FROM faltas f WHERE f.aluno_id IN (SELECT xt.aluno_id FROM aluno_turmas xt WHERE xt.turma_id = t.id) AND f.data_falta BETWEEN ? AND ?) AS faltas,
+                              (SELECT COUNT(*) FROM faltas f WHERE f.aluno_id IN (SELECT xt.aluno_id FROM aluno_turmas xt WHERE xt.turma_id = t.id) AND f.justificada = 1 AND f.data_falta BETWEEN ? AND ?) AS justificadas
                          FROM turmas t JOIN cursos c ON c.id = t.curso_id
                         WHERE t.ano_letivo = ? $wc ORDER BY t.serie, t.letra", [$ini, $fim, $ini, $fim, $ano]);
 
@@ -27,7 +27,7 @@ $script = '';
 if ($aba === 'frequencia') {
     $series = [];
     foreach (q_todos("SELECT c.nome AS curso, MONTH(f.data_falta) AS m, COUNT(*) AS n
-                        FROM faltas f JOIN alunos a ON a.id = f.aluno_id JOIN turmas t ON t.id = a.turma_id JOIN cursos c ON c.id = t.curso_id
+                        FROM faltas f JOIN alunos a ON a.id = f.aluno_id JOIN turmas t ON t.id = COALESCE((SELECT xa.turma_id FROM aluno_turmas xa WHERE xa.aluno_id = a.id AND xa.ano_letivo = @ano_ver), a.turma_id) JOIN cursos c ON c.id = t.curso_id
                        WHERE f.data_falta BETWEEN ? AND ? $wc GROUP BY c.nome, MONTH(f.data_falta)", ["$ano-01-01", "$ano-12-31"]) as $r) {
         $series[$r['curso']] ??= array_fill(1, 12, 0);
         $series[$r['curso']][(int)$r['m']] = (int)$r['n'];
@@ -51,13 +51,13 @@ if ($aba === 'frequencia') {
 
 if ($aba === 'turmas') {
     $dias = [];
-    foreach (q_todos("SELECT a.turma_id, DAYOFWEEK(f.data_falta) AS d, COUNT(*) AS n FROM faltas f JOIN alunos a ON a.id = f.aluno_id JOIN turmas t ON t.id = a.turma_id
-                      WHERE f.data_falta BETWEEN ? AND ? $wc GROUP BY a.turma_id, DAYOFWEEK(f.data_falta)", [$ini, $fim]) as $r) {
+    foreach (q_todos("SELECT t.id AS turma_id, DAYOFWEEK(f.data_falta) AS d, COUNT(*) AS n FROM faltas f JOIN alunos a ON a.id = f.aluno_id JOIN turmas t ON t.id = COALESCE((SELECT xa.turma_id FROM aluno_turmas xa WHERE xa.aluno_id = a.id AND xa.ano_letivo = @ano_ver), a.turma_id)
+                      WHERE f.data_falta BETWEEN ? AND ? $wc GROUP BY t.id, DAYOFWEEK(f.data_falta)", [$ini, $fim]) as $r) {
         $dias[$r['turma_id']][(int)$r['d']] = (int)$r['n'];
     }
     $max_dia = 1; foreach ($dias as $l) $max_dia = max($max_dia, ...array_values($l));
     $top = q_todos("SELECT a.id, a.nome, t.serie, t.letra, c.nome AS curso, COUNT(f.id) AS n
-                      FROM faltas f JOIN alunos a ON a.id = f.aluno_id JOIN turmas t ON t.id = a.turma_id JOIN cursos c ON c.id = t.curso_id
+                      FROM faltas f JOIN alunos a ON a.id = f.aluno_id JOIN turmas t ON t.id = COALESCE((SELECT xa.turma_id FROM aluno_turmas xa WHERE xa.aluno_id = a.id AND xa.ano_letivo = @ano_ver), a.turma_id) JOIN cursos c ON c.id = t.curso_id
                      WHERE f.data_falta BETWEEN ? AND ? $wc GROUP BY a.id, a.nome, t.serie, t.letra, c.nome ORDER BY n DESC, a.nome LIMIT 20", [$ini, $fim]);
     $ord = $turmas_ano;
     usort($ord, fn($a, $b) => ($b['alunos'] ? $b['faltas'] / $b['alunos'] : 0) <=> ($a['alunos'] ? $a['faltas'] / $a['alunos'] : 0));
@@ -73,7 +73,7 @@ if ($aba === 'alerta') {
     $minimo = max(1, (int)($_GET['minimo'] ?? FALTAS_ATENCAO));
     $alerta = q_todos("SELECT a.id, a.nome, a.responsavel_nome, a.responsavel_telefone, t.serie, t.letra, c.nome AS curso,
                               COUNT(f.id) AS n, SUM(CASE WHEN f.justificada = 1 THEN 0 ELSE 1 END) AS nj, MAX(f.data_falta) AS ultima
-                         FROM faltas f JOIN alunos a ON a.id = f.aluno_id JOIN turmas t ON t.id = a.turma_id JOIN cursos c ON c.id = t.curso_id
+                         FROM faltas f JOIN alunos a ON a.id = f.aluno_id JOIN turmas t ON t.id = COALESCE((SELECT xa.turma_id FROM aluno_turmas xa WHERE xa.aluno_id = a.id AND xa.ano_letivo = @ano_ver), a.turma_id) JOIN cursos c ON c.id = t.curso_id
                         WHERE a.situacao = 'ativo' AND f.data_falta BETWEEN ? AND ? $wc
                         GROUP BY a.id, a.nome, a.responsavel_nome, a.responsavel_telefone, t.serie, t.letra, c.nome
                        HAVING COUNT(f.id) >= ? ORDER BY n DESC, a.nome", [$ini, $fim, $minimo]);
@@ -89,10 +89,10 @@ if ($aba === 'notas') {
     $wb = $bim ? ' AND n.bimestre = ' . $bim : '';
     $medias_turma = q_todos("SELECT t.id, t.serie, t.letra, c.nome AS curso, ROUND(AVG(n.nota), 1) AS media, COUNT(n.id) AS lancadas,
                                     SUM(CASE WHEN n.nota < ? THEN 1 ELSE 0 END) AS abaixo
-                               FROM notas n JOIN alunos a ON a.id = n.aluno_id JOIN turmas t ON t.id = a.turma_id JOIN cursos c ON c.id = t.curso_id
+                               FROM notas n JOIN alunos a ON a.id = n.aluno_id JOIN turmas t ON t.id = COALESCE((SELECT xa.turma_id FROM aluno_turmas xa WHERE xa.aluno_id = a.id AND xa.ano_letivo = @ano_ver), a.turma_id) JOIN cursos c ON c.id = t.curso_id
                               WHERE n.ano_letivo = ? $wb $wc GROUP BY t.id, t.serie, t.letra, c.nome ORDER BY t.serie, t.letra", [MEDIA_APROVACAO, $ano]);
     $baixo = q_todos("SELECT a.id, a.nome, t.serie, t.letra, c.nome AS curso, d.nome AS disciplina, ROUND(AVG(n.nota), 1) AS media
-                        FROM notas n JOIN alunos a ON a.id = n.aluno_id JOIN turmas t ON t.id = a.turma_id JOIN cursos c ON c.id = t.curso_id
+                        FROM notas n JOIN alunos a ON a.id = n.aluno_id JOIN turmas t ON t.id = COALESCE((SELECT xa.turma_id FROM aluno_turmas xa WHERE xa.aluno_id = a.id AND xa.ano_letivo = @ano_ver), a.turma_id) JOIN cursos c ON c.id = t.curso_id
                         JOIN disciplinas d ON d.id = n.disciplina_id
                        WHERE n.ano_letivo = ? AND a.situacao = 'ativo' $wb $wc
                        GROUP BY a.id, a.nome, t.serie, t.letra, c.nome, d.nome HAVING AVG(n.nota) < ? ORDER BY t.serie, t.letra, a.nome LIMIT 400", [$ano, MEDIA_APROVACAO]);
@@ -126,8 +126,6 @@ $base_qs = http_build_query(['curso' => $curso_id ?: null, 'mes' => $mes ?: null
         <select class="form-select" id="f_bim" name="bimestre"><option value="">Todos</option>
         <?php for ($b = 1; $b <= 4; $b++): ?><option value="<?= $b ?>"<?= ($bim ?? 0) === $b ? ' selected' : '' ?>><?= $b ?>º bimestre</option><?php endfor; ?></select></div>
     <?php endif; ?>
-    <div class="col-6 col-md-2"><label class="form-label" for="f_ano">Ano</label>
-        <select class="form-select" id="f_ano" name="ano"><?php for ($a = ANO_LETIVO; $a >= ANO_LETIVO - 4; $a--): ?><option value="<?= $a ?>"<?= $ano === $a ? ' selected' : '' ?>><?= $a ?></option><?php endfor; ?></select></div>
     <?php if ($aba === 'alerta'): ?>
     <div class="col-6 col-md-2"><label class="form-label" for="f_min">A partir de</label>
         <div class="input-group"><input type="number" min="1" class="form-control" id="f_min" name="minimo" value="<?= $minimo ?>"><span class="input-group-text">faltas</span></div></div>

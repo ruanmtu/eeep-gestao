@@ -77,11 +77,11 @@ $saidas_semana = 0;
 try {
     $saidas_turma = q_todos("SELECT t.id, t.serie, t.letra, c.nome AS curso, c.sigla, COUNT(s.id) AS n
                                FROM turmas t JOIN cursos c ON c.id = t.curso_id
-                               LEFT JOIN alunos a ON a.turma_id = t.id
-                               LEFT JOIN saidas s ON s.aluno_id = a.id AND s.tipo = 'saida' AND s.status = 'autorizada' AND s.data_hora BETWEEN ? AND ?
+                               LEFT JOIN aluno_turmas xt ON xt.turma_id = t.id
+                               LEFT JOIN saidas s ON s.aluno_id = xt.aluno_id AND s.tipo = 'saida' AND s.status = 'autorizada' AND s.data_hora BETWEEN ? AND ?
                               WHERE t.ano_letivo = ? AND t.ativo = 1
                               GROUP BY t.id, t.serie, t.letra, c.nome, c.sigla ORDER BY n DESC, t.serie, t.letra",
-                             ["$seg 00:00:00", "$sex 23:59:59", ANO_LETIVO]);
+                             ["$seg 00:00:00", "$sex 23:59:59", ANO_VER]);
     $saidas_semana = array_sum(array_column($saidas_turma, 'n'));
 } catch (PDOException $e) { /* banco ainda sem a tabela de saídas */ }
 $max_saidas = max(1, ...array_map('intval', array_column($saidas_turma, 'n')) ?: [1]);
@@ -98,7 +98,7 @@ $per = periodo_atual();
 $eventos = proximos_eventos(5);
 $ultimos_arquivos = [];
 try { $ultimos_arquivos = q_todos('SELECT id, titulo, nome_original, categoria, criado_em FROM arquivos WHERE especial IS NULL ORDER BY id DESC LIMIT 4'); } catch (PDOException $e) {}
-$aniversariantes = $ver_alunos ? q_todos("SELECT a.id, a.nome, a.foto, a.data_nascimento, t.serie, t.letra, c.sigla FROM alunos a LEFT JOIN turmas t ON t.id = a.turma_id LEFT JOIN cursos c ON c.id = t.curso_id
+$aniversariantes = $ver_alunos ? q_todos("SELECT a.id, a.nome, a.foto, a.data_nascimento, t.serie, t.letra, c.sigla FROM alunos a LEFT JOIN turmas t ON t.id = COALESCE((SELECT xa.turma_id FROM aluno_turmas xa WHERE xa.aluno_id = a.id AND xa.ano_letivo = @ano_ver), a.turma_id) LEFT JOIN cursos c ON c.id = t.curso_id
                                            WHERE a.situacao = 'ativo' AND a.data_nascimento IS NOT NULL AND MONTH(a.data_nascimento) = ? AND DAY(a.data_nascimento) = ? ORDER BY a.nome LIMIT 12", [(int)date('n'), (int)date('j')]) : [];
 $hoje_nums = [
     'faltas' => $faltas_hoje,
@@ -153,8 +153,8 @@ if (!$gestao) {
         $dt_ids = array_map('intval', array_column($dt_turmas, 'id'));
         $soma = ['alunos' => 0, 'faltas_hoje' => 0, 'faltas_sem' => 0, 'oc_hoje' => 0, 'saidas_hoje' => 0];
         foreach ($dt_ids as $tid) { $r = turma_resumo($tid); foreach (['alunos', 'faltas_hoje', 'faltas_sem', 'oc_hoje'] as $k) $soma[$k] += (int)$r[$k]; }
-        try { $soma['saidas_hoje'] = (int)q_valor("SELECT COUNT(*) FROM saidas s JOIN alunos a ON a.id = s.aluno_id WHERE a.turma_id IN (" . implode(',', $dt_ids) . ") AND s.tipo = 'saida' AND s.status = 'autorizada' AND s.data_hora BETWEEN ? AND ?", ["$hoje 00:00:00", "$hoje 23:59:59"]); } catch (PDOException $e) {}
-        $ids_turma = array_map('intval', array_column(q_todos('SELECT id FROM alunos WHERE turma_id IN (' . implode(',', $dt_ids) . ") AND situacao = 'ativo'"), 'id'));
+        try { $soma['saidas_hoje'] = (int)q_valor("SELECT COUNT(*) FROM saidas s JOIN alunos a ON a.id = s.aluno_id WHERE a.id IN (SELECT xt.aluno_id FROM aluno_turmas xt WHERE xt.turma_id IN (" . implode(',', $dt_ids) . ")) AND s.tipo = 'saida' AND s.status = 'autorizada' AND s.data_hora BETWEEN ? AND ?", ["$hoje 00:00:00", "$hoje 23:59:59"]); } catch (PDOException $e) {}
+        $ids_turma = array_map('intval', array_column(q_todos("SELECT id FROM alunos WHERE id IN (SELECT xt.aluno_id FROM aluno_turmas xt WHERE xt.turma_id IN (" . implode(',', $dt_ids) . ") AND xt.situacao IN ('ativo','concluido'))"), 'id'));
         $alertas = array_filter($alertas, fn($a) => in_array((int)$a['aluno_id'], $ids_turma, true));
         $kpis = [
             ['people', 'Alunos ativos', $soma['alunos'], 'minha_turma.php', 'verde'],
@@ -273,12 +273,12 @@ function li_ranking(array $t, int $pos, string $valor, int $max, bool $detalhe =
 
 <?php if ($gestao || pode('relatorios')):
     $rs_media = null; $rs_top = null; $rs_n = 0;
-    try { $rs_media = q_valor('SELECT ROUND(AVG(nota), 1) FROM notas WHERE ano_letivo = ?', [ANO_LETIVO]); $rs_n = (int)q_valor('SELECT COUNT(DISTINCT a.turma_id) FROM notas n JOIN alunos a ON a.id = n.aluno_id WHERE n.ano_letivo = ?', [ANO_LETIVO]); } catch (PDOException $e) {} ?>
+    try { $rs_media = q_valor('SELECT ROUND(AVG(nota), 1) FROM notas WHERE ano_letivo = ?', [ANO_VER]); $rs_n = (int)q_valor('SELECT COUNT(DISTINCT a.turma_id) FROM notas n JOIN alunos a ON a.id = n.aluno_id WHERE n.ano_letivo = ?', [ANO_VER]); } catch (PDOException $e) {} ?>
 <!-- ===== Resultados da escola: os gráficos ficam na página própria (resultados.php) ===== -->
 <a class="rs-chamada mb-3" href="resultados.php">
     <span class="rs-chamada-ic"><i class="bi bi-bar-chart-line-fill"></i></span>
     <span class="rs-chamada-tx"><b>Resultados da escola</b><small>Resultados por turma e período, rendimento por turma e média conceitual</small></span>
-    <?php if ($rs_media !== null && $rs_media !== false): ?><span class="rs-chamada-n"><small>Média <?= ANO_LETIVO ?></small><b><?= number_format((float)$rs_media, 1, ',', '') ?></b></span>
+    <?php if ($rs_media !== null && $rs_media !== false): ?><span class="rs-chamada-n"><small>Média <?= ANO_VER ?></small><b><?= number_format((float)$rs_media, 1, ',', '') ?></b></span>
     <span class="rs-chamada-n d-none d-sm-flex"><small>Turmas com notas</small><b><?= $rs_n ?></b></span><?php endif; ?>
     <span class="rs-chamada-ir">Abrir <i class="bi bi-arrow-right"></i></span>
 </a>

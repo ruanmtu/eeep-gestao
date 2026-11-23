@@ -74,7 +74,7 @@ if (eh_post()) {
                 $mapa[(int)$i] = in_array($k, $validos, true) || preg_match('/^nota:[a-z0-9 ]+:[0-4]$/', $k) ? $k : 'ignorar';
             }
             $op = [
-                'ano'          => max(2000, min(2100, (int)($_POST['ano'] ?? ANO_LETIVO))),
+                'ano'          => max(2000, min(2100, (int)($_POST['ano'] ?? ANO_VER))),
                 'bimestre'     => max(1, min(4, (int)($_POST['bimestre'] ?? 1))),
                 'tipo_nota'    => in_array($_POST['tipo_nota'] ?? '', ['media', 'global', 'parcial', 'conceitual'], true) ? $_POST['tipo_nota'] : 'media',
                 'criar'        => !empty($_POST['criar']),
@@ -90,7 +90,7 @@ if (eh_post()) {
         $mapa = $_SESSION['imp']['mapa'] ?? null; $op = $_SESSION['imp']['op'] ?? null;
         if (!$mapa || !$op) redirecionar('importar.php');
         $linhas = array_slice($abas[$imp['aba']] ?? [], $imp['cab'] + 1, null, true);
-        try { $res = importacao_processar($linhas, $mapa, $op, $acao === 'importar'); }
+        try { $res = importacao_processar($linhas, $mapa, $op, $acao === 'importar'); if ($acao === 'importar') aluno_turmas_sincronizar(); }
         catch (Throwable $e) { flash('danger', 'A importação parou com um erro: ' . $e->getMessage()); redirecionar('importar.php'); }
         if ($acao === 'previa') { $_SESSION['imp_previa'] = $res; redirecionar('importar.php?etapa=previa'); }
 
@@ -180,7 +180,7 @@ function lista_avisos(array $r): string
     $dados = array_values(array_filter(array_slice($linhas, $imp['cab'] + 1), fn($l) => array_filter($l, 'strlen')));
     $ncol = max(count($cab), ...array_map('count', array_slice($dados, 0, 30) ?: [[]]));
     $mapa = $imp['mapa'] ?? importacao_sugerir(array_pad($cab, $ncol, ''));
-    $op = $imp['op'] ?? ['ano' => ANO_LETIVO, 'bimestre' => 1, 'tipo_nota' => 'media', 'criar' => true, 'atualizar' => 'vazios', 'turma_padrao' => 0];
+    $op = $imp['op'] ?? ['ano' => ANO_VER, 'bimestre' => 1, 'tipo_nota' => 'media', 'criar' => true, 'atualizar' => 'vazios', 'turma_padrao' => 0];
     $reconhecidos = array_filter($mapa, fn($k) => $k !== 'ignorar');
     $n_disc = count(array_filter($reconhecidos, fn($k) => str_starts_with($k, 'nota:')));
     $letra = function (int $i) { $s = ''; for ($i++; $i > 0; $i = intdiv($i - 1, 26)) $s = chr(65 + ($i - 1) % 26) . $s; return $s; };

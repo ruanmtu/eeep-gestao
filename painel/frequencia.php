@@ -2,14 +2,14 @@
 require __DIR__ . '/../includes/app.php';
 exigir('frequencia');
 
-$data = (string)($_GET['data'] ?? date('Y-m-d'));
+$data = (string)($_GET['data'] ?? data_padrao());
 if (!data_valida($data) || $data > date('Y-m-d')) $data = date('Y-m-d');
 $aviso = validar_data_falta($data);
 
 /* Faltas já lançadas no dia, agrupadas por turma */
 $faltas = q_todos('SELECT f.id, f.aluno_id, f.registrado_por, a.nome, a.turma_id, t.serie, t.letra, c.nome AS curso, u.nome AS por
                      FROM faltas f JOIN alunos a ON a.id = f.aluno_id
-                     LEFT JOIN turmas t ON t.id = a.turma_id LEFT JOIN cursos c ON c.id = t.curso_id
+                     LEFT JOIN turmas t ON t.id = COALESCE((SELECT xa.turma_id FROM aluno_turmas xa WHERE xa.aluno_id = a.id AND xa.ano_letivo = @ano_ver), a.turma_id) LEFT JOIN cursos c ON c.id = t.curso_id
                      LEFT JOIN usuarios u ON u.id = f.registrado_por
                     WHERE f.data_falta = ? ORDER BY t.serie, t.letra, a.nome', [$data]);
 $grupos = [];

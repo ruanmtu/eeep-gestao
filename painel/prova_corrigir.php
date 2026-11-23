@@ -14,7 +14,7 @@ $partes_js = array_map(fn($p) => ['nome' => $p['nome'], 'inicio' => $p['inicio']
 $formato = json_decode((string)($prova['formato_externo'] ?? ''), true) ?: null;
 $alunos = q_todos("SELECT a.id, a.nome, a.foto, t.letra, c.nome AS curso,
                           (SELECT r.nota FROM prova_resultados r WHERE r.prova_id = ? AND r.aluno_id = a.id) AS nota
-                     FROM alunos a JOIN turmas t ON t.id = a.turma_id JOIN cursos c ON c.id = t.curso_id
+                     FROM alunos a JOIN turmas t ON t.id = COALESCE((SELECT xa.turma_id FROM aluno_turmas xa WHERE xa.aluno_id = a.id AND xa.ano_letivo = @ano_ver), a.turma_id) JOIN cursos c ON c.id = t.curso_id
                     WHERE a.situacao = 'ativo' AND t.serie = ? AND t.ano_letivo = ?" . ($prova['curso_id'] ? ' AND t.curso_id = ' . (int)$prova['curso_id'] : '') . '
                     ORDER BY t.letra, a.nome', [$prova['id'], $prova['serie'], $prova['ano_letivo']]);
 $mapa = [];

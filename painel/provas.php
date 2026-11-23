@@ -7,7 +7,7 @@ $professor = restrito_a_atribuicoes();
 /* Disciplinas que o usuário pode usar */
 /* v74: no bloco de provas / simulado o professor pode juntar disciplinas dos colegas (as dele aparecem primeiro) */
 $disciplinas = q_todos('SELECT d.id, d.nome, d.tipo, c.nome AS curso FROM disciplinas d LEFT JOIN cursos c ON c.id = d.curso_id WHERE d.ativo = 1 ORDER BY d.tipo, c.nome, d.nome');
-$minhas_disc = $professor ? array_map('intval', array_column(q_todos('SELECT DISTINCT a.disciplina_id FROM atribuicoes a JOIN turmas t ON t.id = a.turma_id WHERE a.usuario_id = ? AND t.ano_letivo = ?', [uid(), ANO_LETIVO]), 'disciplina_id')) : [];
+$minhas_disc = $professor ? array_map('intval', array_column(q_todos('SELECT DISTINCT a.disciplina_id FROM atribuicoes a JOIN turmas t ON t.id = a.turma_id WHERE a.usuario_id = ? AND t.ano_letivo = ?', [uid(), ANO_VER]), 'disciplina_id')) : [];
 $ids_disc = array_map('intval', array_column($disciplinas, 'id'));
 
 /* Criar prova (uma disciplina ou um bloco com várias) */
@@ -47,7 +47,7 @@ if (eh_post() && ($_POST['acao'] ?? '') === 'criar') {
     } else {
         q('INSERT INTO provas (titulo, disciplina_id, serie, ano_letivo, bimestre, data_aplicacao, hora_inicio, hora_fim, aplicador, modelo_folha, num_questoes, num_alternativas, valor, criado_por)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-          [$titulo, $partes[0][0], $serie, ANO_LETIVO, $bim, data_valida($data) ? $data : null, $h_ini . ':00', $h_fim . ':00', $aplicador ?: null, OMR_MODELO_ATUAL,
+          [$titulo, $partes[0][0], $serie, ANO_VER, $bim, data_valida($data) ? $data : null, $h_ini . ':00', $h_fim . ':00', $aplicador ?: null, OMR_MODELO_ATUAL,
            $total, $nalt, count($partes) === 1 ? $partes[0][2] : 10, uid()]);
         $id = (int)db()->lastInsertId();
         foreach ($partes as $o => [$d, $nq, $val]) q('INSERT INTO prova_partes (prova_id, ordem, disciplina_id, nome, num_questoes, valor) VALUES (?, ?, ?, ?, ?, ?)', [$id, $o + 1, $d, $nomes_disc[$d], $nq, $val]);
@@ -61,11 +61,11 @@ if (eh_post() && ($_POST['acao'] ?? '') === 'criar') {
     redirecionar('provas.php');
 }
 
-$w = 'p.ano_letivo = ?'; $p = [ANO_LETIVO];
+$w = 'p.ano_letivo = ?'; $p = [ANO_VER];
 [$wv, $pv] = provas_filtro_visiveis(); $w .= ' AND ' . $wv; $p = array_merge($p, $pv);
 $provas = q_todos("SELECT p.*, d.nome AS disciplina, u.nome AS autor,
                           (SELECT COUNT(*) FROM prova_resultados r WHERE r.prova_id = p.id) AS corrigidas,
-                          (SELECT COUNT(*) FROM alunos a JOIN turmas t ON t.id = a.turma_id
+                          (SELECT COUNT(*) FROM alunos a JOIN turmas t ON t.id = COALESCE((SELECT xa.turma_id FROM aluno_turmas xa WHERE xa.aluno_id = a.id AND xa.ano_letivo = @ano_ver), a.turma_id)
                             WHERE a.situacao = 'ativo' AND t.serie = p.serie AND t.ano_letivo = p.ano_letivo
                               AND (d.curso_id IS NULL OR t.curso_id = d.curso_id)) AS alunos
                      FROM provas p JOIN disciplinas d ON d.id = p.disciplina_id LEFT JOIN usuarios u ON u.id = p.criado_por
@@ -83,7 +83,7 @@ require __DIR__ . '/../includes/layout_topo.php';
 <div class="row g-3">
     <div class="col-12">
         <div class="card">
-            <div class="card-header"><h2>Provas de <?= ANO_LETIVO ?></h2><span class="etiqueta cinza"><?= count($provas) ?></span></div>
+            <div class="card-header"><h2>Provas de <?= ANO_VER ?></h2><span class="etiqueta cinza"><?= count($provas) ?></span></div>
             <?php if ($provas): ?>
             <div class="table-responsive"><table class="table table-hover">
                 <thead><tr><th style="min-width:240px">Prova</th><th>Série / bim.</th><th class="num">Questões</th><th>Gabarito</th><th class="num">Corrigidas</th><th class="text-end">Ações</th></tr></thead>

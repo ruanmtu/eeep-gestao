@@ -43,7 +43,7 @@ function busca_lista(string $where, array $p = [], int $limite = 300): array
 {
     try {
         return q_todos('SELECT b.*, a.nome, a.foto, a.turma_id, t.serie, t.letra, c.nome AS curso, c.sigla FROM busca_ativa b JOIN alunos a ON a.id = b.aluno_id
-                          LEFT JOIN turmas t ON t.id = a.turma_id LEFT JOIN cursos c ON c.id = t.curso_id
+                          LEFT JOIN turmas t ON t.id = COALESCE((SELECT xa.turma_id FROM aluno_turmas xa WHERE xa.aluno_id = a.id AND xa.ano_letivo = @ano_ver), a.turma_id) LEFT JOIN cursos c ON c.id = t.curso_id
                          WHERE ' . $where . ' ORDER BY b.data_acao DESC, b.id DESC LIMIT ' . $limite, $p);
     } catch (PDOException $e) { return []; }
 }

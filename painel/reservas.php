@@ -189,7 +189,7 @@ require __DIR__ . '/../includes/layout_topo.php';
 </form>
 
 <?php elseif ($aba === 'agenda'):
-    $dia = data_valida($_GET['data'] ?? '') ? $_GET['data'] : $hoje;
+    $dia = data_valida($_GET['data'] ?? '') ? $_GET['data'] : data_padrao();
     $res = reservas_do_dia($dia);
     $mapa = [];
     foreach ($res as $r) $mapa[(int)$r['recurso_id']][(int)$r['aula']] = $r;

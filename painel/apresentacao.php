@@ -3,7 +3,7 @@ require __DIR__ . '/../includes/app.php';
 exigir('apresentacao');
 
 
-$ano = (int)($_GET['ano'] ?? ANO_LETIVO);
+$ano = in_array((int)($_GET['ano'] ?? 0), anos_letivos(), true) ? (int)$_GET['ano'] : ANO_VER;
 $bim = max(0, min(4, (int)($_GET['bimestre'] ?? 0)));
 $curso_id = (int)($_GET['curso'] ?? 0);
 $ini = $bim ? bimestres($ano)[$bim][0] : "$ano-01-01";
@@ -19,7 +19,7 @@ foreach (q_todos('SELECT t.id, t.serie, t.letra, c.nome AS curso, c.sigla FROM t
     $turmas[(int)$t['id']] = $t + ['rot' => $t['serie'] . 'º ' . $t['letra'], 'alunos' => 0, 'faltas' => 0, 'faltosos' => 0, 'notas' => [], 'abaixo' => 0, 'qtd' => 0];
 }
 $alunos = [];
-if ($turmas) foreach (q_todos("SELECT id, nome, turma_id FROM alunos WHERE situacao = 'ativo' AND turma_id IN (" . implode(',', array_keys($turmas)) . ')') as $a) {
+if ($turmas) foreach (q_todos("SELECT a.id, a.nome, xt.turma_id FROM aluno_turmas xt JOIN alunos a ON a.id = xt.aluno_id WHERE xt.situacao IN ('ativo','concluido') AND xt.turma_id IN (" . implode(',', array_keys($turmas)) . ')') as $a) {
     $alunos[(int)$a['id']] = $a + ['faltas' => 0, 'notas' => [], 'disc' => []];
     $turmas[(int)$a['turma_id']]['alunos']++;
 }

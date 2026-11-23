@@ -78,21 +78,21 @@ if (eh_post()) {
 }
 
 /* ------------------------- Dados ------------------------- */
-$ini_ano = ANO_LETIVO . '-01-01';
-$fim_ano = ANO_LETIVO . '-12-31';
+$ini_ano = ANO_VER . '-01-01';
+$fim_ano = ANO_VER . '-12-31';
 
 $faltas = q_todos('SELECT f.*, u.nome AS por FROM faltas f LEFT JOIN usuarios u ON u.id = f.registrado_por
-                    WHERE f.aluno_id = ? ORDER BY f.data_falta DESC', [$id]);
+                    WHERE f.aluno_id = ? AND f.data_falta BETWEEN ? AND ? ORDER BY f.data_falta DESC', [$id, $ini_ano, $fim_ano]);
 $faltas_ano = array_filter($faltas, fn($f) => $f['data_falta'] >= $ini_ano && $f['data_falta'] <= $fim_ano);
-$faltas_pl = faltas_planilha_bimestres($id, ANO_LETIVO);
+$faltas_pl = faltas_planilha_bimestres($id, ANO_VER);
 $n_faltas = count($faltas_ano) + array_sum($faltas_pl);
 $n_just = count(array_filter($faltas_ano, fn($f) => $f['justificada']));
 $faltas_mes = array_fill(1, 12, 0);
 foreach ($faltas_ano as $f) $faltas_mes[(int)substr($f['data_falta'], 5, 2)]++;
 
-$ocorrencias = ocorrencias_lista('o.aluno_id = ?', [$id], 500);
-$autorizacoes = autorizacoes_lista('s.aluno_id = ?', [$id], 500);
-$buscas = busca_lista('b.aluno_id = ?', [$id], 500);
+$ocorrencias = ocorrencias_lista('o.aluno_id = ? AND o.data_ocorrencia BETWEEN ? AND ?', [$id, $ini_ano, $fim_ano], 500);
+$autorizacoes = autorizacoes_lista('s.aluno_id = ? AND s.data_hora BETWEEN ? AND ?', [$id, $ini_ano . ' 00:00:00', $fim_ano . ' 23:59:59'], 500);
+$buscas = busca_lista('b.aluno_id = ? AND b.data_acao BETWEEN ? AND ?', [$id, $ini_ano, $fim_ano], 500);
 $situacao_busca = busca_situacao($buscas);
 $faltas_30 = count(array_filter($faltas, fn($f) => $f['data_falta'] >= date('Y-m-d', strtotime('-30 days')) && !$f['justificada']));
 $suspenso = array_filter($ocorrencias, fn($o) => $o['suspensao_inicio'] && $o['suspensao_inicio'] <= date('Y-m-d') && $o['suspensao_fim'] >= date('Y-m-d'));
@@ -154,7 +154,7 @@ require __DIR__ . '/../includes/layout_topo.php';
         </div>
     </div>
     <div class="ficha-numeros">
-        <div><strong class="<?= nivel_faltas($n_faltas) === 'critico' ? 'text-danger' : '' ?>"><?= $n_faltas ?></strong><span>faltas em <?= ANO_LETIVO ?></span></div>
+        <div><strong class="<?= nivel_faltas($n_faltas) === 'critico' ? 'text-danger' : '' ?>"><?= $n_faltas ?></strong><span>faltas em <?= ANO_VER ?></span></div>
         <div><strong><?= $media_geral !== null ? num($media_geral) : '—' ?></strong><span>média geral</span></div>
         <div><strong class="<?= $n_ocorr >= 3 ? 'text-danger' : '' ?>"><?= $n_ocorr ?></strong><span>ocorrências</span></div>
     </div>
@@ -252,7 +252,7 @@ require __DIR__ . '/../includes/layout_topo.php';
                 <?php endif; ?>
                 <div class="card"><div class="card-header"><h3>Faltas por mês</h3><span class="ms-auto small text-secondary"><?= $n_just ?> justificada(s)</span></div><div class="card-body py-2">
                     <ul class="lista-linhas">
-                        <?php $max = max(1, ...$faltas_mes); foreach ($faltas_mes as $m => $n): if ($m > (int)date('n') && ANO_LETIVO == date('Y') && !$n) continue; ?>
+                        <?php $max = max(1, ...$faltas_mes); foreach ($faltas_mes as $m => $n): if ($m > (int)date('n') && ANO_VER == date('Y') && !$n) continue; ?>
                             <li><span style="width:80px"><?= MESES[$m] ?></span><span class="barra-prop"><span style="width:<?= round($n / $max * 100) ?>%"></span></span><strong style="width:28px;text-align:right"><?= $n ?></strong></li>
                         <?php endforeach; ?>
                     </ul>
@@ -317,14 +317,14 @@ require __DIR__ . '/../includes/layout_topo.php';
         <?php $rd_aluno = resultados_aluno($id); ?>
         <section class="rd rd-aluno mb-3" id="resultadosAluno" data-media="<?= MEDIA_APROVACAO ?>" data-dados="<?= e(json_encode($rd_aluno, JSON_UNESCAPED_UNICODE)) ?>">
             <div class="rd-topo">
-                <div class="rd-tit"><span class="rd-ic"><i class="bi bi-person-lines-fill"></i></span><div><h2>Desempenho de <?= e(primeiro_ultimo(nome_proprio($aluno['nome']))) ?></h2><small><?= e(turma_nome($aluno, false)) ?> · <?= ANO_LETIVO ?></small></div></div>
+                <div class="rd-tit"><span class="rd-ic"><i class="bi bi-person-lines-fill"></i></span><div><h2>Desempenho de <?= e(primeiro_ultimo(nome_proprio($aluno['nome']))) ?></h2><small><?= e(turma_nome($aluno, false)) ?> · <?= ANO_VER ?></small></div></div>
                 <div class="rd-periodos" role="tablist" aria-label="Período">
                     <?php foreach ([1, 2, 3, 4] as $b): ?><button type="button" data-bim="<?= $b ?>"><?= $b ?>º per.</button><?php endforeach; ?><button type="button" data-bim="0">Ano</button>
                 </div>
             </div>
             <div class="rd-corpo"></div>
         </section>
-        <div class="card"><div class="card-header"><h3>Notas de <?= ANO_LETIVO ?></h3><span class="ms-auto small text-secondary">Média para aprovação: <?= num(MEDIA_APROVACAO) ?></span></div>
+        <div class="card"><div class="card-header"><h3>Notas de <?= ANO_VER ?></h3><span class="ms-auto small text-secondary">Média para aprovação: <?= num(MEDIA_APROVACAO) ?></span></div>
         <?php if ($boletim): ?>
             <div class="table-responsive"><table class="table">
                 <thead><tr><th>Disciplina</th><th class="num">1º bim.</th><th class="num">2º bim.</th><th class="num">3º bim.</th><th class="num">4º bim.</th><th class="num">Média</th></tr></thead>

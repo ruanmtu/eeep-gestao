@@ -18,7 +18,7 @@ if ($bim < 0 || $bim > 4) $bim = 0;
 $disciplinas = [];
 if ($turma) {
     $com_nota = q_todos('SELECT DISTINCT d.id, d.nome FROM notas n JOIN alunos a ON a.id = n.aluno_id JOIN disciplinas d ON d.id = n.disciplina_id
-                          WHERE a.turma_id = ? AND n.ano_letivo = ? ORDER BY d.nome', [$turma_id, ANO_LETIVO]);
+                          WHERE a.id IN (SELECT xt.aluno_id FROM aluno_turmas xt WHERE xt.turma_id = ?) AND n.ano_letivo = ? ORDER BY d.nome', [$turma_id, ANO_VER]);
     if (restrito_a_atribuicoes()) { $minhas = array_map('intval', array_column(disciplinas_do_usuario($turma), 'id')); $com_nota = array_values(array_filter($com_nota, fn($d) => in_array((int)$d['id'], $minhas, true))); }
     $disciplinas = $com_nota;
 }
@@ -26,7 +26,7 @@ $ids_disc = array_map('intval', array_column($disciplinas, 'id'));
 $disc_id = (int)($_GET['disciplina'] ?? 0);
 if (!in_array($disc_id, $ids_disc, true)) $disc_id = $ids_disc[0] ?? 0;
 
-$alunos = $turma ? q_todos("SELECT id, nome FROM alunos WHERE turma_id = ? AND situacao = 'ativo' ORDER BY nome", [$turma_id]) : [];
+$alunos = $turma ? q_todos("SELECT id, nome FROM alunos WHERE id IN (SELECT xt.aluno_id FROM aluno_turmas xt WHERE xt.turma_id = ? AND xt.situacao IN ('ativo','concluido')) ORDER BY nome", [$turma_id]) : [];
 if (class_exists('Collator')) { $col = new Collator('pt_BR'); usort($alunos, fn($x, $y) => $col->compare($x['nome'], $y['nome'])); }
 
 /* notas: [aluno][disciplina][bimestre] => nota */
@@ -34,13 +34,13 @@ $N = [];
 if ($turma && $ids_disc) {
     $in = implode(',', array_fill(0, count($ids_disc), '?'));
     foreach (q_todos("SELECT n.aluno_id, n.disciplina_id, n.bimestre, n.nota FROM notas n JOIN alunos a ON a.id = n.aluno_id
-                       WHERE a.turma_id = ? AND n.ano_letivo = ? AND n.disciplina_id IN ($in)", array_merge([$turma_id, ANO_LETIVO], $ids_disc)) as $r)
+                       WHERE a.id IN (SELECT xt.aluno_id FROM aluno_turmas xt WHERE xt.turma_id = ?) AND n.ano_letivo = ? AND n.disciplina_id IN ($in)", array_merge([$turma_id, ANO_VER], $ids_disc)) as $r)
         $N[(int)$r['aluno_id']][(int)$r['disciplina_id']][(int)$r['bimestre']] = (float)$r['nota'];
 }
 $media = function (array $v): ?float { $v = array_filter($v, fn($x) => $x !== null); return $v ? array_sum($v) / count($v) : null; };
 $nota_quadro = fn(int $aid, int $did) => $bim ? ($N[$aid][$did][$bim] ?? null) : $media($N[$aid][$did] ?? []);
 $ultima = null;
-try { $ultima = q_valor('SELECT MAX(atualizado_em) FROM notas WHERE ano_letivo = ?', [ANO_LETIVO]); } catch (PDOException $e) {}
+try { $ultima = q_valor('SELECT MAX(atualizado_em) FROM notas WHERE ano_letivo = ?', [ANO_VER]); } catch (PDOException $e) {}
 
 /* exportar o que está na tela */
 if ($turma && ($_GET['exportar'] ?? '') === 'csv') {
@@ -66,7 +66,7 @@ $fmt = fn(?float $v) => $v === null ? '—' : num($v, 1);
 <div class="nt-topo">
     <div class="nt-topo-tx">
         <span class="nt-ic"><i class="bi bi-journal-check"></i></span>
-        <div><h2>Notas de <?= ANO_LETIVO ?></h2>
+        <div><h2>Notas de <?= ANO_VER ?></h2>
             <small><i class="bi bi-lock me-1"></i>Somente consulta · as notas chegam pela planilha do Power BI<?= $ultima ? ' · última atualização em ' . date('d/m/Y \à\s H:i', strtotime((string)$ultima)) : '' ?></small></div>
     </div>
     <?php if (pode('importar')): ?><a class="btn btn-light nt-enviar" href="importar.php"><i class="bi bi-cloud-arrow-up me-1"></i>Enviar planilha (CSV)</a><?php endif; ?>
@@ -95,7 +95,7 @@ $fmt = fn(?float $v) => $v === null ? '—' : num($v, 1);
 </ul>
 
 <?php if (!$disciplinas): ?>
-<div class="card"><div class="vazio"><i class="bi bi-cloud-arrow-up"></i><strong>Ainda não há notas desta turma em <?= ANO_LETIVO ?></strong>As notas aparecem aqui assim que a gestão enviar a planilha do Power BI.</div></div>
+<div class="card"><div class="vazio"><i class="bi bi-cloud-arrow-up"></i><strong>Ainda não há notas desta turma em <?= ANO_VER ?></strong>As notas aparecem aqui assim que a gestão enviar a planilha do Power BI.</div></div>
 <?php elseif ($aba === 'quadro'): ?>
 <div class="card nt-card">
     <div class="card-header"><h2><?= e(turma_nome($turma)) ?> · <?= $bim ? $bim . 'º período' : 'média do ano' ?></h2>

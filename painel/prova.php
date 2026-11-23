@@ -94,13 +94,13 @@ if (eh_post()) {
 $gab = str_pad((string)$prova['gabarito'], $n, '-');
 $pronto = !str_contains($gab, '-');
 $turmas = q_todos("SELECT t.id, t.serie, t.letra, c.nome AS curso,
-                          (SELECT COUNT(*) FROM alunos a WHERE a.turma_id = t.id AND a.situacao = 'ativo') AS alunos,
-                          (SELECT COUNT(*) FROM prova_resultados r JOIN alunos a ON a.id = r.aluno_id WHERE r.prova_id = ? AND a.turma_id = t.id) AS corrigidas
+                          (SELECT COUNT(*) FROM aluno_turmas xt WHERE xt.turma_id = t.id AND xt.situacao IN ('ativo','concluido')) AS alunos,
+                          (SELECT COUNT(*) FROM prova_resultados r WHERE r.prova_id = ? AND r.aluno_id IN (SELECT xt.aluno_id FROM aluno_turmas xt WHERE xt.turma_id = t.id)) AS corrigidas
                      FROM turmas t JOIN cursos c ON c.id = t.curso_id
                     WHERE t.serie = ? AND t.ano_letivo = ? AND t.ativo = 1" . ($prova['curso_id'] ? ' AND t.curso_id = ' . (int)$prova['curso_id'] : '') . ' ORDER BY t.letra',
                   [$id, $prova['serie'], $prova['ano_letivo']]);
 $resultados = q_todos('SELECT r.*, a.nome, t.serie, t.letra, c.nome AS curso, u.nome AS por FROM prova_resultados r JOIN alunos a ON a.id = r.aluno_id
-                        LEFT JOIN turmas t ON t.id = a.turma_id LEFT JOIN cursos c ON c.id = t.curso_id LEFT JOIN usuarios u ON u.id = r.corrigido_por
+                        LEFT JOIN turmas t ON t.id = COALESCE((SELECT xa.turma_id FROM aluno_turmas xa WHERE xa.aluno_id = a.id AND xa.ano_letivo = @ano_ver), a.turma_id) LEFT JOIN cursos c ON c.id = t.curso_id LEFT JOIN usuarios u ON u.id = r.corrigido_por
                        WHERE r.prova_id = ? ORDER BY t.letra, a.nome', [$id]);
 $media = $resultados ? array_sum(array_column($resultados, 'nota')) / count($resultados) : 0;
 

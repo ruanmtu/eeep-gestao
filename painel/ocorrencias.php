@@ -28,14 +28,14 @@ $f = [
     'categoria' => isset(CATEGORIAS_OCORRENCIA[$_GET['categoria'] ?? '']) ? $_GET['categoria'] : '',
     'gravidade' => isset(GRAVIDADES[$_GET['gravidade'] ?? '']) ? $_GET['gravidade'] : '',
     'turma'     => (int)($_GET['turma'] ?? 0),
-    'de'        => data_valida($_GET['de'] ?? '') ? $_GET['de'] : ANO_LETIVO . '-01-01',
-    'ate'       => data_valida($_GET['ate'] ?? '') ? $_GET['ate'] : date('Y-m-d'),
+    'de'        => data_valida($_GET['de'] ?? '') && substr($_GET['de'], 0, 4) == ANO_VER ? $_GET['de'] : ano_inicio(),
+    'ate'       => data_valida($_GET['ate'] ?? '') && substr($_GET['ate'], 0, 4) == ANO_VER ? $_GET['ate'] : (vendo_outro_ano() ? ano_fim() : date('Y-m-d')),
     'busca'     => trim((string)($_GET['busca'] ?? '')),
 ];
 $w = ['o.data_ocorrencia BETWEEN ? AND ?']; $p = [$f['de'], $f['ate']];
 if ($f['categoria']) { $w[] = 'o.categoria = ?'; $p[] = $f['categoria']; }
 if ($f['gravidade']) { $w[] = 'o.gravidade = ?'; $p[] = $f['gravidade']; }
-if ($f['turma']) { $w[] = 'a.turma_id = ?'; $p[] = $f['turma']; }
+if ($f['turma']) { $w[] = 'a.id IN (SELECT xt.aluno_id FROM aluno_turmas xt WHERE xt.turma_id = ?)'; $p[] = $f['turma']; }
 if ($f['busca'] !== '') { $w[] = 'a.nome LIKE ?'; $p[] = '%' . $f['busca'] . '%'; }
 if (!$ve_tudo) { $w[] = 'o.registrado_por = ?'; $p[] = uid(); }
 $lista = ocorrencias_lista(implode(' AND ', $w), $p);

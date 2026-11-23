@@ -67,12 +67,12 @@ if ($aba === 'atribuicoes') {
     $profs = q_todos("SELECT u.id, u.nome, u.foto, u.perfil, u.cargo,
                              (SELECT COUNT(DISTINCT a.turma_id) FROM atribuicoes a JOIN turmas t ON t.id = a.turma_id WHERE a.usuario_id = u.id AND t.ano_letivo = ?) AS n_turmas,
                              (SELECT COUNT(*) FROM atribuicoes a JOIN turmas t ON t.id = a.turma_id WHERE a.usuario_id = u.id AND t.ano_letivo = ?) AS n_atr
-                        FROM usuarios u WHERE u.perfil <> 'admin' AND u.ativo = 1 ORDER BY u.perfil = 'professor' DESC, u.nome", [ANO_LETIVO, ANO_LETIVO]);
+                        FROM usuarios u WHERE u.perfil <> 'admin' AND u.ativo = 1 ORDER BY u.perfil = 'professor' DESC, u.nome", [ANO_VER, ANO_VER]);
     if (!$prof_sel || !in_array($prof_sel, array_map('intval', array_column($profs, 'id')), true)) $prof_sel = (int)($profs[0]['id'] ?? 0);
     $prof = null; foreach ($profs as $p) if ((int)$p['id'] === $prof_sel) $prof = $p;
     $atrs = $prof ? q_todos('SELECT at.id, at.turma_id, d.nome AS disciplina, d.tipo, t.serie, t.letra, c.nome AS curso, c.sigla
                                FROM atribuicoes at JOIN disciplinas d ON d.id = at.disciplina_id JOIN turmas t ON t.id = at.turma_id JOIN cursos c ON c.id = t.curso_id
-                              WHERE at.usuario_id = ? AND t.ano_letivo = ? ORDER BY t.serie, t.letra, d.nome', [$prof_sel, ANO_LETIVO]) : [];
+                              WHERE at.usuario_id = ? AND t.ano_letivo = ? ORDER BY t.serie, t.letra, d.nome', [$prof_sel, ANO_VER]) : [];
     $por_turma = []; foreach ($atrs as $a) $por_turma[$a['turma_id']][] = $a;
     $todas_turmas = turmas_lista();
 }
@@ -116,7 +116,7 @@ require __DIR__ . '/../includes/layout_topo.php';
             <div class="pf-nums"><span><b><?= count($por_turma) ?></b>turmas</span><span><b><?= count($atrs) ?></b>componentes</span></div>
         </div>
 
-        <h3 class="pf-sub"><i class="bi bi-diagram-3"></i>Turmas e componentes em <?= ANO_LETIVO ?></h3>
+        <h3 class="pf-sub"><i class="bi bi-diagram-3"></i>Turmas e componentes em <?= ANO_VER ?></h3>
         <?php if ($por_turma): ?>
         <div class="pf-turmas">
             <?php foreach ($por_turma as $tid => $itens): $t0 = $itens[0]; ?>

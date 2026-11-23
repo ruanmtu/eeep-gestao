@@ -243,7 +243,7 @@ function ocorrencias_lista(string $where, array $p, int $limite = 300): array
 {
     return q_todos('SELECT o.*, a.nome, a.foto, a.matricula, a.responsavel_telefone, a.telefone, a.turma_id, t.serie, t.letra, c.nome AS curso, c.sigla, u.nome AS por, u.foto AS por_foto
                       FROM ocorrencias o JOIN alunos a ON a.id = o.aluno_id
-                      LEFT JOIN turmas t ON t.id = a.turma_id LEFT JOIN cursos c ON c.id = t.curso_id
+                      LEFT JOIN turmas t ON t.id = COALESCE((SELECT xa.turma_id FROM aluno_turmas xa WHERE xa.aluno_id = a.id AND xa.ano_letivo = @ano_ver), a.turma_id) LEFT JOIN cursos c ON c.id = t.curso_id
                       LEFT JOIN usuarios u ON u.id = o.registrado_por
                      WHERE ' . $where . ' ORDER BY o.data_ocorrencia DESC, o.hora DESC, o.id DESC LIMIT ' . $limite, $p);
 }

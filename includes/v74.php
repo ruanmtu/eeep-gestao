@@ -52,9 +52,9 @@ function eh_coordenador_curso(): bool { return (bool)cursos_coordenados(); }
 /** Turmas em que o usuário pode emitir a liberação de saída: as que dirige + as do(s) curso(s) que coordena */
 function saida_turmas_permitidas(): array
 {
-    $ids = array_map('intval', array_column(turmas_dirigidas(), 'id'));
+    $ids = array_map('intval', array_column(turmas_dirigidas(null, ano_hoje()), 'id'));   // saída é sempre de hoje
     if ($cs = cursos_coordenados())
-        $ids = array_merge($ids, array_map('intval', array_column(q_todos('SELECT id FROM turmas WHERE curso_id IN (' . implode(',', $cs) . ') AND ano_letivo = ?', [ANO_LETIVO]), 'id')));
+        $ids = array_merge($ids, array_map('intval', array_column(q_todos('SELECT id FROM turmas WHERE curso_id IN (' . implode(',', $cs) . ') AND ano_letivo = ?', [ano_hoje()]), 'id')));
     return array_values(array_unique($ids));
 }
 

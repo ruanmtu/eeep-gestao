@@ -46,7 +46,7 @@ function livro_didatico_buscar(int $id): ?array
 function livros_do_professor(int $uid): array
 {
     try {
-        return q_todos('SELECT DISTINCT a.disciplina_id, t.serie FROM atribuicoes a JOIN turmas t ON t.id = a.turma_id WHERE a.usuario_id = ? AND t.ano_letivo = ?', [$uid, ANO_LETIVO]);
+        return q_todos('SELECT DISTINCT a.disciplina_id, t.serie FROM atribuicoes a JOIN turmas t ON t.id = a.turma_id WHERE a.usuario_id = ? AND t.ano_letivo = ?', [$uid, ANO_VER]);
     } catch (PDOException $e) { return []; }
 }
 

@@ -37,7 +37,7 @@ if (eh_post() && ($_POST['acao'] ?? '') === 'tratar_alerta') {
 /* alertas visíveis para quem está vendo */
 $alertas = alertas_sequencia(true);
 if (!$gestao) {
-    $ids_al = $ids_dt ? array_map('intval', array_column(q_todos('SELECT id FROM alunos WHERE turma_id IN (' . implode(',', $ids_dt) . ")"), 'id')) : [];
+    $ids_al = $ids_dt ? array_map('intval', array_column(q_todos('SELECT id FROM alunos WHERE id IN (SELECT xt.aluno_id FROM aluno_turmas xt WHERE xt.turma_id IN (' . implode(',', $ids_dt) . '))'), 'id')) : [];
     $alertas = array_values(array_filter($alertas, fn($a) => in_array((int)$a['aluno_id'], $ids_al, true)));
 }
 usort($alertas, fn($a, $b) => count($b['dias']) <=> count($a['dias']));
@@ -50,9 +50,9 @@ $ativos = count(array_filter($alertas, fn($a) => !empty($a['ativa'])));
 /* contatos já registrados (histórico) */
 $hist = [];
 try {
-    $w = $gestao ? '1 = 1' : ($ids_dt ? 'a.turma_id IN (' . implode(',', $ids_dt) . ')' : '0 = 1');
+    $w = $gestao ? '1 = 1' : ($ids_dt ? 'a.id IN (SELECT xt.aluno_id FROM aluno_turmas xt WHERE xt.turma_id IN (' . implode(',', $ids_dt) . '))' : '0 = 1');
     $hist = q_todos("SELECT c.*, a.nome, t.serie, t.letra, cu.sigla, u.nome AS por FROM alertas_contato c JOIN alunos a ON a.id = c.aluno_id
-                      LEFT JOIN turmas t ON t.id = a.turma_id LEFT JOIN cursos cu ON cu.id = t.curso_id LEFT JOIN usuarios u ON u.id = c.resolvido_por
+                      LEFT JOIN turmas t ON t.id = COALESCE((SELECT xa.turma_id FROM aluno_turmas xa WHERE xa.aluno_id = a.id AND xa.ano_letivo = @ano_ver), a.turma_id) LEFT JOIN cursos cu ON cu.id = t.curso_id LEFT JOIN usuarios u ON u.id = c.resolvido_por
                       WHERE $w ORDER BY c.id DESC LIMIT 30");
 } catch (PDOException $e) {}
 $contatos_mes = count(array_filter($hist, fn($h) => substr((string)($h['criado_em'] ?? $h['resolvido_em'] ?? ''), 0, 7) === date('Y-m')));

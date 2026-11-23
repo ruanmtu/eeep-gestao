@@ -4,14 +4,14 @@
 require __DIR__ . '/../includes/app.php';
 exigir('frequencia');
 
-$data = (string)($_GET['data'] ?? date('Y-m-d'));
+$data = (string)($_GET['data'] ?? data_padrao());
 if (!data_valida($data) || $data > date('Y-m-d')) $data = date('Y-m-d');
 $turmas = turmas_lista();
 $tid = (int)($_GET['turma'] ?? 0);
 if ($tid && !in_array($tid, array_map('intval', array_column($turmas, 'id')), true)) $tid = 0;
 
 $p = [$data]; $w = '';
-if ($tid) { $w = ' AND a.turma_id = ?'; $p[] = $tid; }
+if ($tid) { $w = ' AND a.id IN (SELECT xt.aluno_id FROM aluno_turmas xt WHERE xt.turma_id = ?)'; $p[] = $tid; }
 $faltas = q_todos("SELECT a.nome, a.turma_id, f.justificada FROM faltas f JOIN alunos a ON a.id = f.aluno_id WHERE f.data_falta = ?$w ORDER BY a.nome", $p);
 $grupos = [];
 foreach ($faltas as $f) $grupos[(int)$f['turma_id']][] = $f;

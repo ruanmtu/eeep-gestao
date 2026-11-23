@@ -47,7 +47,7 @@ function chamada_aula_buscar(string $data, int $aula, int $turma_id): ?array
 /** Grava a chamada de uma aula. $faltas = ids dos alunos ausentes */
 function chamada_aula_salvar(string $data, int $aula, int $turma_id, ?int $disciplina_id, array $faltas): array
 {
-    $alunos = array_map('intval', array_column(q_todos("SELECT id FROM alunos WHERE turma_id = ? AND situacao = 'ativo'", [$turma_id]), 'id'));
+    $alunos = array_map('intval', array_column(q_todos("SELECT id FROM alunos WHERE id IN (SELECT xt.aluno_id FROM aluno_turmas xt WHERE xt.turma_id = ? AND xt.situacao IN ('ativo','concluido'))", [$turma_id]), 'id'));
     $faltas = array_values(array_intersect(array_map('intval', $faltas), $alunos));
     $agora = date('Y-m-d H:i:s');
     db()->beginTransaction();

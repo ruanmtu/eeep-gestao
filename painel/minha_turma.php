@@ -15,23 +15,23 @@ if (!$tid || !pode_painel_turma($tid)) $tid = (int)($minhas[0]['id'] ?? $opcoes[
 $turma = q_um('SELECT t.*, c.nome AS curso, c.sigla, u.nome AS dt_nome FROM turmas t JOIN cursos c ON c.id = t.curso_id LEFT JOIN usuarios u ON u.id = t.diretor_turma_id WHERE t.id = ?', [$tid]);
 $aba = in_array($_GET['aba'] ?? '', ['alunos', 'frequencia', 'notas', 'ocorrencias', 'observacoes', 'busca', 'autorizacoes'], true) ? $_GET['aba'] : 'alunos';
 $R = turma_resumo($tid);
-$ini_ano = ANO_LETIVO . '-01-01';
+$ini_ano = ano_inicio(); $fim_ano = ano_fim();
 
 /* alunos em ordem alfabética (o nº é a posição na lista) */
-$alunos = q_todos("SELECT a.* FROM alunos a WHERE a.turma_id = ? AND a.situacao = 'ativo' ORDER BY a.nome", [$tid]);
+$alunos = q_todos("SELECT a.* FROM alunos a WHERE a.id IN (SELECT xt.aluno_id FROM aluno_turmas xt WHERE xt.turma_id = ? AND xt.situacao IN ('ativo','concluido')) ORDER BY a.nome", [$tid]);
 if (class_exists('Collator')) { $col = new Collator('pt_BR'); usort($alunos, fn($x, $y) => $col->compare($x['nome'], $y['nome'])); }
 $ids = array_map('intval', array_column($alunos, 'id'));
 $in = $ids ? implode(',', $ids) : '0';
 $por = fn(string $sql, array $p = []) => array_column(q_todos($sql, $p), 'n', 'aluno_id');
 $f_mes = $por("SELECT aluno_id, COUNT(*) AS n FROM faltas WHERE aluno_id IN ($in) AND data_falta >= ? GROUP BY aluno_id", [date('Y-m-01')]);
-$f_ano = $por("SELECT aluno_id, COUNT(*) AS n FROM faltas WHERE aluno_id IN ($in) AND data_falta >= ? GROUP BY aluno_id", [$ini_ano]);
-$f_sem_just = $por("SELECT aluno_id, COUNT(*) AS n FROM faltas WHERE aluno_id IN ($in) AND data_falta >= ? AND justificada = 0 GROUP BY aluno_id", [$ini_ano]);
-$oc_ano = $por("SELECT aluno_id, COUNT(*) AS n FROM ocorrencias WHERE aluno_id IN ($in) AND data_ocorrencia >= ? GROUP BY aluno_id", [$ini_ano]);
-$med = $por("SELECT aluno_id, AVG(nota) AS n FROM notas WHERE aluno_id IN ($in) AND ano_letivo = ? GROUP BY aluno_id", [ANO_LETIVO]);
+$f_ano = $por("SELECT aluno_id, COUNT(*) AS n FROM faltas WHERE aluno_id IN ($in) AND data_falta BETWEEN ? AND ? GROUP BY aluno_id", [$ini_ano, $fim_ano]);
+$f_sem_just = $por("SELECT aluno_id, COUNT(*) AS n FROM faltas WHERE aluno_id IN ($in) AND data_falta BETWEEN ? AND ? AND justificada = 0 GROUP BY aluno_id", [$ini_ano, $fim_ano]);
+$oc_ano = $por("SELECT aluno_id, COUNT(*) AS n FROM ocorrencias WHERE aluno_id IN ($in) AND data_ocorrencia BETWEEN ? AND ? GROUP BY aluno_id", [$ini_ano, $fim_ano]);
+$med = $por("SELECT aluno_id, AVG(nota) AS n FROM notas WHERE aluno_id IN ($in) AND ano_letivo = ? GROUP BY aluno_id", [ANO_VER]);
 /* observações que os professores registram nos alunos da turma (o DT acompanha aqui) */
 $obs = [];
 try { $obs = q_todos("SELECT o.*, a.nome AS aluno_nome, a.foto AS aluno_foto, u.foto AS usuario_foto FROM aluno_observacoes o JOIN alunos a ON a.id = o.aluno_id LEFT JOIN usuarios u ON u.id = o.usuario_id
-                        WHERE a.turma_id = ? AND a.situacao = 'ativo' ORDER BY o.criado_em DESC, o.id DESC LIMIT 400", [$tid]); } catch (PDOException $e) {}
+                        WHERE a.id IN (SELECT xt.aluno_id FROM aluno_turmas xt WHERE xt.turma_id = ? AND xt.situacao IN ('ativo','concluido')) ORDER BY o.criado_em DESC, o.id DESC LIMIT 400", [$tid]); } catch (PDOException $e) {}
 $obs_30 = count(array_filter($obs, fn($o) => $o['criado_em'] >= date('Y-m-d', strtotime('-30 days'))));
 $oc_ano_total = array_sum($oc_ano);
 $em_alerta = array_flip(array_map(fn($a) => (int)$a['aluno_id'], $R['alertas']));
@@ -52,7 +52,7 @@ require __DIR__ . '/../includes/layout_topo.php';
         <div class="mt-meta">
             <span class="mt-dt"><i><?= e($dt_ini) ?></i><span><small>Diretor(a) de turma</small><?= e($turma['dt_nome'] ? primeiro_ultimo($turma['dt_nome']) : 'não definido') ?></span></span>
             <span><small>Curso</small><?= e($turma['curso']) ?></span>
-            <span><small>Ano letivo</small><?= ANO_LETIVO ?></span>
+            <span><small>Ano letivo</small><?= ANO_VER ?></span>
         </div>
     </div>
     <div class="mt-acoes">
@@ -74,7 +74,7 @@ require __DIR__ . '/../includes/layout_topo.php';
         ['exclamation-triangle-fill', 'Em alerta de faltas', count($R['alertas']), FALTAS_SEGUIDAS_ALERTA . '+ faltas seguidas', count($R['alertas']) ? 'vermelho' : 'verde', 'frequencia#alertas'],
         ['shield-fill-exclamation', 'Ocorrências no mês', $R['oc_mes'], $R['oc_hoje'] . ' hoje', $R['oc_hoje'] ? 'vermelho' : 'azul', 'ocorrencias'],
         ['chat-square-heart-fill', 'Observações', $obs_30, 'nos últimos 30 dias', 'roxo', 'observacoes'],
-        ['journal-check', 'Média geral', $R['media'] ? num($R['media'], 1) : '–', ANO_LETIVO, $R['media'] && $R['media'] < MEDIA_APROVACAO ? 'vermelho' : 'verde', 'notas'],
+        ['journal-check', 'Média geral', $R['media'] ? num($R['media'], 1) : '–', ANO_VER, $R['media'] && $R['media'] < MEDIA_APROVACAO ? 'vermelho' : 'verde', 'notas'],
     ];
     foreach ($kp as $i => [$ic, $rot, $val, $sub, $cor, $ab]): $n = is_numeric($val) ? (float)$val : null; ?>
     <a class="mt-kpi c-<?= $cor ?>" href="?turma=<?= $tid ?>&amp;aba=<?= $ab ?>" style="--i:<?= $i ?>">
@@ -145,7 +145,7 @@ require __DIR__ . '/../includes/layout_topo.php';
     $bim = (int)($_GET['bim'] ?? 0) ?: (int)($per['bimestre'] ?? 1);
     $bim = max(1, min(4, $bim));
     $notas = q_todos("SELECT n.aluno_id, n.disciplina_id, n.nota, d.nome FROM notas n JOIN disciplinas d ON d.id = n.disciplina_id
-                       WHERE n.aluno_id IN ($in) AND n.ano_letivo = ? AND n.bimestre = ? ORDER BY d.tipo, d.nome", [ANO_LETIVO, $bim]);
+                       WHERE n.aluno_id IN ($in) AND n.ano_letivo = ? AND n.bimestre = ? ORDER BY d.tipo, d.nome", [ANO_VER, $bim]);
     $discs = []; $tab = [];
     foreach ($notas as $n) { $discs[(int)$n['disciplina_id']] = $n['nome']; $tab[(int)$n['aluno_id']][(int)$n['disciplina_id']] = (float)$n['nota']; }
     $media_disc = [];
@@ -168,11 +168,11 @@ require __DIR__ . '/../includes/layout_topo.php';
 </div>
 
 <?php elseif ($aba === 'ocorrencias'):
-    $lista = ocorrencias_lista('a.turma_id = ? AND o.data_ocorrencia >= ?', [$tid, $ini_ano], 300);
+    $lista = ocorrencias_lista('a.id IN (SELECT xt.aluno_id FROM aluno_turmas xt WHERE xt.turma_id = ?) AND o.data_ocorrencia BETWEEN ? AND ?', [$tid, $ini_ano, $fim_ano], 300);
     $por_cat = array_count_values(array_map(fn($o) => categoria_ocorrencia($o)[0], $lista)); arsort($por_cat); ?>
 <div class="row g-3">
     <div class="col-xl-8"><div class="card">
-        <div class="card-header"><h2>Ocorrências da turma em <?= ANO_LETIVO ?></h2><span class="etiqueta"><?= count($lista) ?></span>
+        <div class="card-header"><h2>Ocorrências da turma em <?= ANO_VER ?></h2><span class="etiqueta"><?= count($lista) ?></span>
             <?php if (pode('ocorrencias')): ?><a class="btn btn-sm btn-danger ms-auto nao-imprimir" href="ocorrencias.php#nova"><i class="bi bi-plus-lg me-1"></i>Registrar</a><?php endif; ?></div>
         <?php if ($lista): ?><ul class="oc-hoje-lista" style="max-height:none">
             <?php foreach ($lista as $o): [$rot, , $ic] = categoria_ocorrencia($o); ?>
@@ -250,15 +250,15 @@ require __DIR__ . '/../includes/layout_topo.php';
 </script>
 
 <?php elseif ($aba === 'busca'):
-    $lista = busca_lista('a.turma_id = ?', [$tid], 300); ?>
+    $lista = busca_lista('a.id IN (SELECT xt.aluno_id FROM aluno_turmas xt WHERE xt.turma_id = ?) AND b.data_acao BETWEEN ? AND ?', [$tid, $ini_ano, $fim_ano], 300); ?>
 <div class="card"><div class="card-header"><h2>Providências de busca ativa</h2><span class="etiqueta"><?= count($lista) ?></span></div>
     <?php if ($lista): ?><ul class="ba-lista"><?php foreach ($lista as $b) echo busca_cartao($b, true); ?></ul>
     <?php else: ?><div class="vazio py-5"><i class="bi bi-telephone-outbound"></i><strong>Nenhuma providência registrada</strong>Registre na ficha do aluno, aba "Busca ativa".</div><?php endif; ?>
 </div>
 
 <?php else:
-    $lista = autorizacoes_lista('a.turma_id = ? AND s.data_hora >= ?', [$tid, $ini_ano . ' 00:00:00'], 300); ?>
-<div class="card"><div class="card-header"><h2>Autorizações da turma em <?= ANO_LETIVO ?></h2><span class="etiqueta"><?= count($lista) ?></span></div>
+    $lista = autorizacoes_lista('a.id IN (SELECT xt.aluno_id FROM aluno_turmas xt WHERE xt.turma_id = ?) AND s.data_hora BETWEEN ? AND ?', [$tid, $ini_ano . ' 00:00:00', $fim_ano . ' 23:59:59'], 300); ?>
+<div class="card"><div class="card-header"><h2>Autorizações da turma em <?= ANO_VER ?></h2><span class="etiqueta"><?= count($lista) ?></span></div>
     <?php if ($lista): ?><div class="table-responsive"><table class="table table-sm align-middle">
         <thead><tr><th>Data</th><th>Aluno</th><th>Autorização</th><th>Motivo</th></tr></thead>
         <tbody><?php foreach ($lista as $s): ?><tr><td class="text-nowrap"><?= date('d/m H:i', strtotime($s['data_hora'])) ?></td>

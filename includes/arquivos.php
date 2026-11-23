@@ -207,7 +207,7 @@ function config_gravar(string $chave, ?string $valor): void
 const BIMESTRES_PADRAO = [1 => ['02-02', '04-17'], 2 => ['04-22', '06-30'], 3 => ['08-03', '10-09'], 4 => ['10-13', '12-30']];   // calendário SIGE 2026
 
 /** Início e fim de cada bimestre do ano: [n => [inicio, fim]] */
-function bimestres(int $ano = ANO_LETIVO): array
+function bimestres(int $ano = ANO_VER): array
 {
     $b = [];
     foreach (BIMESTRES_PADRAO as $n => [$i, $f]) {
@@ -218,7 +218,7 @@ function bimestres(int $ano = ANO_LETIVO): array
     return $b;
 }
 
-function bimestres_configurados(int $ano = ANO_LETIVO): bool { return config_ler("bimestre_{$ano}_1_inicio") !== null; }
+function bimestres_configurados(int $ano = ANO_VER): bool { return config_ler("bimestre_{$ano}_1_inicio") !== null; }
 
 /**
  * Situação de hoje no calendário letivo:
@@ -228,7 +228,7 @@ function periodo_atual(?string $hoje = null): array
 {
     $hoje ??= date('Y-m-d');
     $ano = (int)substr($hoje, 0, 4);
-    $bs = bimestres($ano === ANO_LETIVO ? ANO_LETIVO : $ano);
+    $bs = bimestres($ano === ANO_VER ? ANO_VER : $ano);
     foreach ($bs as $n => [$i, $f]) {
         if ($hoje >= $i && $hoje <= $f) {
             $tot = max(1, (strtotime($f) - strtotime($i)) / 86400);

@@ -70,7 +70,7 @@ function emprestimos_lista(string $where = '1=1', array $p = [], string $ordem =
 {
     return q_todos("SELECT e.*, l.titulo, l.autor, a.nome, a.responsavel_telefone, a.telefone, t.serie, t.letra, c.nome AS curso, f.numero AS ficha, u.nome AS por
                       FROM emprestimos e JOIN livros l ON l.id = e.livro_id JOIN alunos a ON a.id = e.aluno_id
-                      LEFT JOIN turmas t ON t.id = a.turma_id LEFT JOIN cursos c ON c.id = t.curso_id
+                      LEFT JOIN turmas t ON t.id = COALESCE((SELECT xa.turma_id FROM aluno_turmas xa WHERE xa.aluno_id = a.id AND xa.ano_letivo = @ano_ver), a.turma_id) LEFT JOIN cursos c ON c.id = t.curso_id
                       LEFT JOIN biblioteca_fichas f ON f.aluno_id = a.id LEFT JOIN usuarios u ON u.id = e.registrado_por
                      WHERE $where ORDER BY $ordem LIMIT $limite", $p);
 }
@@ -198,7 +198,7 @@ function bib_analisar_leitores(array $linhas): array
 {
     if ($linhas && !isset($linhas[0]['aluno']) && !isset($linhas[0]['nome']) && !isset($linhas[0]['leitor'])) throw new RuntimeException('Não achei a coluna "Aluno". Use o mesmo modelo do "Exportar leitores".');
     $alunos = [];
-    foreach (q_todos("SELECT a.id, a.nome, t.serie, t.letra, c.sigla FROM alunos a LEFT JOIN turmas t ON t.id = a.turma_id LEFT JOIN cursos c ON c.id = t.curso_id WHERE a.situacao = 'ativo'") as $a) $alunos[norm($a['nome'])][] = $a;
+    foreach (q_todos("SELECT a.id, a.nome, t.serie, t.letra, c.sigla FROM alunos a LEFT JOIN turmas t ON t.id = COALESCE((SELECT xa.turma_id FROM aluno_turmas xa WHERE xa.aluno_id = a.id AND xa.ano_letivo = @ano_ver), a.turma_id) LEFT JOIN cursos c ON c.id = t.curso_id WHERE a.situacao = 'ativo'") as $a) $alunos[norm($a['nome'])][] = $a;
     $fichas = [];
     foreach (q_todos('SELECT f.id, f.numero, f.aluno_id, f.bloqueada FROM biblioteca_fichas f') as $f) $fichas[(int)$f['aluno_id']] = $f;
     $itens = []; $vistos = [];

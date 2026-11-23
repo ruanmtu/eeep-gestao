@@ -9,8 +9,8 @@ $turma_id = (int)($_GET['turma'] ?? 0);
 $branco = max(0, min(60, (int)($_GET['branco'] ?? 0)));
 $alunos = [];
 if ($turma_id) {
-    $alunos = q_todos("SELECT a.id, a.nome, a.turma_id, t.serie, t.letra, c.nome AS curso FROM alunos a JOIN turmas t ON t.id = a.turma_id JOIN cursos c ON c.id = t.curso_id
-                        WHERE a.turma_id = ? AND a.situacao = 'ativo' AND t.serie = ? ORDER BY a.nome", [$turma_id, $prova['serie']]);
+    $alunos = q_todos("SELECT a.id, a.nome, a.turma_id, t.serie, t.letra, c.nome AS curso FROM alunos a JOIN turmas t ON t.id = COALESCE((SELECT xa.turma_id FROM aluno_turmas xa WHERE xa.aluno_id = a.id AND xa.ano_letivo = @ano_ver), a.turma_id) JOIN cursos c ON c.id = t.curso_id
+                        WHERE a.id IN (SELECT xt.aluno_id FROM aluno_turmas xt WHERE xt.turma_id = ? AND xt.situacao IN ('ativo','concluido')) AND t.serie = ? ORDER BY a.nome", [$turma_id, $prova['serie']]);
     /* nº do aluno = posição na lista da turma em ordem alfabética */
     $col = class_exists('Collator') ? new Collator('pt_BR') : null;
     usort($alunos, fn($x, $y) => $col ? $col->compare($x['nome'], $y['nome']) : strcmp(remover_acentos_ordem($x['nome']), remover_acentos_ordem($y['nome'])));

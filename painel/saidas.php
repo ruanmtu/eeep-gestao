@@ -141,9 +141,11 @@ $aluno_f = $f_aluno ? aluno_buscar($f_aluno) : null;
 if ($busca_codigo) {
     $base = autorizacoes_lista('s.codigo = ?', [$busca_codigo]);
 } elseif ($aluno_f) {
-    $base = autorizacoes_lista('s.aluno_id = ?', [$f_aluno], 500);
+    $base = autorizacoes_lista('s.aluno_id = ? AND s.data_hora BETWEEN ? AND ?', [$f_aluno, ano_inicio() . ' 00:00:00', ano_fim() . ' 23:59:59'], 500);
 } elseif ($f_busca !== '') {
-    $base = autorizacoes_lista('a.nome LIKE ?', ['%' . $f_busca . '%'], 300);
+    $base = autorizacoes_lista('a.nome LIKE ? AND s.data_hora BETWEEN ? AND ?', ['%' . $f_busca . '%', ano_inicio() . ' 00:00:00', ano_fim() . ' 23:59:59'], 300);
+} elseif (vendo_outro_ano()) {
+    $base = autorizacoes_lista('s.data_hora BETWEEN ? AND ?', [ano_inicio() . ' 00:00:00', ano_fim() . ' 23:59:59'], 1000);   // ano anterior: o ano todo
 } else {
     $base = autorizacoes_lista('s.data_hora BETWEEN ? AND ?', ["$seg 00:00:00", "$sex 23:59:59"]);
 }
@@ -301,7 +303,9 @@ $assina = $autoriza
                 <a class="<?= !$f_tipo ? 'ativo' : '' ?>" href="?<?= $qs(['tipo' => '']) ?>">Todas <span><?= array_sum($cont_tipos) ?></span></a>
                 <?php foreach (TIPOS_AUTORIZACAO as $k => [$rot, $ic]): ?><a class="<?= $f_tipo === $k ? 'ativo' : '' ?>" href="?<?= $qs(['tipo' => $k]) ?>"><i class="bi bi-<?= $ic ?>"></i><?= e(['saida' => 'Saídas', 'tablet' => 'Tablets', 'outra' => 'Internas'][$k]) ?> <span><?= $cont_tipos[$k] ?></span></a><?php endforeach; ?>
             </div>
-            <?php if (!$aluno_f && $f_busca === '' && !$busca_codigo): ?>
+            <?php if (!$aluno_f && $f_busca === '' && !$busca_codigo && vendo_outro_ano()): ?>
+            <div class="semana-nav"><span>Ano letivo de <?= ANO_VER ?></span></div>
+            <?php elseif (!$aluno_f && $f_busca === '' && !$busca_codigo): ?>
             <div class="semana-nav">
                 <a href="?<?= $qs(['semana' => date('Y-m-d', strtotime($seg . ' -7 days'))]) ?>" aria-label="Semana anterior"><i class="bi bi-chevron-left"></i></a>
                 <span><?= e(semana_rotulo($seg, $sex)) ?></span>
@@ -375,7 +379,7 @@ $assina = $autoriza
         foreach ($base as $s) if (($s['tipo'] ?? 'saida') === 'saida') { $k = $s['serie'] . 'º ' . $s['letra'] . ' · ' . $s['curso']; $rk[$k] = ($rk[$k] ?? 0) + 1; }
         arsort($rk); $mx = max(1, ...array_values($rk) ?: [1]);
         if ($rk && !$aluno_f): ?>
-        <div class="card"><div class="card-header"><h2>Saídas por turma</h2><span class="small text-secondary"><?= $f_busca === '' ? 'nesta semana' : 'na busca' ?></span></div>
+        <div class="card"><div class="card-header"><h2>Saídas por turma</h2><span class="small text-secondary"><?= $f_busca !== '' ? 'na busca' : (vendo_outro_ano() ? 'em ' . ANO_VER : 'nesta semana') ?></span></div>
             <div class="card-body py-2"><ul class="lista-linhas"><?php foreach (array_slice($rk, 0, 8, true) as $k => $n): ?>
                 <li><span style="width:170px" class="text-truncate"><?= e($k) ?></span><span class="barra-prop"><span style="width:<?= round($n / $mx * 100) ?>%"></span></span><strong style="width:24px;text-align:right"><?= $n ?></strong></li>
             <?php endforeach; ?></ul></div></div>

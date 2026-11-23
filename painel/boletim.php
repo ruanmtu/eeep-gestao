@@ -4,7 +4,7 @@ exigir('alunos.ver');
 
 $aluno = aluno_buscar((int)($_GET['id'] ?? 0));
 if (!$aluno) { flash('warning', 'Aluno não encontrado.'); redirecionar('alunos.php'); }
-$ano = (int)($_GET['ano'] ?? ANO_LETIVO);
+$ano = in_array((int)($_GET['ano'] ?? 0), anos_letivos(), true) ? (int)$_GET['ano'] : ANO_VER;
 $boletim = boletim_aluno((int)$aluno['id'], $ano);
 $faltas = q_um('SELECT COUNT(*) AS n, SUM(CASE WHEN justificada = 1 THEN 1 ELSE 0 END) AS j FROM faltas WHERE aluno_id = ? AND data_falta BETWEEN ? AND ?',
                [$aluno['id'], "$ano-01-01", "$ano-12-31"]);
@@ -73,7 +73,7 @@ registrar_log('boletim', 'Boletim ' . $ano . ' gerado', (int)$aluno['id']);
                 <?php for ($b = 1; $b <= 4; $b++): $n = $d['b'][$b] ?? null; ?><td class="n<?= $n !== null && $n < MEDIA_APROVACAO ? ' baixo' : '' ?>"><?= $n === null ? '—' : num($n) ?></td><?php endfor; ?>
                 <td class="n<?= $d['media'] < MEDIA_APROVACAO ? ' baixo' : '' ?>"><strong><?= num($d['media']) ?></strong></td></tr>
         <?php endforeach; ?>
-        <?php $nc = []; if ($aluno['turma_id'] && $ano === ANO_LETIVO) for ($b = 1; $b <= 4; $b++) $nc[$b] = nc_media_aluno((int)$aluno['id'], (int)$aluno['turma_id'], $b);
+        <?php $nc = []; if ($aluno['turma_id'] && $ano === ano_hoje()) for ($b = 1; $b <= 4; $b++) $nc[$b] = nc_media_aluno((int)$aluno['id'], (int)$aluno['turma_id'], $b);
         if (array_filter($nc, fn($v) => $v !== null)): $ncv = array_filter($nc, fn($v) => $v !== null); ?>
             <tr><td class="grupo" colspan="6">Nota conceitual (média de todos os professores da turma)</td></tr>
             <tr><td>Média conceitual</td><?php for ($b = 1; $b <= 4; $b++): ?><td class="n"><?= $nc[$b] === null ? '—' : num($nc[$b]) ?></td><?php endfor; ?><td class="n"><strong><?= num(array_sum($ncv) / count($ncv)) ?></strong></td></tr>

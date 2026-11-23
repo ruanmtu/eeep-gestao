@@ -28,20 +28,21 @@ $w = ['1=1'];
 $p = [];
 if ($f['busca'] !== '') { $w[] = '(a.nome LIKE ? OR a.matricula LIKE ?)'; $p[] = '%' . $f['busca'] . '%'; $p[] = $f['busca'] . '%'; }
 if ($f['curso']) { $w[] = 't.curso_id = ?'; $p[] = $f['curso']; }
-if ($f['turma']) { $w[] = 'a.turma_id = ?'; $p[] = $f['turma']; }
+if ($f['turma']) { $w[] = 'a.id IN (SELECT xt.aluno_id FROM aluno_turmas xt WHERE xt.turma_id = ?)'; $p[] = $f['turma']; }
 if ($f['serie']) { $w[] = 't.serie = ?'; $p[] = $f['serie']; }
 if ($f['situacao'] !== 'todas') { $w[] = 'a.situacao = ?'; $p[] = $f['situacao']; }
+if (vendo_outro_ano()) $w[] = 'EXISTS (SELECT 1 FROM aluno_turmas xa2 WHERE xa2.aluno_id = a.id AND xa2.ano_letivo = @ano_ver)';   // só quem estudou no ano escolhido
 
 $alunos = q_todos('SELECT a.id, a.matricula, a.nome, a.foto, a.situacao, a.responsavel_telefone, t.serie, t.letra, c.nome AS curso,
                           (SELECT COUNT(*) FROM faltas f WHERE f.aluno_id = a.id AND f.data_falta BETWEEN ? AND ?)
                           + (SELECT COALESCE(SUM(fb.faltas), 0) FROM faltas_bimestre fb WHERE fb.aluno_id = a.id AND fb.ano_letivo = ?) AS faltas,
-                          (SELECT COUNT(*) FROM ocorrencias o WHERE o.aluno_id = a.id AND o.tipo <> \'elogio\') AS ocorrencias
+                          (SELECT COUNT(*) FROM ocorrencias o WHERE o.aluno_id = a.id AND o.tipo <> \'elogio\' AND o.data_ocorrencia BETWEEN ? AND ?) AS ocorrencias
                      FROM alunos a
-                     LEFT JOIN turmas t ON t.id = a.turma_id
+                     LEFT JOIN turmas t ON t.id = COALESCE((SELECT xa.turma_id FROM aluno_turmas xa WHERE xa.aluno_id = a.id AND xa.ano_letivo = @ano_ver), a.turma_id)
                      LEFT JOIN cursos c ON c.id = t.curso_id
                     WHERE ' . implode(' AND ', $w) . '
                     ORDER BY t.serie, t.letra, a.nome',
-                  array_merge([ANO_LETIVO . '-01-01', ANO_LETIVO . '-12-31', ANO_LETIVO], $p));
+                  array_merge([ano_inicio(), ano_fim(), ANO_VER, ano_inicio(), ano_fim()], $p));
 
 if (($_GET['exportar'] ?? '') === 'csv') {
     registrar_log('exportacao', 'Lista de alunos (' . count($alunos) . ')');
@@ -114,7 +115,7 @@ $qs = http_build_query(array_filter($f));
         <table class="table table-hover">
             <thead><tr>
                 <th>Aluno</th><th>Turma</th><th>Situação</th>
-                <th class="num" title="Faltas em <?= ANO_LETIVO ?>">Faltas</th><th class="num">Ocorrências</th><th class="text-end">Ações</th>
+                <th class="num" title="Faltas em <?= ANO_VER ?>">Faltas</th><th class="num">Ocorrências</th><th class="text-end">Ações</th>
             </tr></thead>
             <tbody>
             <?php foreach ($alunos as $a): ?>

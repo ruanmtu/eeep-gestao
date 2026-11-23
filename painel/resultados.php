@@ -13,9 +13,9 @@ $rd_bim = $rd_bims ? end($rd_bims) : 0;
 /* rendimento por turma (notas importadas), no ano ou num período */
 $rend_bim = (int)($_GET['rb'] ?? 0); if ($rend_bim < 0 || $rend_bim > 4) $rend_bim = 0;
 $notas_turma = q_todos("SELECT t.id, t.serie, t.letra, c.sigla, c.nome AS curso, ROUND(AVG(n.nota), 2) AS media, COUNT(n.id) AS qtd
-                          FROM notas n JOIN alunos a ON a.id = n.aluno_id JOIN turmas t ON t.id = a.turma_id JOIN cursos c ON c.id = t.curso_id
+                          FROM notas n JOIN alunos a ON a.id = n.aluno_id JOIN turmas t ON t.id = COALESCE((SELECT xa.turma_id FROM aluno_turmas xa WHERE xa.aluno_id = a.id AND xa.ano_letivo = @ano_ver), a.turma_id) JOIN cursos c ON c.id = t.curso_id
                          WHERE n.ano_letivo = ?" . ($rend_bim ? ' AND n.bimestre = ?' : '') . " GROUP BY t.id, t.serie, t.letra, c.sigla, c.nome ORDER BY media DESC",
-                       $rend_bim ? [ANO_LETIVO, $rend_bim] : [ANO_LETIVO]);
+                       $rend_bim ? [ANO_VER, $rend_bim] : [ANO_VER]);
 $media_escola = $notas_turma ? array_sum(array_column($notas_turma, 'media')) / count($notas_turma) : null;
 $abaixo = count(array_filter($notas_turma, fn($t) => (float)$t['media'] < MEDIA_APROVACAO));
 
@@ -61,7 +61,7 @@ $aba_q = fn(array $x) => '?' . http_build_query(array_merge(['rb' => $rend_bim, 
     <!-- Rendimento por turma -->
     <section class="card rs-card" id="rendimento">
         <div class="card-header rs-cab">
-            <div><h2><i class="bi bi-graph-up-arrow me-1"></i>Rendimento por turma</h2><small>Média das notas da planilha do Power BI · <?= $rend_bim ? $rend_bim . 'º período' : 'ano de ' . ANO_LETIVO ?></small></div>
+            <div><h2><i class="bi bi-graph-up-arrow me-1"></i>Rendimento por turma</h2><small>Média das notas da planilha do Power BI · <?= $rend_bim ? $rend_bim . 'º período' : 'ano de ' . ANO_VER ?></small></div>
             <div class="rs-per" role="group" aria-label="Período do rendimento">
                 <?php foreach ([0, 1, 2, 3, 4] as $b): ?><a class="<?= $b === $rend_bim ? 'ativo' : '' ?>" href="<?= e($aba_q(['rb' => $b])) ?>#rendimento"><?= $b ? $b . 'º' : 'Ano' ?></a><?php endforeach; ?>
             </div>
