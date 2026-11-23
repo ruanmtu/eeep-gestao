@@ -56,6 +56,7 @@ $em_alerta = array_column(alertas_sequencia(true), 'dias', 'aluno_id');
 $titulo = 'Alunos';
 $subtitulo = count($alunos) . ' ' . (count($alunos) === 1 ? 'aluno encontrado' : 'alunos encontrados');
 $menu = 'alunos';
+$com_ano = true;   // v75: campo de ano letivo nesta página
 require __DIR__ . '/../includes/layout_topo.php';
 $qs = http_build_query(array_filter($f));
 ?>

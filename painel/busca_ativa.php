@@ -53,6 +53,7 @@ arsort($por_acao);
 $titulo = 'Busca ativa';
 $subtitulo = 'Providências do diretor de turma e da gestão para trazer o aluno de volta e garantir a permanência na escola.';
 $menu = 'busca_ativa';
+$com_ano = true;   // v75: campo de ano letivo nesta página
 require __DIR__ . '/../includes/layout_topo.php';
 ?>
 

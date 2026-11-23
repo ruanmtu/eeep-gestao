@@ -60,6 +60,7 @@ $cursos = cursos_lista(false);
 $titulo = 'Cursos e turmas';
 $subtitulo = 'Estrutura da escola: cursos técnicos e turmas por ano letivo, com o(a) diretor(a) de cada turma.';
 $menu = 'config';
+$com_ano = ($aba ?? '') === 'cursos';   // v75: ano das turmas
 require __DIR__ . '/../includes/layout_topo.php';
 ?>
 
@@ -72,7 +73,7 @@ require __DIR__ . '/../includes/layout_topo.php';
 <?php if ($aba === 'turmas'):
     $usuarios_dt = q_todos("SELECT id, nome, foto, perfil FROM usuarios WHERE ativo = 1 AND perfil <> 'admin' ORDER BY nome");
     $ud_por_id = array_column($usuarios_dt, null, 'id');
-    $ano_ver = ANO_VER;   // escolhido no seletor de ano do topo
+    $ano_ver = ANO_VER;   // escolhido no campo de ano da página
     $turmas = q_todos("SELECT t.*, c.nome AS curso, c.sigla, (SELECT COUNT(*) FROM aluno_turmas xt WHERE xt.turma_id = t.id AND xt.situacao IN ('ativo','concluido')) AS alunos
                          FROM turmas t JOIN cursos c ON c.id = t.curso_id WHERE t.ano_letivo = ? ORDER BY t.serie, t.letra", [$ano_ver]);
     $cor_curso = []; foreach ($cursos as $c) $cor_curso[$c['id']] = cor_curso($c['nome']);
@@ -83,7 +84,7 @@ require __DIR__ . '/../includes/layout_topo.php';
         <span><b><?= array_sum(array_column($turmas, 'alunos')) ?></b> alunos</span>
         <span class="<?= $sem_dt ? 'ambar' : 'ok' ?>"><b><?= $sem_dt ?></b> sem diretor(a) de turma</span>
     </div>
-    <span class="cf-ano ms-auto"><i class="bi bi-calendar3"></i> Turmas de <b><?= $ano_ver ?></b> <small>(troque o ano no topo da página)</small></span>
+    <div class="ms-auto"><?= ano_campo('Turmas de') ?></div>
     <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#novaTurma"><i class="bi bi-plus-lg me-1"></i>Nova turma</button>
 </div>
 
@@ -97,7 +98,7 @@ require __DIR__ . '/../includes/layout_topo.php';
         <div class="col-md-2"><label class="form-label">Turno</label><input class="form-control" name="turno" value="Integral"></div>
         <div class="col-md-1"><button class="btn btn-primary w-100" type="submit">Criar</button></div>
     </form>
-    <p class="form-text mt-3 mb-0">Na virada do ano: escolha o novo ano no seletor do topo, crie as turmas dele e depois atualize a turma dos alunos. O histórico (notas, faltas, turma de cada aluno) do ano anterior continua guardado.</p>
+    <p class="form-text mt-3 mb-0">Na virada do ano: escolha o novo ano no campo “Turmas de” acima, crie as turmas dele e depois atualize a turma dos alunos. O histórico (notas, faltas, turma de cada aluno) do ano anterior continua guardado.</p>
 </div></div></div>
 
 <?php if ($turmas): ?>

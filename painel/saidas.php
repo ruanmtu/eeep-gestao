@@ -172,6 +172,7 @@ $pode_saida = pode_emitir_saida();
 $titulo = 'Autorizações';
 $subtitulo = 'Saída da escola, porte de tablet pessoal para estudo e outras autorizações, com cupom assinado digitalmente.';
 $menu = 'saidas';
+$com_ano = true;   // v75: campo de ano letivo nesta página
 require __DIR__ . '/../includes/layout_topo.php';
 
 /** Campo de busca do aluno (igual nos três formulários) */

@@ -103,6 +103,7 @@ $curto = fn(string $n) => preg_replace('/^Aspectos?\s+/iu', '', $n);
 
 $titulo = 'Nota conceitual';
 $menu = 'nota_conceitual';
+$com_ano = true;   // v75: campo de ano letivo nesta página
 require __DIR__ . '/../includes/layout_topo.php';
 ?>
 <ul class="nav nav-abas mb-3">

@@ -80,6 +80,7 @@ if ($aba === 'atribuicoes') {
 $titulo = 'Professores e componentes curriculares';
 $subtitulo = 'Quem leciona cada componente em cada turma, e os componentes da base comum e da formação técnica.';
 $menu = 'professores';
+$com_ano = true;   // v75: campo de ano letivo nesta página
 require __DIR__ . '/../includes/layout_topo.php';
 ?>
 

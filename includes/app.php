@@ -57,18 +57,21 @@ const SISTEMA_VERSAO = '75';
 /*  Ano letivo (v75)                                                   */
 /*  O sistema começa em 2026; a lista cresce sozinha a cada ano e      */
 /*  sempre mostra também o ano seguinte (para preparar as turmas).     */
-/*  Abre no ano atual; quem escolher outro ano fica nele até trocar.  */
+/*  Cada página tem o próprio campo de ano (ano_campo()) e lembra o    */
+/*  ano escolhido só para ela; sem escolha, abre no ano atual.        */
 /* ------------------------------------------------------------------ */
 const ANO_INICIAL = 2026;
 function ano_hoje(): int { return max(ANO_INICIAL, (int)date('Y')); }
 function anos_letivos(): array { return range(ano_hoje() + 1, ANO_INICIAL); }
 (function () {
     $lista = anos_letivos();
-    if (isset($_GET['ano_letivo']) && session_status() === PHP_SESSION_ACTIVE) {
+    $pag = basename((string)($_SERVER['SCRIPT_NAME'] ?? ''));
+    $ativa = session_status() === PHP_SESSION_ACTIVE;
+    if (isset($_GET['ano_letivo']) && $ativa) {
         $a = (int)$_GET['ano_letivo'];
-        if (in_array($a, $lista, true)) { if ($a === ano_hoje()) unset($_SESSION['ano_ver']); else $_SESSION['ano_ver'] = $a; }
+        if (in_array($a, $lista, true)) { if ($a === ano_hoje()) unset($_SESSION['ano_pag'][$pag]); else $_SESSION['ano_pag'][$pag] = $a; }
     }
-    $a = (int)($_SESSION['ano_ver'] ?? 0);
+    $a = $ativa ? (int)($_SESSION['ano_pag'][$pag] ?? 0) : 0;
     define('ANO_VER', in_array($a, $lista, true) ? $a : ano_hoje());
 })();
 function vendo_outro_ano(): bool { return ANO_VER !== ano_hoje(); }
@@ -79,6 +82,20 @@ function ano_fim(): string { return ANO_VER . '-12-31'; }
 function data_padrao(): string { return vendo_outro_ano() ? min(ano_fim(), date('Y-m-d', strtotime(ANO_VER . '-12-15'))) : date('Y-m-d'); }
 function mes_padrao(): string { return substr(data_padrao(), 0, 7); }
 /** Link da página atual trocando só o ano */
+/** Campo de ano letivo que cada página coloca no próprio conteúdo */
+function ano_campo(string $rotulo = 'Ano letivo'): string
+{
+    $q = $_GET; unset($q['ano_letivo'], $q['ano']);
+    $ocultos = '';
+    foreach ($q as $k => $v) if (is_scalar($v)) $ocultos .= '<input type="hidden" name="' . e((string)$k) . '" value="' . e((string)$v) . '">';
+    $op = '';
+    foreach (anos_letivos() as $a) $op .= '<option value="' . $a . '"' . ($a === ANO_VER ? ' selected' : '') . '>' . $a . ($a === ano_hoje() ? ' (atual)' : ($a > ano_hoje() ? ' (próximo)' : '')) . '</option>';
+    return '<form method="get" class="ano-campo' . (vendo_outro_ano() ? ' outro' : '') . '">' . $ocultos
+         . '<label><i class="bi bi-calendar3"></i><span>' . e($rotulo) . '</span>'
+         . '<select name="ano_letivo" onchange="this.form.submit()" aria-label="' . e($rotulo) . '">' . $op . '</select></label>'
+         . (vendo_outro_ano() ? '<a href="' . e(url_ano(ano_hoje())) . '">voltar para ' . ano_hoje() . '</a>' : '')
+         . '<noscript><button class="btn btn-sm btn-light">Ver</button></noscript></form>';
+}
 function url_ano(int $a): string
 {
     $q = $_GET; unset($q['ano_letivo'], $q['ano']); $q['ano_letivo'] = $a;

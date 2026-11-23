@@ -119,13 +119,14 @@ usort($tempo, fn($a, $b) => strcmp($b[0], $a[0]));
 
 $titulo = 'Ficha do aluno';
 $menu = 'alunos';
+$com_ano = true;   // v75: campo de ano letivo nesta página
 require __DIR__ . '/../includes/layout_topo.php';
 ?>
 
 <div class="d-flex align-items-center gap-2 mb-3 nao-imprimir flex-wrap">
     <a class="btn btn-sm btn-light" href="alunos.php"><i class="bi bi-arrow-left me-1"></i>Alunos</a>
     <div class="ms-auto d-flex gap-2 flex-wrap">
-        <a class="btn btn-sm btn-light" href="boletim.php?id=<?= $id ?>" target="_blank"><i class="bi bi-printer me-1"></i>Boletim</a>
+        <a class="btn btn-sm btn-light" href="boletim.php?id=<?= $id ?>&amp;ano=<?= ANO_VER ?>" target="_blank"><i class="bi bi-printer me-1"></i>Boletim</a>
         <button class="btn btn-sm btn-light" type="button" onclick="window.print()"><i class="bi bi-file-earmark-person me-1"></i>Imprimir ficha</button>
         <?php if (pode('alunos.editar')): ?><a class="btn btn-sm btn-primary" href="aluno_form.php?id=<?= $id ?>"><i class="bi bi-pencil me-1"></i>Editar dados</a><?php endif; ?>
     </div>

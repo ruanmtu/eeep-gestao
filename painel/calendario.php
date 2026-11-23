@@ -52,6 +52,7 @@ $hoje = date('Y-m-d');
 $titulo = 'Calendário SIGE';
 $subtitulo = 'Calendário letivo ' . ANO_VER . ' da escola: períodos, feriados, recessos, sábados letivos e reuniões.';
 $menu = 'calendario';
+$com_ano = true;   // v75: campo de ano letivo nesta página
 require __DIR__ . '/../includes/layout_topo.php';
 ?>
 <section class="periodos-faixa mb-3">

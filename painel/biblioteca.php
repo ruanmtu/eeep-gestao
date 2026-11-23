@@ -183,6 +183,7 @@ if (!empty($_GET['conferir']) && !empty($_SESSION['bib_imp']) && $_SESSION['bib_
         $bb_conf = ['imp' => $imp, 'itens' => $itens, 'cont' => $cont];
     } catch (RuntimeException $e) { unset($_SESSION['bib_imp']); flash('warning', $e->getMessage()); }
 }
+$com_ano = true;   // v75: campo de ano letivo nesta página
 require __DIR__ . '/../includes/layout_topo.php';
 
 function linha_emprestimo(array $e, string $volta, bool $compacto = false): string

@@ -58,6 +58,7 @@ if ($turma && ($_GET['exportar'] ?? '') === 'csv') {
 
 $titulo = 'Notas';
 $menu = 'notas';
+$com_ano = true;   // v75: campo de ano letivo nesta página
 require __DIR__ . '/../includes/layout_topo.php';
 $qs = fn(array $x = []) => '?' . http_build_query(array_merge(['aba' => $aba, 'turma' => $turma_id ?: null, 'bimestre' => $bim, 'disciplina' => $disc_id ?: null], $x));
 $cl = fn(?float $v) => $v === null ? 'nt-vazia' : ($v < MEDIA_APROVACAO ? 'nt-baixa' : ($v >= 9 ? 'nt-alta' : 'nt-ok'));

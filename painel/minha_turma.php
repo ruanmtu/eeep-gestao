@@ -39,6 +39,7 @@ $em_alerta = array_flip(array_map(fn($a) => (int)$a['aluno_id'], $R['alertas']))
 $titulo = 'Minha turma';
 $subtitulo = turma_nome($turma) . ' · diretor(a) de turma: ' . ($turma['dt_nome'] ? primeiro_ultimo($turma['dt_nome']) : 'não definido');
 $menu = 'minha_turma';
+$com_ano = true;   // v75: campo de ano letivo nesta página
 require __DIR__ . '/../includes/layout_topo.php';
 ?>
 

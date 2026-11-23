@@ -21,6 +21,7 @@ $pode_remover_tudo = pode('frequencia.justificar');
 $titulo = 'Coleta de faltas';
 $subtitulo = 'Passe nas salas, digite o nome de quem faltou e toque para lançar. Tudo é salvo na hora.';
 $menu = 'frequencia';
+$com_ano = true;   // v75: campo de ano letivo nesta página
 require __DIR__ . '/../includes/layout_topo.php';
 ?>
 

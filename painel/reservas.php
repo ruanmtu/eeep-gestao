@@ -138,6 +138,7 @@ $pre_rec = array_map('intval', (array)($form['recursos'] ?? (isset($_GET['recurs
 $titulo = 'Agendamentos';
 $subtitulo = 'Agende ambientes (auditório, laboratórios…) e equipamentos (projetores, som…) por data e aula. O sistema não deixa duas reservas no mesmo horário.';
 $menu = 'reservas';
+$com_ano = true;   // v75: campo de ano letivo nesta página
 require __DIR__ . '/../includes/layout_topo.php';
 ?>
 <ul class="nav nav-abas mb-3">

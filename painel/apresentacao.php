@@ -206,7 +206,9 @@ $slides = [];
             <option value="0">Todos os cursos</option>
             <?php foreach ($cursos as $c): ?><option value="<?= $c['id'] ?>"<?= $curso_id === (int)$c['id'] ? ' selected' : '' ?>><?= e($c['nome']) ?></option><?php endforeach; ?>
         </select>
-        <input type="hidden" name="ano" value="<?= $ano ?>">
+        <select name="ano" onchange="this.form.submit()" aria-label="Ano letivo">
+            <?php foreach (anos_letivos() as $a): ?><option value="<?= $a ?>"<?= $ano === $a ? ' selected' : '' ?>><?= $a ?></option><?php endforeach; ?>
+        </select>
     </form>
     <button type="button" onclick="window.print()"><i class="bi bi-file-earmark-pdf"></i>Salvar em PDF</button>
     <button type="button" class="primario" id="btApresentar"><i class="bi bi-play-fill"></i>Apresentar</button>

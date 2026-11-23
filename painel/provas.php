@@ -76,6 +76,7 @@ foreach (q_todos('SELECT prova_id, nome FROM prova_partes ORDER BY prova_id, ord
 $titulo = 'Correção de provas';
 $subtitulo = 'Cadastre a prova ou o bloco de provas, imprima as folhas de resposta e corrija com a câmera do celular.';
 $menu = 'provas';
+$com_ano = true;   // v75: campo de ano letivo nesta página
 require __DIR__ . '/../includes/layout_topo.php';
 ?>
 

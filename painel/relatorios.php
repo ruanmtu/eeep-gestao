@@ -5,7 +5,7 @@ exigir('relatorios');
 $aba = in_array($_GET['aba'] ?? '', ['frequencia', 'turmas', 'alerta', 'notas'], true) ? $_GET['aba'] : 'frequencia';
 $curso_id = (int)($_GET['curso'] ?? 0);
 $mes = (int)($_GET['mes'] ?? 0);
-$ano = ANO_VER;   // escolhido no seletor de ano do topo
+$ano = ANO_VER;   // escolhido no campo de ano da página
 $ini = $mes ? sprintf('%04d-%02d-01', $ano, $mes) : "$ano-01-01";
 $fim = $mes ? date('Y-m-t', strtotime($ini)) : "$ano-12-31";
 $periodo_txt = $mes ? MESES[$mes] . ' de ' . $ano : 'ano de ' . $ano;
@@ -102,6 +102,7 @@ if ($aba === 'notas') {
 $titulo = 'Relatórios';
 $subtitulo = 'Período: ' . $periodo_txt . ($curso_id ? ' · ' . q_valor('SELECT nome FROM cursos WHERE id = ?', [$curso_id]) : ' · todos os cursos');
 $menu = 'relatorios';
+$com_ano = true;   // v75: campo de ano letivo nesta página
 require __DIR__ . '/../includes/layout_topo.php';
 $base_qs = http_build_query(['curso' => $curso_id ?: null, 'mes' => $mes ?: null, 'ano' => $ano]);
 ?>

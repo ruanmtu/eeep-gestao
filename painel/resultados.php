@@ -38,6 +38,7 @@ try {
 $titulo = 'Resultados da escola';
 $menu = 'resultados';
 $usa_graficos = true;
+$com_ano = true;   // v75: campo de ano letivo nesta página
 require __DIR__ . '/../includes/layout_topo.php';
 $aba_q = fn(array $x) => '?' . http_build_query(array_merge(['rb' => $rend_bim, 'nb' => $nc_bim], $x));
 ?>

@@ -70,6 +70,7 @@ $titulo = $ve_tudo ? 'Registro de ocorrências' : 'Minhas ocorrências';
 $abrir_form = $pre_aluno || $pre['categoria'];
 $subtitulo = 'Advertências, retiradas de sala, suspensões e demais ocorrências do estudante. Cada registro vai para a ficha do aluno.';
 $menu = 'ocorrencias';
+$com_ano = true;   // v75: campo de ano letivo nesta página
 require __DIR__ . '/../includes/layout_topo.php';
 ?>
 <div class="pg-acoes">
