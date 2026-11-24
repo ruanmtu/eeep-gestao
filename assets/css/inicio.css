@@ -1230,3 +1230,22 @@ body.dcv-aberto { overflow: hidden; }
 }
 .dq-nota-g { display: none; }
 @media (min-width: 992px) { .dq-nota-g { display: block; font-family: var(--titulo); font-weight: 800; font-size: 1.6rem; line-height: 1; color: #ffd36b; margin-top: 2px; } }
+
+/* ================= v82 ================= */
+/* documentos e editais dentro de um painel branco, com cabeçalho próprio (não ficam soltos na página) */
+.dc2-bloco { background: #fff; border: 1px solid #e3e9e4; border-radius: 22px; padding: 18px 22px 8px; box-shadow: 0 18px 36px -32px rgba(6,42,20,.7); }
+.dc2-bloco:has(.ed2-grade) { padding-bottom: 20px; background: linear-gradient(180deg, #fff, #f8fbf9); }
+.dc2-bloco + .dc2-bloco { margin-top: 18px; }
+.dc2-tit { align-items: center; margin: -18px -22px 14px; padding: 14px 22px; border-bottom: 1px solid #eef2ef; }
+.dc2-tit h3 i { width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; background: #fff0e2; font-size: 1rem; }
+.dc2-tit-n { font-size: .74rem; font-weight: 700; color: #55635a; background: #f1f4f2; padding: 3px 10px; border-radius: 999px; }
+.dc2-lista .dc-item:last-child, .dc2-lista .dc-item:nth-last-child(2):nth-child(odd) { border-bottom: 0; }
+.dc2-lista .dc-item:hover { background: #f8fbf9 !important; }
+@media (max-width: 767.98px) {
+  .dc2-bloco { padding: 14px 14px 4px; border-radius: 18px; }
+  .dc2-tit { margin: -14px -14px 10px; padding: 12px 14px; }
+  .dc2-lista .dc-item:nth-last-child(2):nth-child(odd) { border-bottom: 1px solid #e6ebe7; }
+}
+/* celular: atalhos em 2 linhas centralizadas */
+@media (max-width: 991.98px) { .sg-atalhos ul { justify-content: center !important; } }
+@media (max-width: 991.98px) { .sg-atalhos ul { align-items: flex-start !important; } }

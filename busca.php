@@ -84,7 +84,7 @@ $sugestoes = ['Matrícula', 'Cursos', 'Fotos', 'Horário de atendimento', 'Ender
 $pagina_titulo = ($q !== '' ? 'Busca: ' . $q : 'Buscar') . ' · ' . $ESCOLA['nome'];
 $pagina_classe = 'pagina-interna inicio-galeria';
 $prefixo = 'index.php';
-$cabeca_extra = '<link href="assets/css/inicio.css?v=31" rel="stylesheet"><meta name="robots" content="noindex">';
+$cabeca_extra = '<link href="assets/css/inicio.css?v=32" rel="stylesheet"><meta name="robots" content="noindex">';
 require __DIR__ . '/includes/site_topo.php';
 ?>
 <main id="conteudo" class="sg-pagina bs-pagina">

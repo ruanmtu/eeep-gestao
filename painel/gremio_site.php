@@ -60,7 +60,7 @@ $v = $atual ?? [];
                 <label class="gr-prev" for="grFoto">
                     <?php if (!empty($v['foto'])): ?><img id="grPrev" src="<?= e(gremio_foto_src($v, '../')) ?>" alt=""><?php else: ?><img id="grPrev" alt="" hidden><span id="grPrevIc"><i class="bi bi-camera"></i>Escolher foto</span><?php endif; ?>
                 </label>
-                <input class="form-control" id="grFoto" type="file" name="foto" accept="image/*">
+                <input class="visually-hidden" id="grFoto" type="file" name="foto" accept="image/*"><small class="text-secondary text-center d-block" style="margin-top:-8px">Toque no quadro para escolher a foto (em pé, de preferência)</small>
                 <div><label class="form-label" for="grN">Nome do estudante</label><input class="form-control" id="grN" name="nome" maxlength="120" required value="<?= e($v['nome'] ?? '') ?>"></div>
                 <div><label class="form-label" for="grF">Função no grêmio</label><input class="form-control" id="grF" name="funcao" maxlength="80" required list="grFuncoes" value="<?= e($v['funcao'] ?? '') ?>" placeholder="Presidente"><datalist id="grFuncoes"><?php foreach (GREMIO_FUNCOES as $f): ?><option value="<?= e($f) ?>"><?php endforeach; ?></datalist></div>
                 <div class="row g-2">

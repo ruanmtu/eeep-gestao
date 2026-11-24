@@ -23,46 +23,50 @@ $n_eventos = $conta('SELECT COUNT(*) FROM eventos WHERE publico = 1 AND COALESCE
 $n_gestao = $conta("SELECT COUNT(*) FROM equipe_site WHERE grupo = 'gestao' AND ativo = 1");
 $n_equipe = $conta('SELECT COUNT(*) FROM equipe_site WHERE ativo = 1');
 $ultima = null; try { $ultima = q_um('SELECT id, titulo, data_publicacao FROM site_informes ORDER BY id DESC LIMIT 1'); } catch (PDOException $e) {}
-$cards = [
-    ['conteudo_site.php', 'building', 'A escola e contato', 'Carrossel de fotos da escola, texto de apresentação, destaques e os dados de contato.', count(site_escola_fotos()), 'fotos no carrossel'],
-    ['ambientes_site.php', 'buildings', 'Ambientes da escola', 'Laboratórios, quadra, biblioteca… Cada um tem a sua página com fotos e o que se estuda.', count(ambientes_lista()), 'ambientes'],
-    ['banners_site.php', 'card-image', 'Banners da página inicial', 'As artes que passam no topo do site (1920 × 400 e 1600 × 900).', $n_banners, 'no ar'],
-    ['informes_site.php', 'newspaper', 'Notícias', 'Publique o que acontece na escola, com foto, data e PDFs.', $n_noticias, 'publicadas' . ($n_rasc ? ' · ' . $n_rasc . ' rascunho(s)' : '')],
-    ['agenda_site.php', 'calendar-event', 'Próximos eventos', 'Feriados, sábados letivos e eventos que aparecem no site.', $n_eventos, 'próximos'],
-    ['gestao_site.php', 'person-workspace', 'Gestão escolar', 'Os 4 cartões de "Quem conduz a escola": foto, nome e texto.', min(4, $n_gestao ?: 4), 'cartões'],
-    ['equipe.php', 'people', 'Equipe no site', 'Professores e funcionários da galeria da equipe, com formação e biografia.', $n_equipe, 'pessoas'],
-    ['arquivos_site.php', 'folder2-open', 'Arquivos do site', 'Regimento, matriz curricular e outros documentos que qualquer visitante pode abrir ou baixar.', count(site_arquivos()), 'arquivos'],
-    ['editais_site.php', 'megaphone', 'Editais', 'Editais de seleção: PDF, período de inscrição, link para se inscrever e resultado.', count(editais_lista()), 'no site'],
-    ['gremio_site.php', 'flag', 'Grêmio estudantil', 'Membros do grêmio com foto, nome, curso e função.', count(gremio_lista()), 'membros'],
-    ['estudantes_site.php', 'images', 'Fotos dos estudantes', 'As fotos de "Quem faz a escola acontecer": trocar, enquadrar e remover.', count(site_estudantes($ESTUDANTES ?? [])), 'fotos'],
+/* v82: números de cada seção (aparecem como uma etiqueta pequena na lista) */
+$num = [
+    'conteudo_site.php' => count(site_escola_fotos()) . ' fotos', 'ambientes_site.php' => count(ambientes_lista()) . ' ambientes',
+    'banners_site.php' => $n_banners . ' no ar', 'informes_site.php' => $n_noticias . ' publicadas' . ($n_rasc ? ' · ' . $n_rasc . ' rascunho' . ($n_rasc > 1 ? 's' : '') : ''),
+    'agenda_site.php' => $n_eventos . ' próximos', 'gestao_site.php' => min(4, $n_gestao ?: 4) . ' cartões', 'equipe.php' => $n_equipe . ' pessoas',
+    'arquivos_site.php' => count(site_arquivos()) . ' arquivos', 'editais_site.php' => count(editais_lista()) . ' editais', 'gremio_site.php' => count(gremio_lista()) . ' membros',
+    'estudantes_site.php' => count(site_estudantes($ESTUDANTES ?? [])) . ' fotos',
 ];
-if (pode('ia.config')) { $ia_ok = ia_ativa(); $cards[] = ['assistente_ia.php', 'stars', 'Sofia · assistente de IA', 'Chave da API do Google, modelo e cota diária de perguntas.', null, $ia_ok ? 'Chave ativa' : 'Sem chave']; }
-if (pode('usuarios')) { $g_ok = google_cfg()['ativo']; $cards[] = ['login_google.php', 'google', 'Login com Google', 'Credenciais do Google para entrar com a conta da escola.', null, $g_ok ? 'Ativo' : 'Desligado']; }
+if (pode('ia.config')) $num['assistente_ia.php'] = ia_ativa() ? 'Ativa' : 'Sem chave';
+if (pode('usuarios')) $num['login_google.php'] = google_cfg()['ativo'] ? 'Ativo' : 'Desligado';
+$acoes = [
+    ['informes_site.php', 'newspaper', 'Publicar uma notícia', 'laranja'],
+    ['banners_site.php', 'card-image', 'Trocar um banner', 'verde'],
+    ['editais_site.php', 'megaphone', 'Publicar um edital', 'azul'],
+    ['agenda_site.php', 'calendar-plus', 'Adicionar um evento', 'roxo'],
+];
 
 $titulo = 'Site';
-$subtitulo = 'Tudo o que aparece na página pública da escola, o login com Google e a Sofia.';
+$subtitulo = 'Escolha o que quer mudar na página da escola. Tudo o que você salvar aparece no site na hora.';
 $menu = 'site';
 require __DIR__ . '/../includes/layout_topo.php';
 require __DIR__ . '/../includes/site_abas.php';
 ?>
-<div class="st-capa">
-    <i class="bi bi-globe2"></i>
-    <div><b>Página da escola</b><span><?= $ultima ? 'Última notícia: ' . e(mb_strimwidth($ultima['titulo'], 0, 60, '…')) . ' · ' . data_curta($ultima['data_publicacao']) : 'Nenhuma notícia publicada ainda.' ?></span></div>
-    <a href="informes_site.php"><i class="bi bi-plus-lg"></i>Nova notícia</a>
+<div class="st-ola">
+    <div class="st-ola-txt"><span>Página pública da escola</span><b>O que você quer fazer hoje?</b>
+        <small><?= $ultima ? 'Última notícia: ' . e(mb_strimwidth($ultima['titulo'], 0, 60, '…')) . ' · ' . data_curta($ultima['data_publicacao']) : 'Nenhuma notícia publicada ainda.' ?></small></div>
+    <a class="st-ola-ver" href="<?= RAIZ ?>index.php" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i>Ver o site</a>
 </div>
-<div class="st-grade">
-    <?php foreach ($cards as [$h, $ic, $tit, $txt, $n, $rot]): ?>
-    <a class="st-card" href="<?= $h ?>">
-        <span class="st-ic"><i class="bi bi-<?= $ic ?>"></i></span>
-        <h3><?= e($tit) ?></h3>
-        <p><?= e($txt) ?></p>
-        <span class="st-num"><span><?php if ($n !== null): ?><b><?= (int)$n ?></b> <?php endif; ?><?= e($rot) ?></span><i class="bi bi-arrow-right"></i></span>
-    </a>
-    <?php endforeach; ?>
+<div class="st-acoes">
+    <?php foreach ($acoes as [$h, $ic, $rot, $cor]): ?><a class="st-acao <?= $cor ?>" href="<?= $h ?>"><i class="bi bi-<?= $ic ?>"></i><span><?= e($rot) ?></span></a><?php endforeach; ?>
 </div>
-<form method="post" class="card mt-3 st-links"><?= csrf_campo() ?><input type="hidden" name="acao" value="links">
-    <div class="card-header"><h2><i class="bi bi-link-45deg me-1"></i>Links externos</h2></div>
-    <div class="card-body">
+<?php foreach (site_secoes_painel() as $g): ?>
+<section class="st-grupo">
+    <h2><?= e($g['titulo']) ?></h2>
+    <div class="st-lista">
+        <?php foreach ($g['itens'] as [$h, $ic, $rot, $txt]): ?>
+        <a class="st-item" href="<?= $h ?>"><span class="st-item-ic"><i class="bi bi-<?= $ic ?>"></i></span><span class="st-item-t"><b><?= e($rot) ?></b><small><?= e($txt) ?></small></span><?php if (isset($num[$h])): ?><span class="st-item-n"><?= e($num[$h]) ?></span><?php endif; ?><i class="bi bi-chevron-right st-item-seta"></i></a>
+        <?php endforeach; ?>
+    </div>
+</section>
+<?php endforeach; ?>
+<form method="post" class="st-grupo st-links"><?= csrf_campo() ?><input type="hidden" name="acao" value="links">
+    <h2>Links externos</h2>
+    <div class="st-links-caixa">
         <label class="form-label" for="icUrl"><i class="bi bi-trophy me-1"></i>Site do interclasse</label>
         <div class="input-group"><input class="form-control" id="icUrl" name="interclasse_url" type="text" inputmode="url" autocomplete="url" maxlength="255" placeholder="https://…" value="<?= e(config_ler('interclasse_url') ?: '') ?>"><button class="btn btn-primary"><i class="bi bi-check2 me-1"></i>Salvar</button></div>
         <div class="form-text">Com o endereço preenchido, o atalho “Eventos” da página inicial vira “Interclasse”, abrindo o site do interclasse. Deixe vazio para tirar o link.</div>

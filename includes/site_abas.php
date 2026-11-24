@@ -1,24 +1,26 @@
 <?php
-/* Abas das páginas do "Site" no painel (incluir logo depois do layout_topo) */
+/* Cabeçalho das páginas do "Site" no painel (incluir logo depois do layout_topo).
+ * v82: em vez de uma faixa com 14 abas, um cabeçalho simples: voltar, onde estou, "Ir para…" e "Ver no site". */
 $_st_atual = basename($_SERVER['SCRIPT_NAME'] ?? '');
-$_st_abas = [
-    ['site.php', 'grid-1x2', 'Visão geral'],
-    ['conteudo_site.php', 'building', 'A escola e contato'],
-    ['ambientes_site.php', 'buildings', 'Ambientes'],
-    ['banners_site.php', 'card-image', 'Banners'],
-    ['informes_site.php', 'newspaper', 'Notícias'],
-    ['agenda_site.php', 'calendar-event', 'Próximos eventos'],
-    ['arquivos_site.php', 'folder2-open', 'Arquivos'],
-    ['editais_site.php', 'megaphone', 'Editais'],
-    ['gestao_site.php', 'person-workspace', 'Gestão escolar'],
-    ['equipe.php', 'people', 'Equipe no site'],
-    ['estudantes_site.php', 'images', 'Fotos dos estudantes'],
-    ['gremio_site.php', 'flag', 'Grêmio estudantil'],
-];
-if (pode('ia.config')) $_st_abas[] = ['assistente_ia.php', 'stars', 'Sofia · chave da IA'];
-if (pode('usuarios')) $_st_abas[] = ['login_google.php', 'google', 'Login com Google'];
+$_st_grupos = site_secoes_painel();
+$_st_aqui = null;
+foreach ($_st_grupos as $_g) foreach ($_g['itens'] as $_x) if ($_x[0] === $_st_atual) $_st_aqui = $_x;
 ?>
-<nav class="st-abas" aria-label="Seções do site">
-    <?php foreach ($_st_abas as [$_h, $_i, $_r]): ?><a href="<?= $_h ?>" class="<?= $_st_atual === $_h ? 'ativo' : '' ?>"<?= $_st_atual === $_h ? ' aria-current="page"' : '' ?>><i class="bi bi-<?= $_i ?>"></i><?= $_r ?></a><?php endforeach; ?>
-    <a class="st-ver" href="<?= RAIZ ?>index.php" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i>Ver o site</a>
+<?php if ($_st_atual !== 'site.php'): ?>
+<nav class="st-nav" aria-label="Gerenciar o site">
+    <a class="st-nav-voltar" href="site.php"><i class="bi bi-arrow-left"></i><span>Site</span></a>
+    <?php if ($_st_aqui): ?><span class="st-nav-aqui"><i class="bi bi-<?= $_st_aqui[1] ?>"></i><?= e($_st_aqui[2]) ?></span><?php endif; ?>
+    <div class="st-nav-dir">
+        <div class="dropdown">
+            <button class="btn st-nav-ir" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-list"></i><span>Ir para…</span></button>
+            <div class="dropdown-menu dropdown-menu-end shadow st-nav-menu">
+                <?php foreach ($_st_grupos as $_g): ?>
+                <h6 class="dropdown-header"><?= e($_g['titulo']) ?></h6>
+                <?php foreach ($_g['itens'] as [$_h, $_i, $_r]): ?><a class="dropdown-item<?= $_st_atual === $_h ? ' active' : '' ?>" href="<?= $_h ?>"><i class="bi bi-<?= $_i ?>"></i><?= e($_r) ?></a><?php endforeach; ?>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <a class="btn st-nav-ver" href="<?= RAIZ ?>index.php" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i><span>Ver no site</span></a>
+    </div>
 </nav>
+<?php endif; ?>

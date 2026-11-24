@@ -129,3 +129,33 @@ function destaques_slide(array $c, int $i, int $total): string
     }
     return $h . '</ol></div>';
 }
+
+/* ======================================================================
+ *  v82 — Seções do "Site" no painel, em linguagem simples e agrupadas
+ *  [arquivo, ícone, nome, o que é]
+ * ====================================================================== */
+function site_secoes_painel(): array
+{
+    $g = [
+        ['titulo' => 'Página inicial', 'itens' => [
+            ['banners_site.php', 'card-image', 'Banners e alunos destaque', 'As imagens que passam no topo do site'],
+            ['informes_site.php', 'newspaper', 'Notícias', 'Publicar o que acontece na escola'],
+            ['agenda_site.php', 'calendar-event', 'Próximos eventos', 'Feriados, sábados letivos e eventos'],
+            ['editais_site.php', 'megaphone', 'Editais', 'Editais de seleção, inscrição e resultado'],
+            ['arquivos_site.php', 'folder2-open', 'Documentos', 'Regimento, matrizes e outros arquivos'],
+        ]],
+        ['titulo' => 'Sobre a escola', 'itens' => [
+            ['conteudo_site.php', 'building', 'A escola e contato', 'Apresentação, fotos da escola e contatos'],
+            ['ambientes_site.php', 'buildings', 'Ambientes', 'Laboratórios, quadra, biblioteca…'],
+            ['gestao_site.php', 'person-workspace', 'Gestão escolar', 'Os cartões de quem conduz a escola'],
+            ['equipe.php', 'people', 'Professores e funcionários', 'A galeria da equipe'],
+            ['gremio_site.php', 'flag', 'Grêmio estudantil', 'Membros do grêmio com foto e função'],
+            ['estudantes_site.php', 'images', 'Fotos dos estudantes', '"Quem faz a escola acontecer"'],
+        ]],
+    ];
+    $cfg = [];
+    if (pode('ia.config')) $cfg[] = ['assistente_ia.php', 'stars', 'Sofia (assistente de IA)', 'Chave e limite de perguntas'];
+    if (pode('usuarios')) $cfg[] = ['login_google.php', 'google', 'Login com Google', 'Entrar com a conta da escola'];
+    if ($cfg) $g[] = ['titulo' => 'Configurações', 'itens' => $cfg];
+    return $g;
+}

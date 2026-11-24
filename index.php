@@ -42,7 +42,6 @@ $banners = site_banners_para_mostrar();
 $dq = destaques_cfg(); if (!empty($dq['ativo']) && $dq['alunos']) array_unshift($banners, ['dq' => $dq, 'titulo' => $dq['titulo']]);   // v80: card dos alunos destaque
 $inf_matricula = null; foreach ($informes as $i) if ($i['categoria'] === 'matricula') { $inf_matricula = $i; break; }
 $atalhos = [   /* só atalhos de uso público (os do painel ficam no login) */
-    ['person-plus-fill', 'Matrícula', '#contato'],
     ['megaphone', 'Notícias', 'informes.php'],
     ic_url() ? ['trophy', 'Interclasse', ic_url()] : ['calendar-event', 'Eventos', '#agendaGrade'],   // v80: o interclasse só aparece neste atalho
     ['mortarboard', 'Cursos', '#cursos'],
@@ -54,7 +53,7 @@ $atalhos = [   /* só atalhos de uso público (os do painel ficam no login) */
     ['chat-dots', 'Fale conosco', '#contato'],
 ];
 
-$cabeca_extra = '<link href="assets/css/inicio.css?v=31" rel="stylesheet">';
+$cabeca_extra = '<link href="assets/css/inicio.css?v=32" rel="stylesheet">';
 $pagina_classe = 'inicio-galeria';
 require __DIR__ . '/includes/site_topo.php';
 ?>
@@ -250,7 +249,7 @@ require __DIR__ . '/includes/site_topo.php';
         <?php endif; ?>
         <?php if ($docs): ?>
         <div class="dc2-bloco">
-            <?php if ($editais): ?><div class="dc2-tit"><h3><i class="bi bi-folder2-open"></i>Documentos da escola</h3></div><?php endif; ?>
+            <div class="dc2-tit"><h3><i class="bi bi-folder2-open"></i>Documentos da escola</h3><span class="dc2-tit-n"><?= count($docs) ?> arquivo<?= count($docs) > 1 ? 's' : '' ?></span></div>
             <ul class="dc2-lista">
                 <?php foreach ($docs as $d): [, $ic, $rot, $cor] = ARQ_SITE_TIPOS[$d['extensao']] ?? ['', 'file-earmark', 'Arquivo', 'cinza'];
                     $u = 'arquivo_site.php?id=' . (int)$d['id']; $ext = strtoupper($d['extensao']); $meta = $rot . ' · ' . tamanho_legivel((int)$d['tamanho']); ?>
