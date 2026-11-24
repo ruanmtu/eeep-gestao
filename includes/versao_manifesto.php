@@ -1,6 +1,6 @@
 <?php
 /* Gerado junto com o pacote: lista dos arquivos da versão e o código (md5) de cada um. Usado por versao.php. */
-return ['versao' => '77', 'arquivos' => [
+return ['versao' => '78', 'arquivos' => [
     'album.php' => '73a1be8e345a10d8a2e463ae81646e69',
     'ambiente.php' => 'cb665635230a1398d218ac6b593ceb52',
     'anexo_site.php' => '353a3253444f72ad0fe8b01abc84c77e',
@@ -8,7 +8,7 @@ return ['versao' => '77', 'arquivos' => [
     'assets/css/fontes.css' => 'cb0ec263849851b1d6736686185e593f',
     'assets/css/impressao.css' => '3c9f78282a6f5035b83c2f6f8399c6cf',
     'assets/css/inicio.css' => '666cd1c67d1f065b8ddd98b428bd2682',
-    'assets/css/interclasse.css' => '6f1ec81f58804b3c66e3a0038ee4f157',
+    'assets/css/interclasse.css' => 'ca7c44f35f71005d9c6afbe6366f8ad7',
     'assets/css/login.css' => '5c90a9c0bcef5a9146d655ea1072f069',
     'assets/css/padrao.css' => 'ea95bd4b395e6f9d2229b5e2f749f59b',
     'assets/css/painel.css' => 'b1c279c2cc126b2023b33f1014ade891',
@@ -41,7 +41,7 @@ return ['versao' => '77', 'arquivos' => [
     'google_entrar.php' => '836ed48c3b776f760c598d95778e722e',
     'google_retorno.php' => '186db351639714b19368320297691d39',
     'includes/agenda.php' => 'a4b73966646a12ca3c12c1503a1581c9',
-    'includes/app.php' => '38a7d39d16b11801c7d7eb76b7652580',
+    'includes/app.php' => '61e9e20a26f80e5face7613e1e642acd',
     'includes/arquivos.php' => '8d57a3fc1e67fc7d9e04921b3eebf0c3',
     'includes/autorizacoes.php' => '6d94aa34a541cf63ea8ad3f750c95e19',
     'includes/avaliacoes.php' => '3bebb8ba8dfb538fa299451f636e6dfe',
@@ -59,7 +59,7 @@ return ['versao' => '77', 'arquivos' => [
     'includes/frequencia.php' => 'd0fc5018281660e5a4c50ff53a1b10c3',
     'includes/google_login.php' => 'cb2d8af05eb3367d4408ff0afc9e8b79',
     'includes/importacao.php' => '1226706c5f5d0556e215ac7124848148',
-    'includes/interclasse.php' => '36ce2d40fa4a61e59170f232c98962b0',
+    'includes/interclasse.php' => '0a89d66c77da9cae3b9e6165d7a8aae3',
     'includes/interclasse_form_jogo.php' => '208bd8787a70e619c0161d63cf3b0be9',
     'includes/janela.php' => 'c001dfa0e537a1a27710049ef1b6e47c',
     'includes/layout_rodape.php' => '5bec750b6a17131d707c6ca20f491686',
@@ -80,10 +80,10 @@ return ['versao' => '77', 'arquivos' => [
     'includes/site_topo.php' => 'aece34d257d2caff5d0a979cbd36a212',
     'includes/v74.php' => '68dc2efa173b28c6c7be58265a184360',
     'includes/v75.php' => '95b51e10b2e7af013f0269daac5dbaa3',
-    'index.php' => '3bd79a16c059a2f538f63cd1e8d03bbe',
+    'index.php' => '8718da6e4cd4c0fe4c4f8e55a899ac25',
     'informe.php' => '230827d501af577ceb948074f6c0058b',
     'informes.php' => 'a8763fd0d067d15ce83ddbdea7dd72ba',
-    'interclasse.php' => 'dcec2601a57e06429143c95851b6421a',
+    'interclasse.php' => 'bb24bbf19253772913828067e6f6bd8a',
     'interclasse_sumula.php' => 'c426c71c2f4cfd4ab066fe77d043c339',
     'login.php' => '954db6818f9e7b5cc30eb6238c9c60b8',
     'logout.php' => '4658bb0c5e1e022f0f41c9cae0ef1d3c',

@@ -295,3 +295,25 @@ function ic_quando(?string $dt): string
     $rot = $d === $hoje ? 'Hoje' : ($d === date('Y-m-d', strtotime('+1 day')) ? 'Amanhã' : $dias[(int)date('w', $t)] . ' ' . date('d/m', $t));
     return $rot . (date('H:i', $t) !== '00:00' ? ' · ' . date('H:i', $t) : '');
 }
+
+/** Escudo da equipe (quadradinho colorido com as iniciais) */
+function ic_escudo(string $nome, ?string $cor, string $cls = ''): string
+{
+    return '<span class="ix-escudo ' . e($cls) . '" style="--c:' . e($cor ?: '#13692a') . '">' . e(ic_iniciais($nome)) . '</span>';
+}
+
+/** Cartão de um jogo (página do interclasse e página inicial) */
+function ic_cartao_jogo(array $g): string
+{
+    $v = ic_vencedor($g);
+    ob_start(); ?>
+    <a class="ix-jogo st-<?= e($g['status']) ?>" href="interclasse.php?jogo=<?= (int)$g['id'] ?>">
+        <span class="ix-jogo-cab"><span><?= e($g['fase'] === 'grupos' ? ($g['grupo'] ? 'Grupo ' . $g['grupo'] : 'Fase de grupos') : (IC_FASES[$g['fase']] ?? '')) ?></span>
+            <?php if ($g['status'] === 'andamento'): ?><em class="ix-vivo"><i></i>Ao vivo</em><?php elseif (in_array($g['status'], ['encerrado', 'wo'], true)): ?><em><?= $g['status'] === 'wo' ? 'W.O.' : 'Fim de jogo' ?></em><?php elseif ($g['status'] === 'adiado'): ?><em class="ix-adiado">Adiado</em><?php else: ?><em><?= e(ic_quando($g['data_hora'])) ?></em><?php endif; ?></span>
+        <?php foreach (['a', 'b'] as $l): ?>
+        <span class="ix-lado<?= $v === $l ? ' venceu' : ($v && $v !== 'empate' ? ' perdeu' : '') ?>"><?= ic_escudo(ic_lado($g, $l), $g['cor_' . $l]) ?><b><?= e(ic_lado($g, $l)) ?></b><strong><?= ($g['placar_' . $l] === null ? '' : (int)$g['placar_' . $l]) ?><?php if ($g['penaltis_' . $l] !== null): ?><small>(<?= (int)$g['penaltis_' . $l] ?>)</small><?php endif; ?></strong></span>
+        <?php endforeach; ?>
+        <span class="ix-jogo-pe"><?= $g['local'] ? '<i class="bi bi-geo-alt"></i>' . e($g['local']) : '' ?><?php if (in_array($g['status'], ['encerrado', 'wo', 'andamento'], true)): ?><span class="ms-auto">Súmula <i class="bi bi-arrow-right"></i></span><?php endif; ?></span>
+    </a>
+    <?php return ob_get_clean();
+}

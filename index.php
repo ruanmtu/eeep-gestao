@@ -53,7 +53,7 @@ $atalhos = [   /* só atalhos de uso público (os do painel ficam no login) */
     ['chat-dots', 'Fale conosco', '#contato'],
 ];
 
-$cabeca_extra = '<link href="assets/css/inicio.css?v=26" rel="stylesheet">' . (ic_no_site() ? '<link href="assets/css/interclasse.css?v=2" rel="stylesheet">' : '');
+$cabeca_extra = '<link href="assets/css/inicio.css?v=26" rel="stylesheet">' . (ic_no_site() ? '<link href="assets/css/interclasse.css?v=3" rel="stylesheet">' : '');
 $pagina_classe = 'inicio-galeria';
 require __DIR__ . '/includes/site_topo.php';
 ?>
@@ -90,12 +90,63 @@ require __DIR__ . '/includes/site_topo.php';
     </ul>
 </nav>
 
-<?php if (ic_no_site()):   /* v77: chamada para o interclasse */
-    $ic_dest = ic_jogos(['status' => ['andamento'], 'so_ativas' => 1], 'g.data_hora', 1)[0] ?? (ic_jogos(['status' => ['agendado'], 'so_ativas' => 1], 'g.data_hora IS NULL, g.data_hora', 1)[0] ?? null); ?>
-<div class="largura" style="margin-top:18px">
-    <a class="ix-faixa" href="interclasse.php"><i class="bi bi-trophy-fill"></i><span><b><?= h(ic_titulo()) ?></b><small>Placares, classificação, chaveamento e artilharia</small></span>
-        <?php if ($ic_dest): ?><span class="ix-faixa-jogo"><?= $ic_dest['status'] === 'andamento' ? '● Ao vivo: ' : h(ic_quando($ic_dest['data_hora'])) . ': ' ?><?= h(ic_lado($ic_dest, 'a')) ?> <?= $ic_dest['status'] === 'andamento' ? (int)$ic_dest['placar_a'] . ' × ' . (int)$ic_dest['placar_b'] : '×' ?> <?= h(ic_lado($ic_dest, 'b')) ?></span><?php endif; ?></a>
-</div>
+<?php if (ic_no_site() && ($ic_mods = array_values(array_filter(ic_modalidades(true), fn($m) => ic_jogos(['modalidade' => $m['id']], 'g.id', 1) || ic_equipes((int)$m['id']))))):   /* v78: interclasse na página inicial */ ?>
+<!-- ================= INTERCLASSE ================= -->
+<section class="ixh" id="interclasse">
+    <div class="largura">
+        <div class="ixh-cab">
+            <div><span class="sg-sobre">Esporte na escola</span><h2><?= h(ic_titulo()) ?></h2><p><?= h(ic_subtitulo()) ?></p></div>
+            <a class="ixh-tudo" href="interclasse.php">Chaveamento, súmulas e equipes <i class="bi bi-arrow-right"></i></a>
+        </div>
+        <?php if (count($ic_mods) > 1): ?><div class="ixh-mods" role="tablist" aria-label="Modalidades">
+            <?php foreach ($ic_mods as $k => $m): ?><button type="button" role="tab" aria-selected="<?= $k ? 'false' : 'true' ?>" aria-controls="ixh-<?= (int)$m['id'] ?>" class="<?= $k ? '' : 'ativo' ?>"><i class="bi bi-<?= h($m['icone'] ?: 'trophy') ?>"></i><?= h($m['nome']) ?></button><?php endforeach; ?>
+        </div><?php endif; ?>
+        <?php foreach ($ic_mods as $k => $m):
+            $mid = (int)$m['id'];
+            $todos = ic_jogos(['modalidade' => $mid]);
+            $vivo = array_values(array_filter($todos, fn($g) => $g['status'] === 'andamento'));
+            $prox = array_values(array_filter($todos, fn($g) => in_array($g['status'], ['agendado', 'adiado'], true)));
+            $res = array_reverse(array_values(array_filter($todos, fn($g) => in_array($g['status'], ['encerrado', 'wo'], true))));
+            $tem_grupos = (bool)array_filter($todos, fn($g) => $g['fase'] === 'grupos');
+            $classif = $tem_grupos ? ic_classificacao($mid) : [];
+            $art = array_values(array_filter(ic_estatisticas($mid), fn($r) => $r['gols'] > 0));
+            usort($art, fn($a, $b) => [$b['gols'], $a['nome']] <=> [$a['gols'], $b['nome']]);
+            $ponto = $m['placar'] === 'gols' ? 'gols' : 'pontos';
+            $jogos_mostrar = array_slice(array_merge($vivo, $prox), 0, 4); ?>
+        <div class="ixh-painel" id="ixh-<?= $mid ?>" role="tabpanel"<?= $k ? ' hidden' : '' ?>>
+            <div class="ixh-jogos">
+                <h3><?= $vivo ? '<span class="ix-vivo"><i></i>Ao vivo</span> e próximos jogos' : '<i class="bi bi-calendar-event"></i>Próximos jogos' ?></h3>
+                <?php if (!$jogos_mostrar): ?><p class="ix-nada">Nenhum jogo marcado no momento.</p><?php else: ?><div class="ix-jogos"><?php foreach ($jogos_mostrar as $g) echo ic_cartao_jogo($g); ?></div><?php endif; ?>
+                <?php if ($res): ?><h3><i class="bi bi-check2-circle"></i>Últimos resultados</h3><div class="ix-jogos"><?php foreach (array_slice($res, 0, 4) as $g) echo ic_cartao_jogo($g); ?></div><?php endif; ?>
+            </div>
+            <aside class="ixh-lado">
+                <?php if ($classif): ?>
+                <div class="ixh-caixa"><h3><i class="bi bi-list-ol"></i>Classificação</h3>
+                    <?php foreach ($classif as $gr => $linhas): ?>
+                    <?php if (count($classif) > 1 || $gr !== 'Único'): ?><h4>Grupo <?= h($gr) ?></h4><?php endif; ?>
+                    <table class="ixh-tab"><thead><tr><th class="eq">Equipe</th><th title="Pontos">P</th><th title="Jogos">J</th><th title="Vitórias">V</th><th title="Saldo">SG</th></tr></thead><tbody>
+                        <?php foreach ($linhas as $i => $r): ?><tr><td class="eq"><span class="pos"><?= $i + 1 ?></span><?= ic_escudo($r['nome'], $r['cor'], 'mini') ?><a href="interclasse.php?equipe=<?= $r['id'] ?>"><?= h($r['nome']) ?></a></td><td><b><?= $r['pts'] ?></b></td><td><?= $r['j'] ?></td><td><?= $r['v'] ?></td><td><?= $r['gp'] - $r['gc'] > 0 ? '+' : '' ?><?= $r['gp'] - $r['gc'] ?></td></tr><?php endforeach; ?>
+                    </tbody></table>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+                <?php if ($art): ?>
+                <div class="ixh-caixa"><h3><i class="bi bi-bullseye"></i><?= $ponto === 'gols' ? 'Artilharia' : 'Pontuadores' ?></h3>
+                    <ol class="ix-rank"><?php foreach (array_slice($art, 0, 5) as $i => $r): ?><li><span class="p"><?= $i + 1 ?>º</span><a href="interclasse.php?jogador=<?= (int)$r['id'] ?>"><b><?= h($r['nome']) ?></b><small><?= h($r['equipe']) ?></small></a><strong><?= (int)$r['gols'] ?></strong></li><?php endforeach; ?></ol>
+                </div>
+                <?php endif; ?>
+                <a class="ixh-mais" href="interclasse.php?m=<?= $mid ?>"><i class="bi bi-diagram-3"></i><span><b>Tudo de <?= h($m['nome']) ?></b><small>Chaveamento, cartões, equipes e súmulas</small></span><i class="bi bi-arrow-right"></i></a>
+            </aside>
+        </div>
+        <?php endforeach; ?>
+    </div>
+</section>
+<?php if (count($ic_mods) > 1): ?><script>
+document.querySelectorAll('.ixh-mods button').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('.ixh-mods button').forEach(x => { x.classList.toggle('ativo', x === b); x.setAttribute('aria-selected', x === b); });
+    document.querySelectorAll('.ixh-painel').forEach(p => p.hidden = p.id !== b.getAttribute('aria-controls'));
+}));
+</script><?php endif; ?>
 <?php endif; ?>
 
 <!-- ================= NOTÍCIAS E EVENTOS (computador) ================= -->

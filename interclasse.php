@@ -17,21 +17,9 @@ if (!$mod && $mods) $mod = $mods[0];
 $m_id = (int)($mod['id'] ?? 0);
 
 $sigla = fn($n) => mb_strtoupper(mb_substr(preg_replace('/^\d+º\s*/u', '', (string)$n) ?: (string)$n, 0, 3));
-$escudo = fn($nome, $cor, $cls = '') => '<span class="ix-escudo ' . $cls . '" style="--c:' . h($cor ?: '#13692a') . '">' . h(ic_iniciais((string)$nome)) . '</span>';
+$escudo = fn($nome, $cor, $cls = '') => ic_escudo((string)$nome, $cor, $cls);
 $placar = function ($g, $l) { return $g['placar_' . $l] === null ? '' : (int)$g['placar_' . $l]; };
-$cartao_jogo = function ($g) use ($escudo, $placar) {
-    $v = ic_vencedor($g);
-    ob_start(); ?>
-    <a class="ix-jogo st-<?= h($g['status']) ?>" href="interclasse.php?jogo=<?= (int)$g['id'] ?>">
-        <span class="ix-jogo-cab"><span><?= h($g['fase'] === 'grupos' ? ($g['grupo'] ? 'Grupo ' . $g['grupo'] : 'Fase de grupos') : (IC_FASES[$g['fase']] ?? '')) ?></span>
-            <?php if ($g['status'] === 'andamento'): ?><em class="ix-vivo"><i></i>Ao vivo</em><?php elseif (in_array($g['status'], ['encerrado', 'wo'], true)): ?><em><?= $g['status'] === 'wo' ? 'W.O.' : 'Fim de jogo' ?></em><?php elseif ($g['status'] === 'adiado'): ?><em class="ix-adiado">Adiado</em><?php else: ?><em><?= h(ic_quando($g['data_hora'])) ?></em><?php endif; ?></span>
-        <?php foreach (['a', 'b'] as $l): ?>
-        <span class="ix-lado<?= $v === $l ? ' venceu' : ($v && $v !== 'empate' ? ' perdeu' : '') ?>"><?= $escudo(ic_lado($g, $l), $g['cor_' . $l]) ?><b><?= h(ic_lado($g, $l)) ?></b><strong><?= $placar($g, $l) ?><?php if ($g['penaltis_' . $l] !== null): ?><small>(<?= (int)$g['penaltis_' . $l] ?>)</small><?php endif; ?></strong></span>
-        <?php endforeach; ?>
-        <span class="ix-jogo-pe"><?= $g['local'] ? '<i class="bi bi-geo-alt"></i>' . h($g['local']) : '' ?><?php if (in_array($g['status'], ['encerrado', 'wo', 'andamento'], true)): ?><span class="ms-auto">Súmula <i class="bi bi-arrow-right"></i></span><?php endif; ?></span>
-    </a>
-    <?php return ob_get_clean();
-};
+$cartao_jogo = fn($g) => ic_cartao_jogo($g);
 
 $pagina_titulo = ic_titulo() . ' · ' . $ESCOLA['nome'];
 $pagina_classe = 'pagina-interna inicio-galeria';
