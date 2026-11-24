@@ -122,3 +122,4 @@ body.tem-topo { padding-top: var(--tp-alt); }
     .tp-links a:hover { background: none; color: #fff; }
 }
 .tp-links a.atual { background: none !important; }
+.tp-links a.tp-destaque { color: var(--laranja-escuro, #d4650a); font-weight: 800; }

@@ -51,7 +51,7 @@ if (session_status() === PHP_SESSION_NONE) {
 /* ------------------------------------------------------------------ */
 /*  Banco de dados                                                     */
 /* ------------------------------------------------------------------ */
-const SISTEMA_VERSAO = '76';
+const SISTEMA_VERSAO = '77';
 
 /* ------------------------------------------------------------------ */
 /*  Ano letivo (v75)                                                   */
@@ -259,6 +259,9 @@ const PERMISSOES_CATALOGO = [
         'ia.config'             => ['Configurar o assistente de IA', 'Chave da API do Google, cotas e relatório de uso (só o administrador, por padrão)'],
         'notificacoes.enviar'   => ['Enviar notificações', 'Mandar avisos para todos ou para grupos (professores, coordenação...)'],
     ],
+    'Interclasse' => [
+        'interclasse'           => ['Alimentar o interclasse', 'Jogos, placares, súmulas, cartões, equipes e jogadores do interclasse no site. Quem tiver só esta permissão vê apenas essa área do painel'],
+    ],
     'Administração' => [
         'importar'              => ['Importar planilha', 'Alimentar o sistema com a planilha do Power BI'],
         'config'                => ['Cursos, turmas e calendário letivo', 'Inclui as datas dos bimestres'],
@@ -308,6 +311,7 @@ const PERMISSOES = [
     'ia'                    => ['diretor', 'coordenacao', 'secretaria', 'professor', 'bibliotecario'],
     'ia.config'             => [],
     'site.publicar'         => ['diretor', 'coordenacao', 'secretaria'],
+    'interclasse'           => ['diretor', 'coordenacao'],
 ];
 
 /** Cor de cada curso (mesma em todo o sistema): Administração azul, Desenvolvimento de Sistemas cinza, Enfermagem verde, Informática vermelho */
@@ -461,6 +465,10 @@ function exigir_login(): void
     if ($u['trocar_senha'] && basename($_SERVER['SCRIPT_NAME']) !== 'perfil.php') {
         redirecionar('perfil.php');   // primeiro acesso: a tela explica o que fazer
     }
+    /* v77: perfil só do interclasse não entra no resto do painel */
+    if (function_exists('so_interclasse') && so_interclasse() && !in_array(basename((string)$_SERVER['SCRIPT_NAME']), ['interclasse.php', 'perfil.php', 'logout.php'], true)) {
+        redirecionar('interclasse.php');
+    }
 }
 
 function exigir(string $perm): void
@@ -605,6 +613,7 @@ nc_migrar_auto();
 require_once __DIR__ . '/v74.php';
 v74_migrar();
 require_once __DIR__ . '/v75.php'; v75_migrar(); aluno_turmas_talvez();
+require_once __DIR__ . '/interclasse.php'; ic_migrar();
 require_once __DIR__ . '/google_login.php';
 require __DIR__ . '/resultados.php';
 require_once __DIR__ . '/livros_didaticos.php';

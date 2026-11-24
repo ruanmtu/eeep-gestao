@@ -46,6 +46,7 @@ $itens_menu = [
         ['reservas', 'reservas.php', 'easel2', 'Reservas', 'reservas'],
         ['biblioteca', 'biblioteca.php', 'book', 'Centro de Multimeios', 'biblioteca', pode('biblioteca') ? contar_atrasados() : 0],
         ['site', 'site.php', 'globe2', 'Site', 'site.publicar'],
+        ['interclasse', 'interclasse.php', 'trophy', 'Interclasse', 'interclasse'],
     ],
     'Administração' => [
         ['importar', 'importar.php', 'cloud-arrow-up', 'Planilha do Power BI', 'importar'],
@@ -54,6 +55,7 @@ $itens_menu = [
         ['usuarios', 'usuarios.php', 'person-badge', 'Usuários e permissões', 'usuarios'],
     ],
 ];
+if (so_interclasse()) $itens_menu = ['Interclasse' => [['interclasse', 'interclasse.php', 'trophy', 'Interclasse', 'interclasse']]];   // v77: só essa área
 ?>
 <!doctype html>
 <html lang="pt-br">
@@ -65,7 +67,7 @@ $itens_menu = [
     <link href="<?= RAIZ ?>assets/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
     <link href="<?= RAIZ ?>assets/css/fontes.css?v=3" rel="stylesheet">
     <link href="<?= RAIZ ?>assets/vendor/icons/bootstrap-icons.min.css" rel="stylesheet">
-    <link href="<?= RAIZ ?>assets/css/painel.css?v=73" rel="stylesheet">
+    <link href="<?= RAIZ ?>assets/css/painel.css?v=74" rel="stylesheet">
     <link href="<?= RAIZ ?>assets/css/padrao.css?v=4" rel="stylesheet">
     <link rel="icon" href="<?= RAIZ ?>assets/img/favicon.png" type="image/png">
     <link rel="apple-touch-icon" href="<?= RAIZ ?>assets/img/apple-touch-icon.png">

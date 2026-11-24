@@ -53,7 +53,7 @@ $atalhos = [   /* só atalhos de uso público (os do painel ficam no login) */
     ['chat-dots', 'Fale conosco', '#contato'],
 ];
 
-$cabeca_extra = '<link href="assets/css/inicio.css?v=26" rel="stylesheet">';
+$cabeca_extra = '<link href="assets/css/inicio.css?v=26" rel="stylesheet">' . (ic_no_site() ? '<link href="assets/css/interclasse.css?v=2" rel="stylesheet">' : '');
 $pagina_classe = 'inicio-galeria';
 require __DIR__ . '/includes/site_topo.php';
 ?>
@@ -89,6 +89,14 @@ require __DIR__ . '/includes/site_topo.php';
         <?php endforeach; ?>
     </ul>
 </nav>
+
+<?php if (ic_no_site()):   /* v77: chamada para o interclasse */
+    $ic_dest = ic_jogos(['status' => ['andamento'], 'so_ativas' => 1], 'g.data_hora', 1)[0] ?? (ic_jogos(['status' => ['agendado'], 'so_ativas' => 1], 'g.data_hora IS NULL, g.data_hora', 1)[0] ?? null); ?>
+<div class="largura" style="margin-top:18px">
+    <a class="ix-faixa" href="interclasse.php"><i class="bi bi-trophy-fill"></i><span><b><?= h(ic_titulo()) ?></b><small>Placares, classificação, chaveamento e artilharia</small></span>
+        <?php if ($ic_dest): ?><span class="ix-faixa-jogo"><?= $ic_dest['status'] === 'andamento' ? '● Ao vivo: ' : h(ic_quando($ic_dest['data_hora'])) . ': ' ?><?= h(ic_lado($ic_dest, 'a')) ?> <?= $ic_dest['status'] === 'andamento' ? (int)$ic_dest['placar_a'] . ' × ' . (int)$ic_dest['placar_b'] : '×' ?> <?= h(ic_lado($ic_dest, 'b')) ?></span><?php endif; ?></a>
+</div>
+<?php endif; ?>
 
 <!-- ================= NOTÍCIAS E EVENTOS (computador) ================= -->
 <section class="nd2" id="noticias">

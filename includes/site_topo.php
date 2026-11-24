@@ -21,7 +21,7 @@ $logo_branca = $ESCOLA['logo_branca'] ?? 'assets/img/logo-branca.png';
     <link href="assets/css/fontes.css?v=3" rel="stylesheet">
     <link href="assets/vendor/icons/bootstrap-icons.min.css" rel="stylesheet">
     <link href="assets/css/site.css?v=28" rel="stylesheet">
-    <link href="assets/css/topo.css?v=3" rel="stylesheet">
+    <link href="assets/css/topo.css?v=4" rel="stylesheet">
     <?= $cabeca_extra ?? '' ?>
     <script>document.documentElement.classList.add('js')</script>
 </head>
@@ -31,6 +31,8 @@ $logo_branca = $ESCOLA['logo_branca'] ?? 'assets/img/logo-branca.png';
 <?php
 $_links = [['house-door', 'Início', $prefixo . '#inicio'], ['megaphone', 'Notícias e agenda', 'informes.php'], ['building', 'A escola', $prefixo . '#escola'],
            ['mortarboard', 'Cursos', $prefixo . '#cursos'], ['folder2-open', 'Documentos', $prefixo . '#documentos'], ['clock-history', 'História', $prefixo . '#historia'], ['people', 'Gestão e equipe', $prefixo . '#gestao'], ['geo-alt', 'Contato', $prefixo . '#contato']];
+$_ic = function_exists('ic_no_site') && ic_no_site();   // v77: interclasse no menu enquanto estiver publicado
+if ($_ic) $_links[] = ['trophy', 'Interclasse', 'interclasse.php'];
 $_rapido = [['ui-checks-grid', 'Corrigir avaliações', 'painel/provas.php'], ['shield-exclamation', 'Registro de ocorrências', 'painel/ocorrencias.php'], ['journal-bookmark', 'Livros didáticos', 'painel/livros_didaticos.php']];
 ?>
 <header class="tp" id="cabecalho">
@@ -40,7 +42,7 @@ $_rapido = [['ui-checks-grid', 'Corrigir avaliações', 'painel/provas.php'], ['
             <img src="<?= h($logo_branca) ?>" alt="<?= h($ESCOLA['nome']) ?>" width="1400" height="451">
         </a>
         <nav class="tp-links" aria-label="Principal">
-            <?php foreach ([$_links[0], $_links[2], $_links[3], $_links[5], $_links[7]] as [, $rot, $url]): ?><a href="<?= h($url) ?>"><?= h($rot) ?></a><?php endforeach; ?>
+            <?php foreach ($_ic ? [$_links[0], $_links[2], $_links[3], $_links[8], $_links[7]] : [$_links[0], $_links[2], $_links[3], $_links[5], $_links[7]] as [, $rot, $url]): ?><a href="<?= h($url) ?>"<?= $url === 'interclasse.php' ? ' class="tp-destaque"' : '' ?>><?= h($rot) ?></a><?php endforeach; ?>
         </nav>
         <button class="tp-lupa" type="button" aria-label="Buscar no site" aria-expanded="false" aria-controls="tpBuscaPainel"><i class="bi bi-search"></i></button>
         <a class="tp-entrar" href="login.php"><i class="bi bi-person-circle"></i><span>Entrar</span></a>
