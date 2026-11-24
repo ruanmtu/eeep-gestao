@@ -110,18 +110,22 @@ function destaques_cfg(): array
     return $c;
 }
 
+/** Foto (em pé) de cada aluno do card: config site_destaques_foto_0..2 */
+function destaques_foto(int $k): string { return (string)config_ler('site_destaques_foto_' . $k); }
+
 /** Slide do card de destaques (mesmo tamanho dos banners) */
 function destaques_slide(array $c, int $i, int $total): string
 {
     $med = ['1º lugar', '2º lugar', '3º lugar'];
-    $foto = (string)config_ler('site_destaques_foto');
-    $h = '<div class="sg-bn sg-bn-dq' . ($foto ? ' com-foto' : '') . '" aria-roledescription="slide" aria-label="' . ($i + 1) . ' de ' . $total . ': ' . e($c['titulo']) . '">'
-       . ($foto ? '<img class="dq-foto" src="' . e(site_img_url('dq', 1, $foto)) . '" alt="' . e(implode(', ', array_column($c['alunos'], 'nome'))) . '"' . ($i > 1 ? ' loading="lazy"' : '') . ' style="object-position:' . e((string)($c['foco'] ?? 'center 30%')) . '">' : '')
+    $h = '<div class="sg-bn sg-bn-dq" aria-roledescription="slide" aria-label="' . ($i + 1) . ' de ' . $total . ': ' . e($c['titulo']) . '">'
        . '<div class="dq-cab"><span class="dq-sobre"><i class="bi bi-award-fill"></i>' . e($c['periodo']) . '</span><strong>' . e($c['titulo']) . '</strong><small>As maiores médias da escola. Parabéns!</small></div><ol class="dq-lista">';
     foreach ($c['alunos'] as $k => $a) {
-        $h .= '<li class="p' . ($k + 1) . '"><span class="dq-med"><i class="bi bi-trophy-fill"></i><b>' . ($k + 1) . 'º</b></span>'
-            . '<span class="dq-nome"><em>' . $med[$k] . '</em><b>' . e($a['nome']) . '</b>' . (!empty($a['turma']) ? '<small>' . e($a['turma']) . '</small>' : '') . '</span>'
-            . '<span class="dq-nota">' . e($a['nota']) . '</span></li>';
+        $f = destaques_foto($k);
+        $ini = mb_strtoupper(implode('', array_map(fn($p) => mb_substr($p, 0, 1), array_slice(preg_split('/\s+/', trim($a['nome'])), 0, 2))));
+        $h .= '<li class="p' . ($k + 1) . '"><div class="dq-retrato">'
+            . ($f ? '<img src="' . e(site_img_url('dq', $k, $f)) . '" alt="' . e($a['nome']) . '"' . ($i > 1 ? ' loading="lazy"' : '') . '>' : '<span class="dq-ini">' . e($ini) . '</span>')
+            . '<span class="dq-med"><i class="bi bi-trophy-fill"></i>' . ($k + 1) . 'º</span><span class="dq-nota">' . e($a['nota']) . '</span></div>'
+            . '<div class="dq-nome"><em>' . $med[$k] . '</em><b>' . e($a['nome']) . '</b>' . (!empty($a['turma']) ? '<small>' . e($a['turma']) . '</small>' : '') . '<span class="dq-nota-g">' . e($a['nota']) . '</span></div></li>';
     }
     return $h . '</ol></div>';
 }

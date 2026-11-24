@@ -54,7 +54,7 @@ $atalhos = [   /* só atalhos de uso público (os do painel ficam no login) */
     ['chat-dots', 'Fale conosco', '#contato'],
 ];
 
-$cabeca_extra = '<link href="assets/css/inicio.css?v=30" rel="stylesheet">';
+$cabeca_extra = '<link href="assets/css/inicio.css?v=31" rel="stylesheet">';
 $pagina_classe = 'inicio-galeria';
 require __DIR__ . '/includes/site_topo.php';
 ?>

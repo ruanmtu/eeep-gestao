@@ -4253,6 +4253,10 @@ html[data-ms-modo="ver"][data-ms-mudou="0"] .ms-salvar { display: none; }
 }
 
 /* v80 — card de alunos destaque (Banners) */
-.dq-adm-foto { display: grid; place-items: center; aspect-ratio: 16 / 10; border-radius: 14px; border: 2px dashed var(--linha); background: #f6f9f7; overflow: hidden; cursor: pointer; color: var(--texto-2, #5b6b60); font-weight: 600; font-size: .85rem; }
-.dq-adm-foto img { width: 100%; height: 100%; object-fit: cover; }
+.dq-adm-alunos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.dq-adm-aluno { display: flex; flex-direction: column; gap: 6px; }
+.dq-adm-foto { position: relative; display: grid; place-items: center; aspect-ratio: 3 / 4; max-height: 260px; border-radius: 14px; border: 2px dashed var(--linha); background: #f6f9f7; overflow: hidden; cursor: pointer; color: var(--texto-2, #5b6b60); font-weight: 600; font-size: .85rem; }
+.dq-adm-foto img { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
 .dq-adm-foto span { display: flex; flex-direction: column; align-items: center; gap: 4px; } .dq-adm-foto span i { font-size: 1.5rem; }
+.dq-adm-pos { position: absolute; top: 8px; left: 8px; background: #f2c200; color: #4a3500; border-radius: 8px; padding: 1px 8px; font-size: .8rem; }
+@media (max-width: 767.98px) { .dq-adm-alunos { grid-template-columns: 1fr; } .dq-adm-foto { max-height: 220px; } }
