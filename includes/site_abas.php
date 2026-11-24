@@ -9,9 +9,11 @@ $_st_abas = [
     ['informes_site.php', 'newspaper', 'Notícias'],
     ['agenda_site.php', 'calendar-event', 'Próximos eventos'],
     ['arquivos_site.php', 'folder2-open', 'Arquivos'],
+    ['editais_site.php', 'megaphone', 'Editais'],
     ['gestao_site.php', 'person-workspace', 'Gestão escolar'],
     ['equipe.php', 'people', 'Equipe no site'],
     ['estudantes_site.php', 'images', 'Fotos dos estudantes'],
+    ['gremio_site.php', 'flag', 'Grêmio estudantil'],
 ];
 if (pode('ia.config')) $_st_abas[] = ['assistente_ia.php', 'stars', 'Sofia · chave da IA'];
 if (pode('usuarios')) $_st_abas[] = ['login_google.php', 'google', 'Login com Google'];

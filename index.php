@@ -47,13 +47,13 @@ $atalhos = [   /* só atalhos de uso público (os do painel ficam no login) */
     ['mortarboard', 'Cursos', '#cursos'],
     ['people', 'Equipe', $equipe ? '#equipe' : '#gestao'],
     ['building', 'A escola', '#escola'],
-    site_arquivos() ? ['folder2-open', 'Arquivos da escola', '#documentos'] : ['geo-alt', 'Como chegar', '#contato'],
-    ['person-badge', 'Gestão escolar', '#gestao'],
+    site_arquivos() || editais_lista() ? ['folder2-open', editais_lista() ? 'Editais e documentos' : 'Documentos', '#documentos'] : ['geo-alt', 'Como chegar', '#contato'],
+    gremio_lista() ? ['flag', 'Grêmio estudantil', '#gremio'] : ['person-badge', 'Gestão escolar', '#gestao'],
     ['clock-history', 'História', '#historia'],
     ['chat-dots', 'Fale conosco', '#contato'],
 ];
 
-$cabeca_extra = '<link href="assets/css/inicio.css?v=26" rel="stylesheet">' . (ic_no_site() ? '<link href="assets/css/interclasse.css?v=3" rel="stylesheet">' : '');
+$cabeca_extra = '<link href="assets/css/inicio.css?v=27" rel="stylesheet">';
 $pagina_classe = 'inicio-galeria';
 require __DIR__ . '/includes/site_topo.php';
 ?>
@@ -90,65 +90,6 @@ require __DIR__ . '/includes/site_topo.php';
     </ul>
 </nav>
 
-<?php if (ic_no_site() && ($ic_mods = array_values(array_filter(ic_modalidades(true), fn($m) => ic_jogos(['modalidade' => $m['id']], 'g.id', 1) || ic_equipes((int)$m['id']))))):   /* v78: interclasse na página inicial */ ?>
-<!-- ================= INTERCLASSE ================= -->
-<section class="ixh" id="interclasse">
-    <div class="largura">
-        <div class="ixh-cab">
-            <div><span class="sg-sobre">Esporte na escola</span><h2><?= h(ic_titulo()) ?></h2><p><?= h(ic_subtitulo()) ?></p></div>
-            <a class="ixh-tudo" href="interclasse.php">Chaveamento, súmulas e equipes <i class="bi bi-arrow-right"></i></a>
-        </div>
-        <?php if (count($ic_mods) > 1): ?><div class="ixh-mods" role="tablist" aria-label="Modalidades">
-            <?php foreach ($ic_mods as $k => $m): ?><button type="button" role="tab" aria-selected="<?= $k ? 'false' : 'true' ?>" aria-controls="ixh-<?= (int)$m['id'] ?>" class="<?= $k ? '' : 'ativo' ?>"><i class="bi bi-<?= h($m['icone'] ?: 'trophy') ?>"></i><?= h($m['nome']) ?></button><?php endforeach; ?>
-        </div><?php endif; ?>
-        <?php foreach ($ic_mods as $k => $m):
-            $mid = (int)$m['id'];
-            $todos = ic_jogos(['modalidade' => $mid]);
-            $vivo = array_values(array_filter($todos, fn($g) => $g['status'] === 'andamento'));
-            $prox = array_values(array_filter($todos, fn($g) => in_array($g['status'], ['agendado', 'adiado'], true)));
-            $res = array_reverse(array_values(array_filter($todos, fn($g) => in_array($g['status'], ['encerrado', 'wo'], true))));
-            $tem_grupos = (bool)array_filter($todos, fn($g) => $g['fase'] === 'grupos');
-            $classif = $tem_grupos ? ic_classificacao($mid) : [];
-            $art = array_values(array_filter(ic_estatisticas($mid), fn($r) => $r['gols'] > 0));
-            usort($art, fn($a, $b) => [$b['gols'], $a['nome']] <=> [$a['gols'], $b['nome']]);
-            $ponto = $m['placar'] === 'gols' ? 'gols' : 'pontos';
-            $jogos_mostrar = array_slice(array_merge($vivo, $prox), 0, 4); ?>
-        <div class="ixh-painel" id="ixh-<?= $mid ?>" role="tabpanel"<?= $k ? ' hidden' : '' ?>>
-            <div class="ixh-jogos">
-                <h3><?= $vivo ? '<span class="ix-vivo"><i></i>Ao vivo</span> e próximos jogos' : '<i class="bi bi-calendar-event"></i>Próximos jogos' ?></h3>
-                <?php if (!$jogos_mostrar): ?><p class="ix-nada">Nenhum jogo marcado no momento.</p><?php else: ?><div class="ix-jogos"><?php foreach ($jogos_mostrar as $g) echo ic_cartao_jogo($g); ?></div><?php endif; ?>
-                <?php if ($res): ?><h3><i class="bi bi-check2-circle"></i>Últimos resultados</h3><div class="ix-jogos"><?php foreach (array_slice($res, 0, 4) as $g) echo ic_cartao_jogo($g); ?></div><?php endif; ?>
-            </div>
-            <aside class="ixh-lado">
-                <?php if ($classif): ?>
-                <div class="ixh-caixa"><h3><i class="bi bi-list-ol"></i>Classificação</h3>
-                    <?php foreach ($classif as $gr => $linhas): ?>
-                    <?php if (count($classif) > 1 || $gr !== 'Único'): ?><h4>Grupo <?= h($gr) ?></h4><?php endif; ?>
-                    <table class="ixh-tab"><thead><tr><th class="eq">Equipe</th><th title="Pontos">P</th><th title="Jogos">J</th><th title="Vitórias">V</th><th title="Saldo">SG</th></tr></thead><tbody>
-                        <?php foreach ($linhas as $i => $r): ?><tr><td class="eq"><span class="pos"><?= $i + 1 ?></span><?= ic_escudo($r['nome'], $r['cor'], 'mini') ?><a href="interclasse.php?equipe=<?= $r['id'] ?>"><?= h($r['nome']) ?></a></td><td><b><?= $r['pts'] ?></b></td><td><?= $r['j'] ?></td><td><?= $r['v'] ?></td><td><?= $r['gp'] - $r['gc'] > 0 ? '+' : '' ?><?= $r['gp'] - $r['gc'] ?></td></tr><?php endforeach; ?>
-                    </tbody></table>
-                    <?php endforeach; ?>
-                </div>
-                <?php endif; ?>
-                <?php if ($art): ?>
-                <div class="ixh-caixa"><h3><i class="bi bi-bullseye"></i><?= $ponto === 'gols' ? 'Artilharia' : 'Pontuadores' ?></h3>
-                    <ol class="ix-rank"><?php foreach (array_slice($art, 0, 5) as $i => $r): ?><li><span class="p"><?= $i + 1 ?>º</span><a href="interclasse.php?jogador=<?= (int)$r['id'] ?>"><b><?= h($r['nome']) ?></b><small><?= h($r['equipe']) ?></small></a><strong><?= (int)$r['gols'] ?></strong></li><?php endforeach; ?></ol>
-                </div>
-                <?php endif; ?>
-                <a class="ixh-mais" href="interclasse.php?m=<?= $mid ?>"><i class="bi bi-diagram-3"></i><span><b>Tudo de <?= h($m['nome']) ?></b><small>Chaveamento, cartões, equipes e súmulas</small></span><i class="bi bi-arrow-right"></i></a>
-            </aside>
-        </div>
-        <?php endforeach; ?>
-    </div>
-</section>
-<?php if (count($ic_mods) > 1): ?><script>
-document.querySelectorAll('.ixh-mods button').forEach(b => b.addEventListener('click', () => {
-    document.querySelectorAll('.ixh-mods button').forEach(x => { x.classList.toggle('ativo', x === b); x.setAttribute('aria-selected', x === b); });
-    document.querySelectorAll('.ixh-painel').forEach(p => p.hidden = p.id !== b.getAttribute('aria-controls'));
-}));
-</script><?php endif; ?>
-<?php endif; ?>
-
 <!-- ================= NOTÍCIAS E EVENTOS (computador) ================= -->
 <section class="nd2" id="noticias">
     <div class="largura">
@@ -161,7 +102,7 @@ document.querySelectorAll('.ixh-mods button').forEach(b => b.addEventListener('c
                 <div class="nd2-corpo">
                     <time><i class="bi bi-calendar3"></i><?= h(data_extenso_curta((string)$inf['data_publicacao'])) ?></time>
                     <h3><?= h($inf['titulo']) ?></h3>
-                    <p><?= h(mb_strimwidth(materia_texto((string)$inf['texto']), 0, 110, '…')) ?></p>
+                    <p<?= !empty($inf['subtitulo']) ? ' class="nd2-sub"' : '' ?>><?= h(!empty($inf['subtitulo']) ? $inf['subtitulo'] : mb_strimwidth(materia_texto((string)$inf['texto']), 0, 110, '…')) ?></p>
                     <span class="nd2-ler">Ler mais <i class="bi bi-arrow-right"></i></span>
                 </div>
             </a>
@@ -211,6 +152,7 @@ document.querySelectorAll('.ixh-mods button').forEach(b => b.addEventListener('c
                         <?php if (!empty($inf['n_anexos'])): ?><span class="nb-pdf"><i class="bi bi-file-earmark-pdf-fill"></i>PDF</span><?php endif; ?></div>
                     <div class="nb-corpo">
                         <h3><?= h($inf['titulo']) ?></h3>
+                        <?php if (!empty($inf['subtitulo'])): ?><p class="nb-sub"><?= h($inf['subtitulo']) ?></p><?php endif; ?>
                         <time><?= date('d/m/Y', strtotime($inf['data_publicacao'])) ?></time>
                     </div>
                 </a>
@@ -294,37 +236,35 @@ document.querySelectorAll('.ixh-mods button').forEach(b => b.addEventListener('c
     </div>
 </section>
 
-<?php $docs = site_arquivos(); if ($docs): $doc_cats = array_values(array_unique(array_column($docs, 'categoria'))); ?>
-<!-- ================= DOCUMENTOS ================= -->
-<section class="sg-secao dc" id="documentos">
+<?php $docs = site_arquivos(); $editais = editais_lista(); if ($docs || $editais): ?>
+<!-- ================= EDITAIS E DOCUMENTOS ================= -->
+<section class="sg-secao dc2" id="documentos">
     <div class="largura">
-        <div class="sg-cab"><div><span class="sg-sobre">Documentos</span><h2>Arquivos da escola</h2><p class="dc-sub">Regimento, matriz curricular dos cursos e outros documentos. Veja aqui no site ou baixe, sem precisar de cadastro.</p></div></div>
-        <?php if (count($doc_cats) > 1): ?>
-        <div class="dc-filtros" role="tablist" aria-label="Filtrar documentos">
-            <button type="button" class="ativo" data-dc="">Todos <small><?= count($docs) ?></small></button>
-            <?php foreach ($doc_cats as $c): ?><button type="button" data-dc="<?= h($c) ?>"><?= h($c) ?> <small><?= count(array_filter($docs, fn($d) => $d['categoria'] === $c)) ?></small></button><?php endforeach; ?>
+        <div class="sg-cab"><div><span class="sg-sobre">Documentos</span><h2><?= $editais ? 'Editais e documentos' : 'Documentos da escola' ?></h2><p class="dc-sub">Abra aqui no site ou baixe, sem precisar de cadastro.</p></div></div>
+        <?php if ($editais): ?>
+        <div class="dc2-bloco">
+            <div class="dc2-tit"><h3><i class="bi bi-megaphone"></i>Editais de seleção</h3><?php if (count($editais) > 3): ?><a href="editais.php">Todos os editais (<?= count($editais) ?>) <i class="bi bi-arrow-right"></i></a><?php endif; ?></div>
+            <div class="ed2-grade"><?php foreach (array_slice($editais, 0, 3) as $x) echo edital_cartao($x); ?></div>
         </div>
         <?php endif; ?>
-        <div class="dc-grade">
-            <?php foreach ($docs as $d): [, $ic, $rot, $cor] = ARQ_SITE_TIPOS[$d['extensao']] ?? ['', 'file-earmark', 'Arquivo', 'cinza'];
-                $k = array_search($d['categoria'], $doc_cats, true) % 6; $u = 'arquivo_site.php?id=' . (int)$d['id']; $ext = strtoupper($d['extensao']); $meta = $rot . ' · ' . tamanho_legivel((int)$d['tamanho']); ?>
-            <article class="dc-item k<?= $k ?>" data-cat="<?= h($d['categoria']) ?>" data-id="<?= (int)$d['id'] ?>" data-ext="<?= h($d['extensao']) ?>" data-titulo="<?= h($d['titulo']) ?>" data-meta="<?= h($meta) ?>" data-cor="<?= $cor ?>" data-ic="<?= h($ic) ?>">
-                <a class="dc-link" href="<?= $u ?>" target="_blank" rel="noopener" data-ver aria-label="Ver <?= h($d['titulo']) ?>">
-                    <span class="dc-doc <?= $cor ?>"><i class="bi bi-<?= h($ic) ?>-fill"></i><b><?= h($ext === 'JPEG' ? 'JPG' : $ext) ?></b></span>
-                    <span class="dc-txt">
-                        <span class="dc-cat"><?= h($d['categoria']) ?></span>
-                        <span class="dc-tit"><?= h($d['titulo']) ?></span>
-                        <?php if ($d['descricao']): ?><span class="dc-desc"><?= h($d['descricao']) ?></span><?php endif; ?>
-                        <span class="dc-meta"><?= h($meta) ?></span>
-                    </span>
-                </a>
-                <span class="dc-bt">
-                    <a class="dc-abrir" href="<?= $u ?>" target="_blank" rel="noopener" data-ver title="Ver aqui no site" aria-label="Ver aqui no site"><i class="bi bi-eye"></i></a>
-                    <a class="dc-baixar" href="<?= $u ?>&amp;baixar=1" title="Baixar" aria-label="Baixar"><i class="bi bi-download"></i></a>
-                </span>
-            </article>
-            <?php endforeach; ?>
+        <?php if ($docs): ?>
+        <div class="dc2-bloco">
+            <?php if ($editais): ?><div class="dc2-tit"><h3><i class="bi bi-folder2-open"></i>Documentos da escola</h3></div><?php endif; ?>
+            <ul class="dc2-lista">
+                <?php foreach ($docs as $d): [, $ic, $rot, $cor] = ARQ_SITE_TIPOS[$d['extensao']] ?? ['', 'file-earmark', 'Arquivo', 'cinza'];
+                    $u = 'arquivo_site.php?id=' . (int)$d['id']; $ext = strtoupper($d['extensao']); $meta = $rot . ' · ' . tamanho_legivel((int)$d['tamanho']); ?>
+                <li class="dc-item" data-id="<?= (int)$d['id'] ?>" data-ext="<?= h($d['extensao']) ?>" data-titulo="<?= h($d['titulo']) ?>" data-meta="<?= h($meta) ?>" data-cor="<?= $cor ?>" data-ic="<?= h($ic) ?>">
+                    <a class="dc2-link" href="<?= $u ?>" target="_blank" rel="noopener" data-ver>
+                        <span class="dc2-ic <?= $cor ?>"><i class="bi bi-<?= h($ic) ?>"></i></span>
+                        <span class="dc2-txt"><b><?= h($d['titulo']) ?></b><small><?= h($d['categoria']) ?> · <?= h($ext === 'JPEG' ? 'JPG' : $ext) ?> · <?= h(tamanho_legivel((int)$d['tamanho'])) ?></small></span>
+                        <span class="dc2-abrir">Abrir</span>
+                    </a>
+                    <a class="dc2-baixar" href="<?= $u ?>&amp;baixar=1" title="Baixar" aria-label="Baixar <?= h($d['titulo']) ?>"><i class="bi bi-download"></i></a>
+                </li>
+                <?php endforeach; ?>
+            </ul>
         </div>
+        <?php endif; ?>
     </div>
     <div class="dcv" id="dcVisor" hidden role="dialog" aria-modal="true" aria-labelledby="dcvTit">
         <div class="dcv-caixa">
@@ -360,6 +300,24 @@ document.querySelectorAll('.ixh-mods button').forEach(b => b.addEventListener('c
         <button type="button" class="est-nav ant" data-luz="-1" aria-label="Foto anterior"><i class="bi bi-chevron-left"></i></button>
         <figure><img id="estLuzImg" alt=""><figcaption id="estLuzLeg"></figcaption></figure>
         <button type="button" class="est-nav prox" data-luz="1" aria-label="Próxima foto"><i class="bi bi-chevron-right"></i></button>
+    </div>
+</section>
+<?php endif; ?>
+
+<?php $gremio = gremio_lista(); if ($gremio): ?>
+<!-- ================= GRÊMIO ESTUDANTIL ================= -->
+<section class="sg-secao gr2" id="gremio">
+    <div class="largura">
+        <div class="sg-cab"><div><span class="sg-sobre">Grêmio estudantil</span><h2>A voz dos estudantes</h2><p class="dc-sub">Quem representa os alunos da escola.</p></div></div>
+        <ul class="gr2-grade">
+            <?php foreach ($gremio as $g): $src = gremio_foto_src($g); ?>
+            <li><figure class="eq2 gr2-pessoa">
+                <div class="eq2-foto"><?php if ($src): ?><img src="<?= h($src) ?>" alt="<?= h($g['nome']) ?>" loading="lazy"><?php else: ?><span class="eq2-ini"><?= h($iniciais($g['nome'])) ?></span><?php endif; ?>
+                    <span class="gr2-funcao"><?= h($g['funcao']) ?></span></div>
+                <figcaption><strong><?= h($g['nome']) ?></strong><?php if ($g['curso']): ?><small><i class="bi bi-mortarboard"></i><?= h($g['curso']) ?></small><?php endif; ?></figcaption>
+            </figure></li>
+            <?php endforeach; ?>
+        </ul>
     </div>
 </section>
 <?php endif; ?>

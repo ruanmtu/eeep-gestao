@@ -281,7 +281,7 @@
     const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
     function abrir(item, doHistorico) {
-        const id = item.dataset.id, ext = item.dataset.ext, url = 'arquivo_site.php?id=' + id, baixar = url + '&baixar=1';
+        const id = item.dataset.id, ext = item.dataset.ext, url = item.dataset.url || 'arquivo_site.php?id=' + id, baixar = url + '&baixar=1';   // v79: editais usam data-url
         const abs = new URL(baixar, location.href).href;
         document.getElementById('dcvTit').textContent = item.dataset.titulo;
         document.getElementById('dcvMeta').textContent = item.dataset.meta;
@@ -305,7 +305,7 @@
         voltarFoco = document.activeElement;
         visor.hidden = false; aberto = true; document.body.classList.add('dcv-aberto');
         visor.querySelector('.dcv-x2').focus({ preventScroll: true });
-        if (doHistorico) try { history.pushState({ dcv: id }, '', '#ver-' + id); } catch (e) {}
+        if (doHistorico && !item.dataset.url) try { history.pushState({ dcv: id }, '', '#ver-' + id); } catch (e) {}
     }
     function fechar(doHistorico) {
         if (!aberto) return;

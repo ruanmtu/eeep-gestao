@@ -3,6 +3,17 @@
 require __DIR__ . '/../includes/app.php';
 exigir('site.publicar');
 
+/* v79: link do site do interclasse (aparece no menu do site enquanto estiver preenchido) */
+if (eh_post() && ($_POST['acao'] ?? '') === 'links') {
+    csrf_verificar();
+    $u = trim((string)($_POST['interclasse_url'] ?? ''));
+    if ($u !== '' && !preg_match('#^https?://#i', $u)) $u = 'https://' . $u;
+    if ($u !== '' && !filter_var($u, FILTER_VALIDATE_URL)) { flash('danger', 'O endereço do site do interclasse não parece válido.'); redirecionar('site.php'); }
+    config_gravar('interclasse_url', mb_substr($u, 0, 255));
+    flash('success', $u ? 'Link do interclasse salvo. Ele aparece no menu do site.' : 'Link do interclasse retirado do site.');
+    redirecionar('site.php');
+}
+
 $conta = function (string $sql, array $p = []) { try { return (int)q_valor($sql, $p); } catch (PDOException $e) { return 0; } };
 $hoje = date('Y-m-d');
 $n_banners = $conta('SELECT COUNT(*) FROM site_banners WHERE ativo = 1 AND (inicio IS NULL OR inicio <= ?) AND (fim IS NULL OR fim >= ?)', [$hoje, $hoje]);
@@ -21,6 +32,8 @@ $cards = [
     ['gestao_site.php', 'person-workspace', 'Gestão escolar', 'Os 4 cartões de "Quem conduz a escola": foto, nome e texto.', min(4, $n_gestao ?: 4), 'cartões'],
     ['equipe.php', 'people', 'Equipe no site', 'Professores e funcionários da galeria da equipe, com formação e biografia.', $n_equipe, 'pessoas'],
     ['arquivos_site.php', 'folder2-open', 'Arquivos do site', 'Regimento, matriz curricular e outros documentos que qualquer visitante pode abrir ou baixar.', count(site_arquivos()), 'arquivos'],
+    ['editais_site.php', 'megaphone', 'Editais', 'Editais de seleção: PDF, período de inscrição, link para se inscrever e resultado.', count(editais_lista()), 'no site'],
+    ['gremio_site.php', 'flag', 'Grêmio estudantil', 'Membros do grêmio com foto, nome, curso e função.', count(gremio_lista()), 'membros'],
     ['estudantes_site.php', 'images', 'Fotos dos estudantes', 'As fotos de "Quem faz a escola acontecer": trocar, enquadrar e remover.', count(site_estudantes($ESTUDANTES ?? [])), 'fotos'],
 ];
 if (pode('ia.config')) { $ia_ok = ia_ativa(); $cards[] = ['assistente_ia.php', 'stars', 'Sofia · assistente de IA', 'Chave da API do Google, modelo e cota diária de perguntas.', null, $ia_ok ? 'Chave ativa' : 'Sem chave']; }
@@ -47,4 +60,12 @@ require __DIR__ . '/../includes/site_abas.php';
     </a>
     <?php endforeach; ?>
 </div>
+<form method="post" class="card mt-3 st-links"><?= csrf_campo() ?><input type="hidden" name="acao" value="links">
+    <div class="card-header"><h2><i class="bi bi-link-45deg me-1"></i>Links externos</h2></div>
+    <div class="card-body">
+        <label class="form-label" for="icUrl"><i class="bi bi-trophy me-1"></i>Site do interclasse</label>
+        <div class="input-group"><input class="form-control" id="icUrl" name="interclasse_url" type="text" inputmode="url" autocomplete="url" maxlength="255" placeholder="https://…" value="<?= e(config_ler('interclasse_url') ?: '') ?>"><button class="btn btn-primary"><i class="bi bi-check2 me-1"></i>Salvar</button></div>
+        <div class="form-text">Com o endereço preenchido, aparece “Interclasse” no menu do site, abrindo o site do interclasse. Deixe vazio para tirar o link.</div>
+    </div>
+</form>
 <?php require __DIR__ . '/../includes/layout_rodape.php'; ?>

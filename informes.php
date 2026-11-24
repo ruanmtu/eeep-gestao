@@ -14,7 +14,7 @@ $url_pag = fn(array $q) => 'informes.php' . (($q = array_filter($q)) ? '?' . htt
 $pagina_titulo = 'Notícias e informes · ' . $ESCOLA['nome'];
 $pagina_classe = 'pagina-interna inicio-galeria';
 $prefixo = 'index.php';
-$cabeca_extra = '<link href="assets/css/inicio.css?v=26" rel="stylesheet">';
+$cabeca_extra = '<link href="assets/css/inicio.css?v=27" rel="stylesheet">';
 require __DIR__ . '/includes/site_topo.php';
 ?>
 <main id="conteudo" class="sg-pagina nl-pagina">

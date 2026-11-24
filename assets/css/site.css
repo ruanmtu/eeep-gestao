@@ -845,3 +845,8 @@ input[type="password"]::-ms-reveal, input[type="password"]::-ms-clear { display:
 .nm-rodape-dados dd { margin: 2px 0 0; font-weight: 700; color: #062a14; font-size: .92rem; }
 .nm-rodape-dados dd small { display: block; font-weight: 500; color: #6a786f; font-size: .78rem; }
 @media (max-width: 860px) { .nm-rodape { flex-direction: column; align-items: flex-start; gap: 16px; } .nm-rodape-logo { width: 160px; } .nm-rodape-dados { padding: 16px 0 0; border-left: 0; border-top: 1px solid #e1e8e2; width: 100%; } }
+
+/* v79 · rodapé simples da notícia */
+.nm-rodape2 { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 30px; padding-top: 16px; border-top: 1px solid #e6ebe7; color: var(--cinza); font-size: .88rem; }
+.nm-rodape2 span { display: inline-flex; align-items: center; gap: 7px; }
+.nm-rodape2 i { color: var(--verde); }

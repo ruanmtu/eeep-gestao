@@ -46,7 +46,6 @@ $itens_menu = [
         ['reservas', 'reservas.php', 'easel2', 'Reservas', 'reservas'],
         ['biblioteca', 'biblioteca.php', 'book', 'Centro de Multimeios', 'biblioteca', pode('biblioteca') ? contar_atrasados() : 0],
         ['site', 'site.php', 'globe2', 'Site', 'site.publicar'],
-        ['interclasse', 'interclasse.php', 'trophy', 'Interclasse', 'interclasse'],
     ],
     'Administração' => [
         ['importar', 'importar.php', 'cloud-arrow-up', 'Planilha do Power BI', 'importar'],
@@ -55,7 +54,6 @@ $itens_menu = [
         ['usuarios', 'usuarios.php', 'person-badge', 'Usuários e permissões', 'usuarios'],
     ],
 ];
-if (so_interclasse()) $itens_menu = ['Interclasse' => [['interclasse', 'interclasse.php', 'trophy', 'Interclasse', 'interclasse']]];   // v77: só essa área
 ?>
 <!doctype html>
 <html lang="pt-br">

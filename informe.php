@@ -11,7 +11,7 @@ $mais = array_values(array_filter(site_informes(true, 6), fn($x) => (int)$x['id'
 $pagina_titulo = $inf['titulo'] . ' · ' . $ESCOLA['nome'];
 $pagina_classe = 'pagina-interna inicio-galeria';
 $prefixo = 'index.php';
-$cabeca_extra = '<link href="assets/css/inicio.css?v=26" rel="stylesheet">';
+$cabeca_extra = '<link href="assets/css/inicio.css?v=27" rel="stylesheet">';
 require __DIR__ . '/includes/site_topo.php';
 ?>
 <main id="conteudo" class="sg-pagina nm-pagina">
@@ -62,14 +62,10 @@ require __DIR__ . '/includes/site_topo.php';
                 </section>
                 <?php endif; ?>
                 <?php $enviado = strtotime((string)($inf['criado_em'] ?? $inf['data_publicacao'])); $pub = strtotime((string)$inf['data_publicacao']); ?>
-                <footer class="nm-rodape">
-                    <img class="nm-rodape-logo" src="assets/img/logo-escola-2026.png" alt="<?= h($ESCOLA['nome']) ?>" width="1367" height="438" loading="lazy">
-                    <dl class="nm-rodape-dados">
-                        <div><dt><i class="bi bi-calendar3"></i>Publicada em</dt><dd><?= date('d/m/Y', $pub) ?></dd></div>
-                        <div><dt><i class="bi bi-clock"></i>Enviada às</dt><dd><?= date('H:i', $enviado) ?><?= date('Y-m-d', $enviado) !== date('Y-m-d', $pub) ? ' de ' . date('d/m/Y', $enviado) : '' ?></dd></div>
-                        <div><dt><i class="bi bi-person"></i>Enviada por</dt><dd><?= h($an) ?><?= $ac ? '<small>' . h($ac) . '</small>' : '' ?></dd></div>
-                        <div><dt><i class="bi bi-tag"></i>Categoria</dt><dd><?= h($crot) ?></dd></div>
-                    </dl>
+                <footer class="nm-rodape2">
+                    <span><i class="bi bi-calendar3"></i>Publicada em <?= date('d/m/Y', $pub) ?> às <?= date('H:i', $enviado) ?></span>
+                    <span><i class="bi bi-person"></i>Por <?= h($an) ?></span>
+                    <span><i class="bi bi-tag"></i><?= h($crot) ?></span>
                 </footer>
             </article>
         </div>
@@ -79,7 +75,7 @@ require __DIR__ . '/includes/site_topo.php';
             <?php foreach (array_slice($mais, 0, 4) as $x): ?>
             <a class="nb-card" href="informe.php?id=<?= $x['id'] ?>">
                 <div class="nb-capa"><?php if ($x['imagem']): ?><img src="<?= h(site_img_url('i', (int)$x['id'], $x['imagem'], true)) ?>" alt="" loading="lazy" style="<?= h(informe_foco($x)) ?>"><?php else: ?><span class="nb-semfoto"><img src="assets/img/brasao-128.png" alt=""></span><?php endif; ?></div>
-                <div class="nb-corpo"><h3><?= h($x['titulo']) ?></h3><time><?= date('d/m/Y', strtotime($x['data_publicacao'])) ?></time></div>
+                <div class="nb-corpo"><h3><?= h($x['titulo']) ?></h3><?php if (!empty($x['subtitulo'])): ?><p class="nb-sub"><?= h($x['subtitulo']) ?></p><?php endif; ?><time><?= date('d/m/Y', strtotime($x['data_publicacao'])) ?></time></div>
             </a>
             <?php endforeach; ?>
         </div>
