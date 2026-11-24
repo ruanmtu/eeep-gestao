@@ -11,6 +11,20 @@ if (eh_post()) {
     $acao = $_POST['acao'] ?? '';
     try {
         switch ($acao) {
+            case 'destaques':   /* v80: card "Alunos destaque" do carrossel */
+                $al = [];
+                for ($k = 0; $k < 3; $k++) $al[] = ['nome' => mb_substr(trim((string)($_POST['dq_nome'][$k] ?? '')), 0, 120), 'nota' => mb_substr(trim((string)($_POST['dq_nota'][$k] ?? '')), 0, 8), 'turma' => mb_substr(trim((string)($_POST['dq_turma'][$k] ?? '')), 0, 60)];
+                $foco = preg_match('/^(left|center|right|\d{1,3}%) (top|center|bottom|\d{1,3}%)$/', (string)($_POST['dq_foco'] ?? '')) ? $_POST['dq_foco'] : 'center 30%';
+                config_gravar('site_destaques', json_encode(['ativo' => !empty($_POST['dq_ativo']) ? 1 : 0, 'titulo' => mb_substr(trim((string)($_POST['dq_titulo'] ?? '')), 0, 60) ?: 'Alunos destaque',
+                    'periodo' => mb_substr(trim((string)($_POST['dq_periodo'] ?? '')), 0, 60), 'alunos' => $al, 'foco' => $foco], JSON_UNESCAPED_UNICODE));
+                if (!empty($_POST['dq_tirar_foto'])) { site_img_apagar(config_ler('site_destaques_foto')); config_gravar('site_destaques_foto', null); }
+                if (!empty($_FILES['dq_foto']['name'])) {
+                    [$arq] = site_img_salvar($_FILES['dq_foto'], 'banners', 'destaques');
+                    site_img_apagar(config_ler('site_destaques_foto'));
+                    config_gravar('site_destaques_foto', $arq);
+                }
+                flash('success', 'Card de alunos destaque salvo.');
+                redirecionar('banners_site.php#destaques');
             case 'salvar':
                 $t = trim((string)($_POST['titulo'] ?? ''));
                 if (mb_strlen($t) < 3) throw new RuntimeException('Escreva o que o banner diz (serve para quem usa leitor de tela e para achar no painel).');
@@ -100,6 +114,38 @@ require __DIR__ . '/../includes/layout_topo.php';
 require __DIR__ . '/../includes/site_abas.php';
 ?>
 <div class="pg-acoes"><?= janela_botao('novoBanner', 'Novo banner', 'plus-lg') ?></div>
+<?php $dq = destaques_cfg(); $dq_foto = config_ler('site_destaques_foto'); $dq_al = array_pad((array)(json_decode((string)config_ler('site_destaques'), true)['alunos'] ?? []), 3, []); ?>
+<form method="post" enctype="multipart/form-data" class="card mb-3 dq-adm" id="destaques"><?= csrf_campo() ?><input type="hidden" name="acao" value="destaques">
+    <div class="card-header"><h2><i class="bi bi-award me-1"></i>Card de alunos destaque</h2><label class="form-check form-switch ms-auto mb-0"><input class="form-check-input" type="checkbox" name="dq_ativo" value="1"<?= !empty($dq['ativo']) ? ' checked' : '' ?>> <span class="form-check-label small">Mostrar no carrossel (primeiro slide)</span></label></div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Foto dos alunos <small class="text-secondary">(de preferência deitada)</small></label>
+                <label class="dq-adm-foto" for="dqFoto"><?php if ($dq_foto): ?><img id="dqPrev" src="<?= e(site_img_url('dq', 1, $dq_foto, true, '../')) ?>" alt=""><?php else: ?><img id="dqPrev" alt="" hidden><span id="dqPrevIc"><i class="bi bi-camera"></i>Escolher foto</span><?php endif; ?></label>
+                <input class="form-control mt-2" id="dqFoto" type="file" name="dq_foto" accept="image/*">
+                <div class="row g-2 mt-1 align-items-center">
+                    <div class="col-7"><select class="form-select form-select-sm" name="dq_foco" title="Que parte da foto aparece quando ela é cortada"><?php foreach (['center 30%' => 'Mostrar o rosto (meio-alto)', 'center top' => 'Mostrar o topo', 'center center' => 'Mostrar o centro', 'center bottom' => 'Mostrar a parte de baixo'] as $k => $v): ?><option value="<?= $k ?>"<?= ($dq['foco'] ?? 'center 30%') === $k ? ' selected' : '' ?>><?= $v ?></option><?php endforeach; ?></select></div>
+                    <?php if ($dq_foto): ?><div class="col-5"><label class="form-check small mb-0"><input class="form-check-input" type="checkbox" name="dq_tirar_foto" value="1"> <span class="form-check-label">tirar a foto</span></label></div><?php endif; ?>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <div class="row g-2 mb-2">
+                    <div class="col-6"><label class="form-label small">Título</label><input class="form-control" name="dq_titulo" maxlength="60" value="<?= e($dq['titulo'] ?? 'Alunos destaque') ?>"></div>
+                    <div class="col-6"><label class="form-label small">Período</label><input class="form-control" name="dq_periodo" maxlength="60" value="<?= e($dq['periodo'] ?? '') ?>" placeholder="3º período · 2026"></div>
+                </div>
+                <?php foreach ([0, 1, 2] as $k): $a = $dq_al[$k]; ?>
+                <div class="row g-2 align-items-end mb-1">
+                    <div class="col-12 col-sm-6"><label class="form-label small"><?= $k + 1 ?>º lugar</label><input class="form-control" name="dq_nome[]" maxlength="120" value="<?= e($a['nome'] ?? '') ?>" placeholder="Nome do aluno"></div>
+                    <div class="col-5 col-sm-2"><label class="form-label small">Média</label><input class="form-control" name="dq_nota[]" maxlength="8" value="<?= e($a['nota'] ?? '') ?>" placeholder="9,94"></div>
+                    <div class="col-7 col-sm-4"><label class="form-label small">Turma <small class="text-secondary">(opcional)</small></label><input class="form-control" name="dq_turma[]" maxlength="60" value="<?= e($a['turma'] ?? '') ?>" placeholder="3º A Informática"></div>
+                </div>
+                <?php endforeach; ?>
+                <button class="btn btn-primary mt-2"><i class="bi bi-check2 me-1"></i>Salvar card</button>
+            </div>
+        </div>
+    </div>
+</form>
+<script>document.getElementById('dqFoto').addEventListener('change', e => { const f = e.target.files[0], i = document.getElementById('dqPrev'), c = document.getElementById('dqPrevIc'); if (!f) return; i.src = URL.createObjectURL(f); i.hidden = false; if (c) c.hidden = true; });</script>
 <div class="row g-3">
     <div class="col-12">
         <?php if (!$lista): ?>

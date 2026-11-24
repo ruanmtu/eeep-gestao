@@ -10,7 +10,7 @@ if (eh_post() && ($_POST['acao'] ?? '') === 'links') {
     if ($u !== '' && !preg_match('#^https?://#i', $u)) $u = 'https://' . $u;
     if ($u !== '' && !filter_var($u, FILTER_VALIDATE_URL)) { flash('danger', 'O endereço do site do interclasse não parece válido.'); redirecionar('site.php'); }
     config_gravar('interclasse_url', mb_substr($u, 0, 255));
-    flash('success', $u ? 'Link do interclasse salvo. Ele aparece no menu do site.' : 'Link do interclasse retirado do site.');
+    flash('success', $u ? 'Link do interclasse salvo. Ele aparece no atalho da página inicial.' : 'Link do interclasse retirado do site.');
     redirecionar('site.php');
 }
 
@@ -65,7 +65,7 @@ require __DIR__ . '/../includes/site_abas.php';
     <div class="card-body">
         <label class="form-label" for="icUrl"><i class="bi bi-trophy me-1"></i>Site do interclasse</label>
         <div class="input-group"><input class="form-control" id="icUrl" name="interclasse_url" type="text" inputmode="url" autocomplete="url" maxlength="255" placeholder="https://…" value="<?= e(config_ler('interclasse_url') ?: '') ?>"><button class="btn btn-primary"><i class="bi bi-check2 me-1"></i>Salvar</button></div>
-        <div class="form-text">Com o endereço preenchido, aparece “Interclasse” no menu do site, abrindo o site do interclasse. Deixe vazio para tirar o link.</div>
+        <div class="form-text">Com o endereço preenchido, o atalho “Eventos” da página inicial vira “Interclasse”, abrindo o site do interclasse. Deixe vazio para tirar o link.</div>
     </div>
 </form>
 <?php require __DIR__ . '/../includes/layout_rodape.php'; ?>

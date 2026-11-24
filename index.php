@@ -39,11 +39,12 @@ $ano_inicio = 2009;   // começou como EEEP David Vieira da Silva
 
 /* Banners do topo e atalhos */
 $banners = site_banners_para_mostrar();
+$dq = destaques_cfg(); if (!empty($dq['ativo']) && $dq['alunos']) array_unshift($banners, ['dq' => $dq, 'titulo' => $dq['titulo']]);   // v80: card dos alunos destaque
 $inf_matricula = null; foreach ($informes as $i) if ($i['categoria'] === 'matricula') { $inf_matricula = $i; break; }
 $atalhos = [   /* só atalhos de uso público (os do painel ficam no login) */
     ['person-plus-fill', 'Matrícula', '#contato'],
     ['megaphone', 'Notícias', 'informes.php'],
-    ['calendar-event', 'Eventos', '#agendaGrade'],
+    ic_url() ? ['trophy', 'Interclasse', ic_url()] : ['calendar-event', 'Eventos', '#agendaGrade'],   // v80: o interclasse só aparece neste atalho
     ['mortarboard', 'Cursos', '#cursos'],
     ['people', 'Equipe', $equipe ? '#equipe' : '#gestao'],
     ['building', 'A escola', '#escola'],
@@ -53,7 +54,7 @@ $atalhos = [   /* só atalhos de uso público (os do painel ficam no login) */
     ['chat-dots', 'Fale conosco', '#contato'],
 ];
 
-$cabeca_extra = '<link href="assets/css/inicio.css?v=27" rel="stylesheet">';
+$cabeca_extra = '<link href="assets/css/inicio.css?v=30" rel="stylesheet">';
 $pagina_classe = 'inicio-galeria';
 require __DIR__ . '/includes/site_topo.php';
 ?>
@@ -65,7 +66,7 @@ require __DIR__ . '/includes/site_topo.php';
 <?php if ($banners): ?>
 <section class="sg-banners" id="inicio" aria-roledescription="carrossel" aria-label="Destaques da escola">
     <div class="sg-bn-trilha" id="bnTrilha" tabindex="0">
-        <?php foreach ($banners as $i => $b): $tag = $b['link'] ? 'a' : 'div'; ?>
+        <?php foreach ($banners as $i => $b): if (!empty($b['dq'])) { echo destaques_slide($b['dq'], $i, count($banners)); continue; } $tag = $b['link'] ? 'a' : 'div'; ?>
         <<?= $tag ?> class="sg-bn"<?= $b['link'] ? ' href="' . h($b['link']) . '"' . (str_starts_with($b['link'], 'http') ? ' target="_blank" rel="noopener"' : '') : '' ?> aria-roledescription="slide" aria-label="<?= $i + 1 ?> de <?= count($banners) ?>: <?= h($b['titulo']) ?>">
             <picture><?php if (!empty($b['larga'])): ?><source media="(min-width: 992px)" srcset="<?= h($b['larga']) ?>"><?php endif; ?><img src="<?= h($b['src']) ?>" alt="<?= h($b['titulo']) ?>" width="1600" height="900"<?= $i > 1 ? ' loading="lazy"' : ' fetchpriority="high"' ?>></picture>
         </<?= $tag ?>>
@@ -85,7 +86,7 @@ require __DIR__ . '/includes/site_topo.php';
 <nav class="sg-atalhos" aria-label="Atalhos">
     <ul class="largura">
         <?php $sep = false; foreach ($atalhos as [$ic, $rot, $url]): $restrito = str_starts_with($url, 'painel/'); if ($restrito && !$sep): $sep = true; ?><li class="at-sep" aria-hidden="true"></li><?php endif; ?>
-        <li<?= $restrito ? ' class="at-equipe"' : '' ?>><a href="<?= h($url) ?>"<?= $restrito ? ' title="Para professores e gestão: pede login"' : '' ?>><span><i class="bi bi-<?= $ic ?>"></i><?= $restrito ? '<b class="at-cad" aria-hidden="true"><i class="bi bi-lock-fill"></i></b>' : '' ?></span><?= h($rot) ?></a></li>
+        <li<?= $restrito ? ' class="at-equipe"' : '' ?>><a href="<?= h($url) ?>"<?= $restrito ? ' title="Para professores e gestão: pede login"' : '' ?><?= str_starts_with($url, 'http') ? ' target="_blank" rel="noopener"' : '' ?>><span><i class="bi bi-<?= $ic ?>"></i><?= $restrito ? '<b class="at-cad" aria-hidden="true"><i class="bi bi-lock-fill"></i></b>' : '' ?></span><?= h($rot) ?></a></li>
         <?php endforeach; ?>
     </ul>
 </nav>
