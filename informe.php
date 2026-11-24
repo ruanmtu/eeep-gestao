@@ -11,7 +11,7 @@ $mais = array_values(array_filter(site_informes(true, 6), fn($x) => (int)$x['id'
 $pagina_titulo = $inf['titulo'] . ' · ' . $ESCOLA['nome'];
 $pagina_classe = 'pagina-interna inicio-galeria';
 $prefixo = 'index.php';
-$cabeca_extra = '<link href="assets/css/inicio.css?v=32" rel="stylesheet">';
+$cabeca_extra = '<link href="assets/css/inicio.css?v=33" rel="stylesheet">';
 require __DIR__ . '/includes/site_topo.php';
 ?>
 <main id="conteudo" class="sg-pagina nm-pagina">
@@ -30,15 +30,12 @@ require __DIR__ . '/includes/site_topo.php';
                         <span class="nm-cat"><i class="bi bi-<?= h($cic) ?>"></i><?= h($crot) ?></span>
                         <h1><?= h($inf['titulo']) ?></h1>
                         <?php if (!empty($inf['subtitulo'])): ?><p class="nm-sub"><?= h($inf['subtitulo']) ?></p><?php endif; ?>
-                        <div class="nm-autor">
-                            <span class="nm-av"><?= h($ai) ?></span>
-                            <div><small>Enviado por</small><b><?= h($an) ?></b><em><?= h($ac) ?></em></div>
-                        </div>
+                        <?php /* v83: "Enviado por" e "Publicado em" saíram daqui: já estão no rodapé da matéria */ if (!empty($inf['data_evento']) || $inf['categoria'] === 'evento' || $anexos): ?>
                         <ul class="nm-dados">
-                            <li><i class="bi bi-calendar3"></i><span><small>Publicado em</small><?= h(informe_quando($inf)) ?></span></li>
                             <?php if (!empty($inf['data_evento']) || $inf['categoria'] === 'evento'): ?><li><i class="bi bi-calendar-event"></i><span><small>Quando acontece</small><?= !empty($inf['data_evento']) ? h(data_curta($inf['data_evento'])) : 'Data a confirmar' ?></span></li><?php endif; ?>
                             <?php if ($anexos): ?><li><i class="bi bi-paperclip"></i><span><small>Documentos</small><a href="#documentos"><?= count($anexos) ?> PDF<?= count($anexos) > 1 ? 's' : '' ?> anexado<?= count($anexos) > 1 ? 's' : '' ?></a></span></li><?php endif; ?>
                         </ul>
+                        <?php endif; ?>
                         <button type="button" class="sg-bt claro nm-comp" id="compartilhar"><i class="bi bi-share"></i>Compartilhar</button>
                     </div>
                 </div>
@@ -71,12 +68,25 @@ require __DIR__ . '/includes/site_topo.php';
         </div>
         <?php if ($mais): ?>
         <h2 class="sg-sub">Outras notícias <a class="nt-todas-link" href="informes.php">ver todas <i class="bi bi-arrow-right"></i></a></h2>
-        <div class="nb-grade">
-            <?php foreach (array_slice($mais, 0, 4) as $x): ?>
-            <a class="nb-card" href="informe.php?id=<?= $x['id'] ?>">
-                <div class="nb-capa"><?php if ($x['imagem']): ?><img src="<?= h(site_img_url('i', (int)$x['id'], $x['imagem'], true)) ?>" alt="" loading="lazy" style="<?= h(informe_foco($x)) ?>"><?php else: ?><span class="nb-semfoto"><img src="assets/img/brasao-128.png" alt=""></span><?php endif; ?></div>
-                <div class="nb-corpo"><h3><?= h($x['titulo']) ?></h3><?php if (!empty($x['subtitulo'])): ?><p class="nb-sub"><?= h($x['subtitulo']) ?></p><?php endif; ?><time><?= date('d/m/Y', strtotime($x['data_publicacao'])) ?></time></div>
-            </a>
+        <div class="nl-mais">
+            <?php foreach (array_slice($mais, 0, 3) as $x):
+                [$xrot, $xic] = CATEGORIAS_INFORME[$x['categoria']] ?? CATEGORIAS_INFORME['aviso'];
+                [$xan, , $xai] = informe_autor($x); ?>
+            <article class="nl-card">
+                <a class="nl-capa" href="informe.php?id=<?= $x['id'] ?>" tabindex="-1" aria-hidden="true">
+                    <?php if ($x['imagem']): ?><img src="<?= h(site_img_url('i', (int)$x['id'], $x['imagem'], true)) ?>" alt="" loading="lazy" style="<?= h(informe_foco($x)) ?>"><?php else: ?><span class="nl-semfoto"><img src="assets/img/brasao-128.png" alt=""></span><?php endif; ?>
+                    <span class="nl-cat"><i class="bi bi-<?= h($xic) ?>"></i><?= h($xrot) ?></span>
+                </a>
+                <div class="nl-corpo">
+                    <time datetime="<?= h(substr($x['data_publicacao'], 0, 10)) ?>"><i class="bi bi-calendar3"></i><?= h(data_curta(substr($x['data_publicacao'], 0, 10))) ?></time>
+                    <h3><a href="informe.php?id=<?= $x['id'] ?>"><?= h($x['titulo']) ?></a></h3>
+                    <?php $xres = !empty($x['subtitulo']) ? (string)$x['subtitulo'] : informe_resumo($x, 140); if ($xres !== ''): ?><p><?= h($xres) ?></p><?php endif; ?>
+                    <div class="nl-pe">
+                        <span class="nl-autor"><span><?= h($xai) ?></span><?= h($xan) ?></span>
+                        <a class="nl-saiba" href="informe.php?id=<?= $x['id'] ?>">Saiba mais <i class="bi bi-arrow-right"></i></a>
+                    </div>
+                </div>
+            </article>
             <?php endforeach; ?>
         </div>
         <?php endif; ?>

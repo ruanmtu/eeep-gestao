@@ -1249,3 +1249,17 @@ body.dcv-aberto { overflow: hidden; }
 /* celular: atalhos em 2 linhas centralizadas */
 @media (max-width: 991.98px) { .sg-atalhos ul { justify-content: center !important; } }
 @media (max-width: 991.98px) { .sg-atalhos ul { align-items: flex-start !important; } }
+
+/* ================= v83 ================= */
+/* "Outras notícias" na página da matéria: mesmo cartão do "Ver todas" */
+.nl-mais { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; margin: 16px 0 10px; }
+.nl-corpo h3 { font-size: 1.05rem; line-height: 1.25; font-weight: 800; letter-spacing: -.015em; margin: 6px 0; }
+.nl-corpo h3 a { color: var(--verde-noite, #062a14); text-decoration: none; }
+.nl-corpo h3 a::after { content: ""; position: absolute; inset: 0; }
+@media (max-width: 991.98px) { .nl-mais { grid-template-columns: repeat(2, minmax(0, 1fr)); } .nl-mais .nl-card:nth-child(3) { display: none; } }
+@media (max-width: 575.98px) { .nl-mais { grid-template-columns: 1fr; gap: 14px; } .nl-mais .nl-card:nth-child(3) { display: flex; } }
+/* o cartão da matéria fica mais limpo sem autor/data repetidos */
+.nm-info .nm-dados:empty { display: none; }
+/* cursos: cada cartão abre sozinho, sem esticar os vizinhos */
+.sg-curso { align-self: start; }
+.nb-corpo time.nb-data { display: inline-flex; align-items: center; gap: 6px; } .nb-corpo time.nb-data i { color: #e8650c; }

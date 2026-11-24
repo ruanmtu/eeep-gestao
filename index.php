@@ -53,7 +53,7 @@ $atalhos = [   /* só atalhos de uso público (os do painel ficam no login) */
     ['chat-dots', 'Fale conosco', '#contato'],
 ];
 
-$cabeca_extra = '<link href="assets/css/inicio.css?v=32" rel="stylesheet">';
+$cabeca_extra = '<link href="assets/css/inicio.css?v=33" rel="stylesheet">';
 $pagina_classe = 'inicio-galeria';
 require __DIR__ . '/includes/site_topo.php';
 ?>
@@ -153,7 +153,7 @@ require __DIR__ . '/includes/site_topo.php';
                     <div class="nb-corpo">
                         <h3><?= h($inf['titulo']) ?></h3>
                         <?php if (!empty($inf['subtitulo'])): ?><p class="nb-sub"><?= h($inf['subtitulo']) ?></p><?php endif; ?>
-                        <time><?= date('d/m/Y', strtotime($inf['data_publicacao'])) ?></time>
+                        <time class="nb-data"><i class="bi bi-calendar3"></i><?= h(data_curta(substr($inf['data_publicacao'], 0, 10))) ?></time>
                     </div>
                 </a>
                 <?php endforeach; ?>

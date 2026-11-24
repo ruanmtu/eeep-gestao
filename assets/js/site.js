@@ -256,11 +256,7 @@
     }
 })();
 
-/* v45 · cursos: abrir um "O que se aprende" fecha os outros */
-(function () {
-    const ds = document.querySelectorAll('.sg-curso details');
-    ds.forEach(d => d.addEventListener('toggle', () => { if (d.open) ds.forEach(o => { if (o !== d) o.open = false; }); }));
-})();
+/* v83 · cursos: cada "O que se aprende" abre e fecha sozinho (vários podem ficar abertos) */
 
 /* v54 · Documentos: filtro por categoria */
 (function () {
