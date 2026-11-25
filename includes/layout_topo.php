@@ -65,7 +65,7 @@ $itens_menu = [
     <link href="<?= RAIZ ?>assets/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
     <link href="<?= RAIZ ?>assets/css/fontes.css?v=3" rel="stylesheet">
     <link href="<?= RAIZ ?>assets/vendor/icons/bootstrap-icons.min.css" rel="stylesheet">
-    <link href="<?= RAIZ ?>assets/css/painel.css?v=79" rel="stylesheet">
+    <link href="<?= RAIZ ?>assets/css/painel.css?v=80" rel="stylesheet">
     <link href="<?= RAIZ ?>assets/css/padrao.css?v=4" rel="stylesheet">
     <link rel="icon" href="<?= RAIZ ?>assets/img/favicon.png" type="image/png">
     <link rel="apple-touch-icon" href="<?= RAIZ ?>assets/img/apple-touch-icon.png">

@@ -101,6 +101,7 @@ require __DIR__ . '/../includes/layout_topo.php';
                         <td class="td-acoes">
                             <a class="btn btn-sm btn-light" href="prova.php?id=<?= $pr['id'] ?>">Abrir</a>
                             <?php if ($pronto): ?><a class="btn btn-sm btn-primary" href="prova_corrigir.php?id=<?= $pr['id'] ?>"><i class="bi bi-camera me-1"></i>Corrigir</a><?php endif; ?>
+                            <?php if (pode('provas.excluir')): ?><form method="post" action="prova.php?id=<?= $pr['id'] ?>" class="d-inline" data-confirmar="Excluir a prova &quot;<?= e($pr['titulo']) ?>&quot; e todas as correções feitas? As notas já lançadas no diário continuam." data-botao="Excluir prova"><?= csrf_campo() ?><input type="hidden" name="acao" value="excluir_prova"><input type="hidden" name="id" value="<?= $pr['id'] ?>"><button class="btn btn-sm btn-light text-danger" type="submit" title="Excluir prova" aria-label="Excluir a prova <?= e($pr['titulo']) ?>"><i class="bi bi-trash"></i></button></form><?php endif; ?>
                         </td>
                     </tr>
                 <?php endforeach; ?>

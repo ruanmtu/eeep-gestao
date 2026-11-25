@@ -1,6 +1,6 @@
 <?php
 /* Gerado junto com o pacote: lista dos arquivos da versão e o código (md5) de cada um. Usado por versao.php. */
-return ['versao' => '88', 'arquivos' => [
+return ['versao' => '89', 'arquivos' => [
     'album.php' => '3fc8daa82e7c249b13addddc92e2d983',
     'ambiente.php' => '49e79a2c7e8064312b54e601b493776e',
     'anexo_site.php' => '353a3253444f72ad0fe8b01abc84c77e',
@@ -11,7 +11,7 @@ return ['versao' => '88', 'arquivos' => [
     'assets/css/interclasse.css' => '9926737a9a71cf27e42ff466e402eacd',
     'assets/css/login.css' => '5c90a9c0bcef5a9146d655ea1072f069',
     'assets/css/padrao.css' => 'ea95bd4b395e6f9d2229b5e2f749f59b',
-    'assets/css/painel.css' => '49a7c33e19276cdeb218405208762a87',
+    'assets/css/painel.css' => '6aa8cd32aefc588cd27843c572396c7b',
     'assets/css/site.css' => '1f922885b1819899a7740e257391c353',
     'assets/css/topo.css' => '30fbf992e539c3609de7c25c3d172c2e',
     'assets/js/editor.js' => '5df722e4510cd2dbdc9c238243ac97b7',
@@ -43,7 +43,7 @@ return ['versao' => '88', 'arquivos' => [
     'google_entrar.php' => '836ed48c3b776f760c598d95778e722e',
     'google_retorno.php' => '186db351639714b19368320297691d39',
     'includes/agenda.php' => 'a4b73966646a12ca3c12c1503a1581c9',
-    'includes/app.php' => '98af03ee384d3c0a242949aa7465c102',
+    'includes/app.php' => 'e2ed83a1e8844f6313a3604ab907ea41',
     'includes/arquivos.php' => '8d57a3fc1e67fc7d9e04921b3eebf0c3',
     'includes/autorizacoes.php' => '6d94aa34a541cf63ea8ad3f750c95e19',
     'includes/avaliacoes.php' => '3bebb8ba8dfb538fa299451f636e6dfe',
@@ -65,7 +65,7 @@ return ['versao' => '88', 'arquivos' => [
     'includes/interclasse_form_jogo.php' => '6eb1d0c09b8a4993435eaaa0c6cf5a0d',
     'includes/janela.php' => 'c001dfa0e537a1a27710049ef1b6e47c',
     'includes/layout_rodape.php' => '5bec750b6a17131d707c6ca20f491686',
-    'includes/layout_topo.php' => 'c85547f204b447a988f79780de075406',
+    'includes/layout_topo.php' => 'c55b6c294222327639e3dac7467c6f72',
     'includes/lib/qrcode.php' => '3b22c07aa48bb1376b0237570609a8cc',
     'includes/livros_didaticos.php' => '2684809cf0dcedbae676ef1367c21106',
     'includes/nota_conceitual.php' => '607c1854c29e9f9eb27d2dfc1dd52413',
@@ -139,7 +139,7 @@ return ['versao' => '88', 'arquivos' => [
     'painel/mapa_sala.php' => 'e10d8f9d84c8631a1656b34c1cfc8e8f',
     'painel/mapa_sala_imprimir.php' => '8247f37e7b2f8ec02a84467e5a81d760',
     'painel/minha_turma.php' => '57b7c4ae31d109fa182f2d165e206a59',
-    'painel/nota_conceitual.php' => 'acd8d423260090483dac20894da12c28',
+    'painel/nota_conceitual.php' => '9b61703add4c37fcc26a7919d4a1100a',
     'painel/notas.php' => '5733c90bd7933525fd8302920425bb1f',
     'painel/notificacoes.php' => 'd27519a0936a703758422707c172758c',
     'painel/ocorrencia_termo.php' => 'd929dca772385d9e1452a04f0cddccc9',
@@ -150,7 +150,7 @@ return ['versao' => '88', 'arquivos' => [
     'painel/prova.php' => 'f36f7d9c663965f84fbf2d7f74ee874c',
     'painel/prova_corrigir.php' => '2f9ef48ed203d8e86862781bcb07be41',
     'painel/prova_folhas.php' => 'f89298d2d01e8ce9ad0262ba3e40a6b8',
-    'painel/provas.php' => '95687f35e55e4b0c437bbfa21055c3a2',
+    'painel/provas.php' => 'eb93c9fd2ff0a3d242371610d953eddb',
     'painel/relatorios.php' => '6a9f660a3b6435840448f2cf92edfa0f',
     'painel/reservas.php' => '5f271d35cc58e2d7af693c45f650969f',
     'painel/resultados.php' => '87494a739d4faf0375e8e7b875dcf31a',
