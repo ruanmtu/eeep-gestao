@@ -144,7 +144,10 @@ window.OMR = (function () {
             if (c.w < ladoMin || c.h < ladoMin || c.w > ladoMax || c.h > ladoMax) continue;
             if (asp < 0.55 || asp > 1.8 || c.preench < 0.47) continue;   // v76: quadrado girado
             if (c.minX === 0 || c.minY === 0 || c.minX + c.w >= w || c.minY + c.h >= h) continue; // cortado na borda
-            if (!achou || c.n > achou.n) achou = c;
+            if (reg.cx !== undefined) {   // v92: perto do ponto esperado vence (o QR tem quadrados maiores ali perto)
+                const d = Math.hypot(c.cx + x0 - reg.cx, c.cy + y0 - reg.cy);
+                if (!achou || d < achou._d) { achou = c; achou._d = d; }
+            } else if (!achou || c.n > achou.n) achou = c;
         }
         if (!achou) return null;
         return { x: achou.cx + x0, y: achou.cy + y0, lado: Math.sqrt(achou.n) };
@@ -161,7 +164,7 @@ window.OMR = (function () {
         return pts.map(p => {
             const x = p.x * fator, y = p.y * fator, l = (p.lado || 10) * fator;
             const r = Math.max(raio, l * 2.2);
-            return marcadorNaRegiao(img, { x0: x - r, y0: y - r, x1: x + r, y1: y + r, ladoMin: l * 0.5, ladoMax: l * 1.8 }) || { x, y, lado: l };
+            return marcadorNaRegiao(img, { x0: x - r, y0: y - r, x1: x + r, y1: y + r, ladoMin: l * 0.5, ladoMax: l * 1.8, cx: x, cy: y }) || { x, y, lado: l };
         });
     }
 
@@ -194,12 +197,19 @@ window.OMR = (function () {
     function mediana(a) { const b = [...a].sort((p, q) => p - q); return b[Math.floor(b.length / 2)]; }
 
     /* Decide a resposta de uma questão a partir do preenchimento de cada bolinha */
-    function decidir(f) {
+    function decidir(f, dk) {
         const ord = f.map((v, i) => [v, i]).sort((a, b) => b[0] - a[0]);
         const base = Math.min(...f);
         const [v1, i1] = ord[0], v2 = ord[1] ? ord[1][0] : 0;
         const forte = v => v >= 0.45 && v - base >= 0.22;
-        if (forte(v1) && forte(v2)) return v1 - v2 >= 0.3 ? [LETRAS[i1], true] : ['M', true];
+        if (forte(v1) && forte(v2)) {
+            /* v92: duas "cheias": se uma é tinta e a outra só uma sombra/sujeira clara, vale a escura */
+            if (dk) {
+                const od = dk.map((v, i) => [v, i]).sort((a, b) => b[0] - a[0]);
+                if (od[0][0] >= 0.45 && od[0][0] - od[1][0] >= 0.28) return [LETRAS[od[0][1]], od[1][0] >= 0.3];
+            }
+            return v1 - v2 >= 0.3 ? [LETRAS[i1], true] : ['M', true];
+        }
         if (forte(v1)) return [LETRAS[i1], false];
         if (v1 >= 0.28 && v1 - v2 >= 0.18) return [LETRAS[i1], true];
         return ['-', false];
@@ -268,33 +278,69 @@ window.OMR = (function () {
         return [0, 1, 2, 3].map(i => melhor[(i0 + i) % 4]);
     }
 
-    /* Foto inteira (sem guia): procura os quadradinhos pretos, agrupa os de
-       tamanho parecido e testa os 4 da ponta de cada grupo */
-    function acharCantos(img, L, erodir) {
-        if (erodir === undefined) return acharCantos(img, L, false) || acharCantos(img, L, true);
-        const { W, H } = img, N = W * H;
-        const comps = manchasEscuras(W, H, img.g, erodir).filter(c =>
-            c.w >= 5 && c.h >= 5 && c.w / c.h > 0.55 && c.w / c.h < 1.8 && c.preench > 0.47 && c.n > N * 0.00002 && c.n < N * 0.02).filter(c => cercadoDePapel(img, c));
-        comps.sort((a, b) => b.n - a.n);
-        const vistos = new Set();
+    /* v92 · Confere uma hipótese de folha casando o MODELO INTEIRO (como os leitores comerciais):
+       quadradinho de orientação escuro, os outros 3 cantos dele claros e as bolinhas impressas
+       no lugar certo (o contorno de cada bolinha é mais escuro que o papel em volta). */
+    function estrutura(s, L) {
+        const qs = L.questoes, passo = Math.max(1, Math.floor(qs.length / 14)), r = L.raio || 1.8;
+        let ok = 0, n = 0;
+        for (let qi = 0; qi < qs.length; qi += passo) for (const [x, y] of qs[qi].alts) {
+            n++;
+            for (const [ox, oy] of [[0, 0], [0.7, 0], [-0.7, 0], [0, 0.7], [0, -0.7], [1.4, 0], [-1.4, 0], [0, 1.4], [0, -1.4]]) {   // tolera papel curvo
+                let anel = 0, fora = 0;
+                for (let a = 0; a < 12; a++) { const t = a / 12 * Math.PI * 2, c = Math.cos(t), sn = Math.sin(t); anel += s.cinza(x + ox + c * r, y + oy + sn * r); fora += s.cinza(x + ox + c * r * 1.6, y + oy + sn * r * 1.6); }
+                if (anel < fora * 0.93) { ok++; break; }
+            }
+        }
+        return n ? ok / n : 0;
+    }
+    function escuroAli(s, x, y, t) {   // 0 = papel, 1 = preto (comparado com o papel em volta)
+        let c = 0, f = 0;
+        for (const [dx, dy] of [[0, 0], [.22, 0], [-.22, 0], [0, .22], [0, -.22]]) c += s.cinza(x + dx * t, y + dy * t);
+        for (let a = 0; a < 8; a++) { const ang = a / 8 * Math.PI * 2; f = Math.max(f, s.cinza(x + Math.cos(ang) * t * 1.3, y + Math.sin(ang) * t * 1.3)); }
+        return f > 0 ? Math.max(0, 1 - (c / 5) / f) : 0;
+    }
+    function hipotese(img, L, p) {
+        const M = homografia(L.marcadores, p); if (!M) return null;
+        const s = amostrador(img.W, img.H, img.g, M), t = L.orientacao_tam || 3.5;
+        const ori = escuroAli(s, L.orientacao[0], L.orientacao[1], t);
+        if (ori < 0.35) return null;
+        const anti = Math.max(...L.anti.map(([x, y]) => escuroAli(s, x, y, t)));
+        if (anti > 0.25) return null;
+        const est = estrutura(s, L);
+        if (est < 0.8) return null;
+        return { M, nota: est * 2 + (ori - anti) };
+    }
+    function acharCantos(img, L) {
+        const { W, H } = img, N = W * H, comps = [];
+        for (const er of [false, true]) for (const c of manchasEscuras(W, H, img.g, er)) {
+            if (!(c.w >= 5 && c.h >= 5 && c.w / c.h > 0.55 && c.w / c.h < 1.8 && c.preench > 0.47 && c.n > N * 0.00002 && c.n < N * 0.02)) continue;
+            if (comps.some(o => Math.hypot(o.cx - c.cx, o.cy - c.cy) < Math.max(o.w, o.h) * 0.6)) continue;
+            c.cerc = cercadoDePapel(img, c); comps.push(c);
+        }
+        /* o papel em volta é só preferência: o quadrado de baixo encosta na moldura e na sombra */
+        comps.sort((a, b) => b.n * (b.cerc ? 1 : 0.7) - a.n * (a.cerc ? 1 : 0.7));
+        const C = comps.slice(0, 16), K = C.length;
+        const ordenar = q => { const mx = q.reduce((t, c) => t + c.cx, 0) / 4, my = q.reduce((t, c) => t + c.cy, 0) / 4; return [...q].sort((p, r) => Math.atan2(p.cy - my, p.cx - mx) - Math.atan2(r.cy - my, r.cx - mx)); };
+        const d = (a, b) => Math.hypot(a.cx - b.cx, a.cy - b.cy);
+        const [m0, m1, , m3] = L.marcadores, asp = Math.hypot(m3[0] - m0[0], m3[1] - m0[1]) / Math.hypot(m1[0] - m0[0], m1[1] - m0[1]), rel = (L.marcador || 6) / Math.hypot(m1[0] - m0[0], m1[1] - m0[1]);
         let melhor = null;
-        for (const ref of comps.slice(0, 40)) {
-            const grupo = comps.filter(c => c.n > ref.n * 0.12 && c.n < ref.n * 3.5);   // v76: em perspectiva o quadrado de longe fica menor
-            const chave = grupo.map(c => c.cx | 0).join(',');
-            if (grupo.length < 4 || vistos.has(chave)) continue;
-            vistos.add(chave);
-            const ext = quatroCantos(grupo);
-            if (!ext) continue;
-            let area = 0;
-            for (let i = 0; i < 4; i++) { const p = ext[i], r = ext[(i + 1) % 4]; area += p.cx * r.cy - r.cx * p.cy; }
-            area = Math.abs(area) / 2;
-            if (area < N * 0.05) continue;
-            const o = orientar(img, L, ext.map(p => ({ x: p.cx, y: p.cy })));
-            if (!o) continue;
-            const nota = o.nota * 2 + area / N;
-            // v76: os 4 quadrados achados, já na ordem da folha (para a câmera "puxar" a folha por eles)
-            const cantos = [0, 1, 2, 3].map(i => { const c = ext[(i + o.rot) % 4]; return { x: c.cx, y: c.cy, lado: Math.sqrt(c.n) }; });
-            if (!melhor || nota > melhor.nota) melhor = Object.assign(o, { nota, cantos });
+        for (let a = 0; a < K; a++) for (let b = a + 1; b < K; b++) for (let c = b + 1; c < K; c++) for (let e = c + 1; e < K; e++) {
+            const g = [C[a], C[b], C[c], C[e]], ns = g.map(x => x.n);
+            if (Math.max(...ns) > Math.min(...ns) * 12) continue;   // perspectiva forte: o quadrado de perto fica bem maior
+            const q = ordenar(g);
+            let area = 0, conv = 0;
+            for (let i = 0; i < 4; i++) { const p0 = q[i], p1 = q[(i + 1) % 4], p2 = q[(i + 2) % 4]; area += p0.cx * p1.cy - p1.cx * p0.cy; conv += Math.sign((p1.cx - p0.cx) * (p2.cy - p1.cy) - (p1.cy - p0.cy) * (p2.cx - p1.cx)); }
+            if (Math.abs(conv) !== 4 || Math.abs(area) / 2 < N * 0.02) continue;
+            const s1 = (d(q[0], q[1]) + d(q[2], q[3])) / 2, s2 = (d(q[1], q[2]) + d(q[3], q[0])) / 2, ra = Math.max(s1, s2) / Math.min(s1, s2);
+            if (ra < asp * 0.55 || ra > asp * 1.8) continue;
+            const lado = Math.sqrt(ns.reduce((t, v) => t + v, 0) / 4) / Math.min(s1, s2);
+            if (lado < rel * 0.35 || lado > rel * 2.6) continue;
+            for (let rot = 0; rot < 4; rot++) {
+                const p = [0, 1, 2, 3].map(i => [q[(i + rot) % 4].cx, q[(i + rot) % 4].cy]);
+                const h = hipotese(img, L, p);
+                if (h && (!melhor || h.nota > melhor.nota)) melhor = Object.assign(h, { pts: p, rot, cantos: [0, 1, 2, 3].map(i => { const k = q[(i + rot) % 4]; return { x: k.cx, y: k.cy, lado: Math.sqrt(k.n) }; }) });
+            }
         }
         return melhor;
     }
@@ -303,7 +349,7 @@ window.OMR = (function () {
        de lado, em ângulo). Na folha da escola confere pelo quadradinho de orientação;
        devolve os cantos na ordem sup. esq., sup. dir., inf. dir., inf. esq. da folha. */
     function acharFolha(img, L) {
-        if (L) { const o = acharCantos(img, L, true) || acharCantos(img, L, false); return o ? o.cantos : null; }
+        if (L) { const o = acharCantos(img, L); return o ? o.cantos : null; }
         const { W, H } = img, N = W * H;
         const comps = manchasEscuras(W, H, img.g, true).filter(c =>
             c.w >= 5 && c.h >= 5 && c.w / c.h > 0.55 && c.w / c.h < 1.8 && c.preench > 0.47 && c.n > N * 0.00004 && c.n < N * 0.02).filter(c => cercadoDePapel(img, c));
@@ -365,14 +411,27 @@ window.OMR = (function () {
     function lerSistema(img, L, o) {
         const M = o.M, s = amostrador(img.W, img.H, img.g, M);
         const respostas = [], preench = [], duvidas = [], alvos = [];
+        const rb = L.raio || 1.8;
+        /* v92 · recentraliza cada questão: procura o pequeno deslocamento em que os contornos
+           impressos das bolinhas casam melhor (papel ondulado, folha curva, foto em ângulo) */
+        const anel = (x, y) => { let t = 0; for (let a = 0; a < 12; a++) { const ang = a / 12 * Math.PI * 2; t += s.cinza(x + Math.cos(ang) * rb, y + Math.sin(ang) * rb); } return t; };
+        let ultimo = [0, 0];
         L.questoes.forEach((q, qi) => {
             const rl = L.raio_leitura || 2.0, rp = L.raio_papel || 4.0;
-            const f = q.alts.map(([x, y]) => s.fracao(x, y, rl, s.papel(x, y, rp) * 0.62, rl / 5));
+            let melhor = null;
+            for (let dy = -1.5; dy <= 1.51; dy += 0.3) for (let dx = -1.5; dx <= 1.51; dx += 0.3) {
+                const v = q.alts.reduce((t, [x, y]) => t + anel(x + dx, y + dy), 0) + 6 * Math.hypot(dx - ultimo[0], dy - ultimo[1]);
+                if (!melhor || v < melhor[0]) melhor = [v, dx, dy];
+            }
+            const [, ox, oy] = melhor; ultimo = [ox, oy];
+            const pos = q.alts.map(([x, y]) => [x + ox, y + oy]);
+            const f = pos.map(([x, y]) => s.fracao(x, y, rl, s.papel(x, y, rp) * 0.62, rl / 5));
+            const dk = pos.map(([x, y]) => { const pp = s.papel(x, y, rp); let t = 0, n = 0; for (let yy = -rl; yy <= rl + 1e-9; yy += rl / 3) for (let xx = -rl; xx <= rl + 1e-9; xx += rl / 3) if (xx * xx + yy * yy <= rl * rl) { t += s.cinza(x + xx, y + yy); n++; } return pp > 0 ? Math.max(0, 1 - t / n / pp) : 0; });
             preench.push(f);
-            const [r, duv] = decidir(f);
+            const [r, duv] = decidir(f, dk);
             if (duv) duvidas.push(qi);
             respostas.push(r);
-            alvos.push(q.alts.map(([x, y]) => M(x, y)));
+            alvos.push(pos.map(([x, y]) => M(x, y)));
         });
         const px = Math.hypot(...[0, 1].map(k => M(10, 0)[k] - M(0, 0)[k])) / 10;
         const qr = interpretarQR(lerQR(img, M, L));
@@ -395,7 +454,9 @@ window.OMR = (function () {
 
     /* Câmera: cantos já achados pela guia */
     function lerComCantos(img, L, pts) {
-        const o = orientar(img, L, pts) || acharCantos(img, L);
+        let o = null;   // v92: os 4 cantos da guia só valem se o modelo inteiro casar
+        for (let rot = 0; rot < 4; rot++) { const p = [0, 1, 2, 3].map(i => [pts[(i + rot) % 4].x, pts[(i + rot) % 4].y]), h = hipotese(img, L, p); if (h && (!o || h.nota > o.nota)) o = Object.assign(h, { pts: p, rot }); }
+        if (!o) o = acharCantos(img, L);
         if (!o) return { ok: false, erro: 'Achei os 4 quadrados, mas não reconheci a folha da escola. É uma folha de outro modelo? Troque para "Outra folha".', img };
         return lerSistema(img, L, o);
     }
@@ -525,5 +586,31 @@ window.OMR = (function () {
     }
 
 
-    return { LETRAS, homografia, prepararImagem, detectarCantos, acharFolha, refinarCantos, cantosNaFoto, ler, lerComCantos, lerExterno, posicoesExterno, retificar, desenhar, carregarArquivo, interpretarQR };
+    /* v92 · Câmera: confirma os 4 cantos do quadro anterior (rápido) antes de procurar na imagem toda */
+    function confirmarCantos(img, L, pts) {
+        const c = refinarCantos(img, pts, 1);
+        let o = null;
+        for (let rot = 0; rot < 4; rot++) { const p = [0, 1, 2, 3].map(i => [c[(i + rot) % 4].x, c[(i + rot) % 4].y]), h = hipotese(img, L, p); if (h && (!o || h.nota > o.nota)) o = { nota: h.nota, rot }; }
+        return o ? [0, 1, 2, 3].map(i => c[(i + o.rot) % 4]) : null;
+    }
+    /* v92 · Junta várias leituras seguidas da mesma folha (câmera): cada questão fica com a
+       resposta da maioria; se as leituras não batem, a questão vai para revisão. */
+    function combinar(lista) {
+        const ok = lista.filter(r => r && r.ok);
+        if (ok.length < 2) return ok[0] || lista[0];
+        const base = Object.assign({}, ok[0]), n = base.respostas.length;
+        base.respostas = []; base.duvidas = []; base.leituras = ok.length;
+        for (let q = 0; q < n; q++) {
+            const cont = {};
+            ok.forEach(r => { cont[r.respostas[q]] = (cont[r.respostas[q]] || 0) + 1; });
+            const [resp, votos] = Object.entries(cont).sort((a, b) => b[1] - a[1])[0];
+            base.respostas.push(resp);
+            const duvidosa = votos < ok.length || ok.every(r => r.duvidas.includes(q));
+            if (duvidosa) base.duvidas.push(q);
+        }
+        base.qr = ok.map(r => r.qr).find(Boolean) || null;
+        return base;
+    }
+    window.__OMRDBG = { manchasEscuras, cercadoDePapel, nivelPapel, hipotese, amostrador, estrutura, escuroAli, acharCantos };
+    return { LETRAS, combinar, confirmarCantos, homografia, prepararImagem, detectarCantos, acharFolha, refinarCantos, cantosNaFoto, ler, lerComCantos, lerExterno, posicoesExterno, retificar, desenhar, carregarArquivo, interpretarQR };
 })();

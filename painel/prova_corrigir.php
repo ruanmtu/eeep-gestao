@@ -160,7 +160,7 @@ require __DIR__ . '/../includes/layout_topo.php';
 
 <?php
 $script_pagina = '<script src="' . RAIZ . 'assets/vendor/jsqr/jsQR.js"></script>
-<script src="' . RAIZ . 'assets/js/omr.js?v=16"></script>
+<script src="' . RAIZ . 'assets/js/omr.js?v=17"></script>
 <script>
 (function () {
   "use strict";
@@ -296,6 +296,10 @@ $script_pagina = '<script src="' . RAIZ . 'assets/vendor/jsqr/jsQR.js"></script>
       const img = OMR.prepararImagem(video, 520);
       let pts = OMR.detectarCantos(img, regioes(img)), livre = false;
       /* v76: fora dos quadrados da tela? procura os 4 quadrados na imagem toda (torta, de lado, em ângulo) */
+      if (!pts.every(Boolean) && st.modo === "escola" && st.ultimos) {   // v92: segue a folha do quadro anterior (rápido)
+        const seg = OMR.confirmarCantos(img, L, st.ultimos);
+        if (seg) { pts = seg; livre = true; }
+      }
       if (!pts.every(Boolean)) {
         const achados = OMR.acharFolha(img, st.modo === "escola" ? L : null);
         if (achados) { pts = achados; livre = true; }
@@ -323,11 +327,23 @@ $script_pagina = '<script src="' . RAIZ . 'assets/vendor/jsqr/jsQR.js"></script>
 
   function capturar(pts, pequena) {
     st.estado = "lendo"; status("Lendo a folha…", "ok"); marcarGuias([1, 1, 1, 1]);
-    setTimeout(() => {
+    /* v92: na folha da escola lê 3 quadros seguidos e fica com o que a maioria leu (como os apps de correção) */
+    if (st.modo !== "escola") {
+      setTimeout(() => { const big = OMR.prepararImagem(video, 1600); processar(big, OMR.refinarCantos(big, pts, big.W / pequena.W)); }, 20);
+      return;
+    }
+    const lidas = []; let cant = pts, fator = null;
+    const um = () => {
       const big = OMR.prepararImagem(video, 1600);
-      const cantos = OMR.refinarCantos(big, pts, big.W / pequena.W);
-      processar(big, cantos);
-    }, 20);
+      if (fator === null) fator = big.W / pequena.W;
+      const c = OMR.refinarCantos(big, cant, lidas.length ? 1 : fator);
+      const r = OMR.lerComCantos(big, L, c); lidas.push(r);
+      if (r.ok && r.contorno) cant = r.contorno.map(([x, y]) => ({ x, y, lado: c[0].lado }));
+      else cant = c;
+      if (lidas.length < 3 && lidas.filter(x => x.ok).length < 3 && lidas.length - lidas.filter(x => x.ok).length < 2) setTimeout(um, 90);
+      else tratar(OMR.combinar(lidas));
+    };
+    setTimeout(um, 20);
   }
 
   /* Uma leitura (câmera ou foto) */

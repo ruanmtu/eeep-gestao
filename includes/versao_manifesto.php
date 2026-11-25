@@ -1,6 +1,6 @@
 <?php
 /* Gerado junto com o pacote: lista dos arquivos da versão e o código (md5) de cada um. Usado por versao.php. */
-return ['versao' => '91', 'arquivos' => [
+return ['versao' => '92', 'arquivos' => [
     'album.php' => '3fc8daa82e7c249b13addddc92e2d983',
     'ambiente.php' => '49e79a2c7e8064312b54e601b493776e',
     'anexo_site.php' => '353a3253444f72ad0fe8b01abc84c77e',
@@ -19,7 +19,7 @@ return ['versao' => '91', 'arquivos' => [
     'assets/js/janela.js' => '7ed406cefb055e316867144186065454',
     'assets/js/lote.js' => 'c217ebc4d8209bfcf40b37cef795444e',
     'assets/js/mapa_sala.js' => '21724abcbed5bc279301e65b50f6d5eb',
-    'assets/js/omr.js' => '7f99a4f578e17f03615c17cb61c42db3',
+    'assets/js/omr.js' => '6437750d3657d49ab2e90033195df97c',
     'assets/js/painel.js' => '2b754268575b5d5cf39591e5cd735091',
     'assets/js/recorte.js' => '58d8305ff2d9abc358b96929a94f95d7',
     'assets/js/resultados.js' => '0d6db55c64968a2baabebf0037060468',
@@ -43,7 +43,7 @@ return ['versao' => '91', 'arquivos' => [
     'google_entrar.php' => '836ed48c3b776f760c598d95778e722e',
     'google_retorno.php' => '186db351639714b19368320297691d39',
     'includes/agenda.php' => 'a4b73966646a12ca3c12c1503a1581c9',
-    'includes/app.php' => 'f2f649eb1152142e61db9898957acac3',
+    'includes/app.php' => '6040bfabd782e86507740eeca2b3334e',
     'includes/arquivos.php' => '8d57a3fc1e67fc7d9e04921b3eebf0c3',
     'includes/autorizacoes.php' => '6d94aa34a541cf63ea8ad3f750c95e19',
     'includes/avaliacoes.php' => '3bebb8ba8dfb538fa299451f636e6dfe',
@@ -148,7 +148,7 @@ return ['versao' => '91', 'arquivos' => [
     'painel/perfil.php' => 'e769ce9c3a4815c20429f280b6112db2',
     'painel/professores.php' => '38efd6f9661b5180642c61a148d08fc2',
     'painel/prova.php' => 'f36f7d9c663965f84fbf2d7f74ee874c',
-    'painel/prova_corrigir.php' => '2f9ef48ed203d8e86862781bcb07be41',
+    'painel/prova_corrigir.php' => 'a7b676654a03bc9c3b040babd92112a8',
     'painel/prova_folhas.php' => 'f89298d2d01e8ce9ad0262ba3e40a6b8',
     'painel/provas.php' => 'eb93c9fd2ff0a3d242371610d953eddb',
     'painel/relatorios.php' => '6a9f660a3b6435840448f2cf92edfa0f',
