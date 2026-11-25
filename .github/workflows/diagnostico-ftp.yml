@@ -28,3 +28,5 @@ jobs:
           L "cat /domains/eeepvenceslau.com.br/public_html/.htaccess" | head -40
           echo "### versao.php"
           grep -E 'versao\.php$' lista.txt | o
+          echo "### pastas de domínios e subdomínios (até 3 níveis, sem o conteúdo do site principal)"
+          grep -E '^/domains/[^/]+/?$|^/domains/[^/]+/[^/]+/?$|^/domains/[^/]+/public_html/[^/.]+/?$' lista.txt | grep -v 'public_html/\(assets\|dados\|includes\|painel\|interclasse\)' | head -80 | o
