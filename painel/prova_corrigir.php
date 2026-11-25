@@ -160,7 +160,7 @@ require __DIR__ . '/../includes/layout_topo.php';
 
 <?php
 $script_pagina = '<script src="' . RAIZ . 'assets/vendor/jsqr/jsQR.js"></script>
-<script src="' . RAIZ . 'assets/js/omr.js?v=17"></script>
+<script src="' . RAIZ . 'assets/js/omr.js?v=18"></script>
 <script>
 (function () {
   "use strict";
@@ -195,12 +195,12 @@ $script_pagina = '<script src="' . RAIZ . 'assets/vendor/jsqr/jsQR.js"></script>
      tamanho dos quadrados, posição do QR), com folga só para o aviso de cima */
   const MM = { x0: L.marcadores[0][0], y0: L.marcadores[0][1], larg: L.marcadores[1][0] - L.marcadores[0][0] };
   function quadro() {
-    const sw = palco.clientWidth, sh = palco.clientHeight, topo = 62, base = 74, lado = Math.max(14, sw * 0.04);
+    const sw = palco.clientWidth, sh = palco.clientHeight, topo = 62, base = 120, lado = Math.max(14, sw * 0.04);   // v93: espaço para o aviso de baixo não cobrir as guias
     const w = Math.min(sw - 2 * lado, (sh - topo - base) * 0.97 / ASP);
     return { x: (sw - w) / 2, y: topo + (sh - topo - base - w * ASP) / 2, w, h: w * ASP, k: w / MM.larg };
   }
   function posicionarGuia() {
-    const f = quadro(), t = Math.max(22, f.k * L.marcador * 1.45);            // quadrado da guia ≈ 1,45× o quadrado impresso
+    const f = quadro(), t = Math.max(34, f.k * L.marcador * 2.6);             // v93: quadrado da guia grande (≈ 2,6× o impresso), como nos apps de correção
     const px = (x, y) => [f.x + (x - MM.x0) * f.k, f.y + (y - MM.y0) * f.k];
     const g = $("guia"), sp = g.querySelectorAll("span");
     g.classList.remove("puxando"); g.querySelector(".sg-puxa polygon").setAttribute("points", "");
@@ -219,11 +219,11 @@ $script_pagina = '<script src="' . RAIZ . 'assets/vendor/jsqr/jsQR.js"></script>
   function regioes(img) {
     const sw = palco.clientWidth, sh = palco.clientHeight, vw = video.videoWidth, vh = video.videoHeight;
     const s = Math.max(sw / vw, sh / vh), dx = (sw - vw * s) / 2, dy = (sh - vh * s) / 2, k = img.W / vw, f = quadro();
-    const rx = Math.max(f.w * 0.13, f.k * L.marcador * 2.2), ry = Math.max(f.h * 0.07, f.k * L.marcador * 2.2), conv = (X, Y) => [(X - dx) / s * k, (Y - dy) / s * k];
+    const rx = Math.max(f.w * 0.18, f.k * L.marcador * 3.4), ry = Math.max(f.h * 0.1, f.k * L.marcador * 3.4), conv = (X, Y) => [(X - dx) / s * k, (Y - dy) / s * k];
     const lm = f.w * L.marcador / (L.marcadores[1][0] - L.marcadores[0][0]) / s * k;      // lado do quadrado na imagem
     return [[f.x, f.y], [f.x + f.w, f.y], [f.x + f.w, f.y + f.h], [f.x, f.y + f.h]].map(([x, y]) => {
       const [x0, y0] = conv(x - rx, y - ry), [x1, y1] = conv(x + rx, y + ry);
-      return { x0, y0, x1, y1, ladoMin: lm * 0.45, ladoMax: lm * 2.4 };
+      const [cx, cy] = conv(x, y); return { x0, y0, x1, y1, ladoMin: lm * 0.6, ladoMax: lm * 2.4, cx, cy };
     });
   }
   function marcarGuias(pts) { $("guia").querySelectorAll("span").forEach((s, i) => s.classList.toggle("ok", !!pts[i])); }
@@ -295,6 +295,7 @@ $script_pagina = '<script src="' . RAIZ . 'assets/vendor/jsqr/jsQR.js"></script>
     if ((st.estado === "procurando" || st.estado === "aguardando_saida") && video.videoWidth) {
       const img = OMR.prepararImagem(video, 520);
       let pts = OMR.detectarCantos(img, regioes(img)), livre = false;
+      if (st.modo === "escola" && pts.every(Boolean)) { const ok = OMR.confirmarCantos(img, L, pts); pts = ok || [null, null, null, null]; }   // v93: guia grande -> confere com o modelo
       /* v76: fora dos quadrados da tela? procura os 4 quadrados na imagem toda (torta, de lado, em ângulo) */
       if (!pts.every(Boolean) && st.modo === "escola" && st.ultimos) {   // v92: segue a folha do quadro anterior (rápido)
         const seg = OMR.confirmarCantos(img, L, st.ultimos);
@@ -312,9 +313,9 @@ $script_pagina = '<script src="' . RAIZ . 'assets/vendor/jsqr/jsQR.js"></script>
         if (livre) puxarGuias(pts, img); else { soltarGuias(); marcarGuias(pts); }
         if (todos) {
           const mov = st.ultimos ? Math.max(...pts.map((p, i) => Math.hypot(p.x - st.ultimos[i].x, p.y - st.ultimos[i].y))) : 1e9;
-          st.estaveis = mov < img.W * 0.015 ? st.estaveis + 1 : 1; st.ultimos = pts;
+          st.estaveis = mov < img.W * 0.03 ? st.estaveis + 1 : 1; st.ultimos = pts;   // v93: tolera a mão tremendo um pouco
           status(st.estaveis >= 2 ? "Segure firme…" : (livre ? "Folha encontrada: puxando pelos quadrados" : "Folha encontrada"), "ok");
-          if (st.estaveis >= 3) { capturar(pts, img); }
+          if (st.estaveis >= 2) { capturar(pts, img); }
         } else {
           st.estaveis = 0; st.ultimos = null;
           const n = pts.filter(Boolean).length;
@@ -322,7 +323,7 @@ $script_pagina = '<script src="' . RAIZ . 'assets/vendor/jsqr/jsQR.js"></script>
         }
       }
     }
-    setTimeout(laco, 110);
+    setTimeout(laco, 80);
   }
 
   function capturar(pts, pequena) {
@@ -340,7 +341,8 @@ $script_pagina = '<script src="' . RAIZ . 'assets/vendor/jsqr/jsQR.js"></script>
       const r = OMR.lerComCantos(big, L, c); lidas.push(r);
       if (r.ok && r.contorno) cant = r.contorno.map(([x, y]) => ({ x, y, lado: c[0].lado }));
       else cant = c;
-      if (lidas.length < 3 && lidas.filter(x => x.ok).length < 3 && lidas.length - lidas.filter(x => x.ok).length < 2) setTimeout(um, 90);
+      const limpa = lidas.length === 1 && r.ok && r.qr && !r.duvidas.length;   // v93: leitura limpa -> pronto, sem esperar mais quadros
+      if (!limpa && lidas.length < 3 && lidas.filter(x => x.ok).length < 3 && lidas.length - lidas.filter(x => x.ok).length < 2) setTimeout(um, 60);
       else tratar(OMR.combinar(lidas));
     };
     setTimeout(um, 20);
