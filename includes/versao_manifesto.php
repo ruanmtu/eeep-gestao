@@ -1,6 +1,6 @@
 <?php
 /* Gerado junto com o pacote: lista dos arquivos da versão e o código (md5) de cada um. Usado por versao.php. */
-return ['versao' => '90', 'arquivos' => [
+return ['versao' => '91', 'arquivos' => [
     'album.php' => '3fc8daa82e7c249b13addddc92e2d983',
     'ambiente.php' => '49e79a2c7e8064312b54e601b493776e',
     'anexo_site.php' => '353a3253444f72ad0fe8b01abc84c77e',
@@ -43,7 +43,7 @@ return ['versao' => '90', 'arquivos' => [
     'google_entrar.php' => '836ed48c3b776f760c598d95778e722e',
     'google_retorno.php' => '186db351639714b19368320297691d39',
     'includes/agenda.php' => 'a4b73966646a12ca3c12c1503a1581c9',
-    'includes/app.php' => 'bec570204620eca39d6d492a804eadf5',
+    'includes/app.php' => 'f2f649eb1152142e61db9898957acac3',
     'includes/arquivos.php' => '8d57a3fc1e67fc7d9e04921b3eebf0c3',
     'includes/autorizacoes.php' => '6d94aa34a541cf63ea8ad3f750c95e19',
     'includes/avaliacoes.php' => '3bebb8ba8dfb538fa299451f636e6dfe',
@@ -139,7 +139,7 @@ return ['versao' => '90', 'arquivos' => [
     'painel/mapa_sala.php' => 'e10d8f9d84c8631a1656b34c1cfc8e8f',
     'painel/mapa_sala_imprimir.php' => '8247f37e7b2f8ec02a84467e5a81d760',
     'painel/minha_turma.php' => '57b7c4ae31d109fa182f2d165e206a59',
-    'painel/nota_conceitual.php' => 'eb19d5a24d20cf3b67543902b0e18757',
+    'painel/nota_conceitual.php' => 'a3f3d805e361c2627e2c5d63756b198d',
     'painel/notas.php' => '5733c90bd7933525fd8302920425bb1f',
     'painel/notificacoes.php' => 'd27519a0936a703758422707c172758c',
     'painel/ocorrencia_termo.php' => 'd929dca772385d9e1452a04f0cddccc9',
