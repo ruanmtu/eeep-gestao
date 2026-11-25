@@ -4373,3 +4373,8 @@ html[data-ms-modo="ver"][data-ms-mudou="0"] .ms-salvar { display: none; }
 .gr-prev-lixo:hover { background: #c62828; color: #fff; }
 .eq-foto-lixo { width: auto; } .eq-foto-lixo .gr-prev-lixo { top: 4px; right: 4px; width: 30px; height: 30px; }
 @media (max-width: 575.98px) { .gr-form { flex-direction: column; align-items: center; } }
+/* v87 · card "Venha ser EEEP!" no painel */
+.vs-adm-grade { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 20px; align-items: start; }
+.vs-adm-grade .dq-adm-quadro { margin: 0; width: 210px; }
+.vs-adm-ic { width: 36px; height: 36px; flex: none; border-radius: 10px; display: grid; place-items: center; background: linear-gradient(140deg, #ffe08a, #f2b705); color: #4a3500; }
+@media (max-width: 767.98px) { .vs-adm-grade { grid-template-columns: 1fr; } .vs-adm-grade .dq-adm-quadro { margin: 0 auto; } }

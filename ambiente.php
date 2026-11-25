@@ -13,7 +13,7 @@ $pagina_titulo = $amb['titulo'] . ' · ' . $ESCOLA['nome'];
 $pagina_descricao = $amb['resumo'] ?: ('Conheça o ambiente ' . $amb['titulo'] . ' da ' . $ESCOLA['nome'] . '.');
 $pagina_classe = 'pagina-interna inicio-galeria';
 $prefixo = 'index.php';
-$cabeca_extra = '<link href="assets/css/inicio.css?v=36" rel="stylesheet">' . ($fotos ? '<meta property="og:image" content="' . h(ambiente_foto_url($amb, 0)) . '">' : '');
+$cabeca_extra = '<link href="assets/css/inicio.css?v=37" rel="stylesheet">' . ($fotos ? '<meta property="og:image" content="' . h(ambiente_foto_url($amb, 0)) . '">' : '');
 require __DIR__ . '/includes/site_topo.php';
 ?>
 <main id="conteudo" class="sg-pagina pa-pagina">
