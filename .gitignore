@@ -6,3 +6,4 @@ dados/
 .DS_Store
 Thumbs.db
 *.log
+selecao/includes/config.php
