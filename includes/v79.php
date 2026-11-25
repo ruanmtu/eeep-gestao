@@ -116,16 +116,26 @@ function destaques_foto(int $k): string { return (string)config_ler('site_destaq
 /** Slide do card de destaques (mesmo tamanho dos banners) */
 function destaques_slide(array $c, int $i, int $total): string
 {
-    $med = ['1º lugar', '2º lugar', '3º lugar'];
-    $h = '<div class="sg-bn sg-bn-dq" aria-roledescription="slide" aria-label="' . ($i + 1) . ' de ' . $total . ': ' . e($c['titulo']) . '">'
-       . '<div class="dq-cab"><span class="dq-sobre"><i class="bi bi-award-fill"></i>' . e($c['periodo']) . '</span><strong>' . e($c['titulo']) . '</strong><small>As maiores médias da escola. Parabéns!</small></div><ol class="dq-lista">';
+    /* v84 · banner animado no modelo do esboço: logo + título à esquerda; foto em pé, lugar, nome, turma e média de cada aluno */
+    $tit = trim((string)$c['titulo']) ?: 'Alunos destaque';
+    $pal = preg_split('/\s+/', $tit, 2);
+    $logo = $GLOBALS['ESCOLA']['logo_branca'] ?? 'assets/img/logo-branca.png';
+    $h = '<div class="sg-bn sg-bn-dq2" aria-roledescription="slide" aria-label="' . ($i + 1) . ' de ' . $total . ': ' . e($tit) . '">'
+       . '<div class="dq2-fundo" aria-hidden="true"><i class="dq2-bolha b1"></i><i class="dq2-bolha b2"></i><i class="dq2-bolha b3"></i><span class="dq2-raios"></span>'
+       . str_repeat('<b class="dq2-confete"></b>', 14) . '</div>'
+       . '<div class="dq2-intro"><img class="dq2-logo" src="' . e($logo) . '" alt="" width="1400" height="451">'
+       . '<h3 class="dq2-tit"><span>' . e($pal[0]) . '</span>' . (isset($pal[1]) ? '<em>' . e($pal[1]) . '</em>' : '') . '</h3>'
+       . '<p class="dq2-per"><i class="bi bi-stars"></i>' . e($c['periodo']) . '</p></div><ol class="dq2-lista">';
     foreach ($c['alunos'] as $k => $a) {
+        if ($k > 2) break;
         $f = destaques_foto($k);
         $ini = mb_strtoupper(implode('', array_map(fn($p) => mb_substr($p, 0, 1), array_slice(preg_split('/\s+/', trim($a['nome'])), 0, 2))));
-        $h .= '<li class="p' . ($k + 1) . '"><div class="dq-retrato">'
-            . ($f ? '<img src="' . e(site_img_url('dq', $k, $f)) . '" alt="' . e($a['nome']) . '"' . ($i > 1 ? ' loading="lazy"' : '') . '>' : '<span class="dq-ini">' . e($ini) . '</span>')
-            . '<span class="dq-med"><i class="bi bi-trophy-fill"></i>' . ($k + 1) . 'º</span><span class="dq-nota">' . e($a['nota']) . '</span></div>'
-            . '<div class="dq-nome"><em>' . $med[$k] . '</em><b>' . e($a['nome']) . '</b>' . (!empty($a['turma']) ? '<small>' . e($a['turma']) . '</small>' : '') . '<span class="dq-nota-g">' . e($a['nota']) . '</span></div></li>';
+        $h .= '<li class="dq2-al p' . ($k + 1) . '" style="--k:' . $k . '">'
+            . '<div class="dq2-foto">' . ($f ? '<img src="' . e(site_img_url('dq', $k, $f)) . '" alt="' . e($a['nome']) . '"' . ($i > 1 ? ' loading="lazy"' : '') . '>' : '<span class="dq2-ini">' . e($ini) . '</span>')
+            . '<span class="dq2-luz"></span><span class="dq2-med"><i class="bi bi-trophy-fill"></i>' . ($k + 1) . 'º</span></div>'
+            . '<div class="dq2-txt"><span class="dq2-lugar">' . ($k + 1) . 'º Lugar</span><b class="dq2-nome">' . e($a['nome']) . '</b>'
+            . (!empty($a['turma']) ? '<small class="dq2-turma">' . e($a['turma']) . '</small>' : '')
+            . '<strong class="dq2-nota" data-nota="' . e($a['nota']) . '">' . e($a['nota']) . '</strong></div></li>';
     }
     return $h . '</ol></div>';
 }

@@ -14,7 +14,7 @@ $url_pag = fn(array $q) => 'informes.php' . (($q = array_filter($q)) ? '?' . htt
 $pagina_titulo = 'Notícias e informes · ' . $ESCOLA['nome'];
 $pagina_classe = 'pagina-interna inicio-galeria';
 $prefixo = 'index.php';
-$cabeca_extra = '<link href="assets/css/inicio.css?v=33" rel="stylesheet">';
+$cabeca_extra = '<link href="assets/css/inicio.css?v=34" rel="stylesheet">';
 require __DIR__ . '/includes/site_topo.php';
 ?>
 <main id="conteudo" class="sg-pagina nl-pagina">
@@ -66,4 +66,4 @@ require __DIR__ . '/includes/site_topo.php';
         </div>
     </div>
 </main>
-<?php $rodape_extra = '<script src="assets/js/inicio.js?v=7" defer></script>'; require __DIR__ . '/includes/site_rodape.php'; ?>
+<?php $rodape_extra = '<script src="assets/js/inicio.js?v=8" defer></script>'; require __DIR__ . '/includes/site_rodape.php'; ?>

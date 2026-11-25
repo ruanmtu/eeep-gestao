@@ -11,7 +11,7 @@ $mais = array_values(array_filter(site_informes(true, 6), fn($x) => (int)$x['id'
 $pagina_titulo = $inf['titulo'] . ' · ' . $ESCOLA['nome'];
 $pagina_classe = 'pagina-interna inicio-galeria';
 $prefixo = 'index.php';
-$cabeca_extra = '<link href="assets/css/inicio.css?v=33" rel="stylesheet">';
+$cabeca_extra = '<link href="assets/css/inicio.css?v=34" rel="stylesheet">';
 require __DIR__ . '/includes/site_topo.php';
 ?>
 <main id="conteudo" class="sg-pagina nm-pagina">
@@ -92,4 +92,4 @@ require __DIR__ . '/includes/site_topo.php';
         <?php endif; ?>
     </div>
 </main>
-<?php $rodape_extra = '<script src="assets/js/inicio.js?v=7" defer></script>'; require __DIR__ . '/includes/site_rodape.php'; ?>
+<?php $rodape_extra = '<script src="assets/js/inicio.js?v=8" defer></script>'; require __DIR__ . '/includes/site_rodape.php'; ?>

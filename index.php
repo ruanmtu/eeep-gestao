@@ -53,7 +53,7 @@ $atalhos = [   /* só atalhos de uso público (os do painel ficam no login) */
     ['chat-dots', 'Fale conosco', '#contato'],
 ];
 
-$cabeca_extra = '<link href="assets/css/inicio.css?v=33" rel="stylesheet">';
+$cabeca_extra = '<link href="assets/css/inicio.css?v=34" rel="stylesheet">';
 $pagina_classe = 'inicio-galeria';
 require __DIR__ . '/includes/site_topo.php';
 ?>
@@ -416,4 +416,4 @@ require __DIR__ . '/includes/site_topo.php';
 </section>
 </main>
 
-<?php $rodape_extra = '<script src="assets/js/inicio.js?v=7" defer></script>'; require __DIR__ . '/includes/site_rodape.php'; ?>
+<?php $rodape_extra = '<script src="assets/js/inicio.js?v=8" defer></script>'; require __DIR__ . '/includes/site_rodape.php'; ?>

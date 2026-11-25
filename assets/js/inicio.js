@@ -153,3 +153,26 @@ document.querySelectorAll('a[href="#agenda"]').forEach(a => a.addEventListener('
   const g = document.getElementById('agendaGrade');
   if (g && innerWidth >= 992) { e.preventDefault(); g.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
 }));
+
+/* v84 · Banner "Alunos destaque": anima toda vez que aparece e conta a média de 0 até a nota */
+(function () {
+  const bns = document.querySelectorAll('.sg-bn-dq2'); if (!bns.length || !('IntersectionObserver' in window)) return;
+  const reduz = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const contar = el => {
+    const alvo = parseFloat(String(el.dataset.nota).replace(',', '.')); if (isNaN(alvo)) return;
+    const casas = (String(el.dataset.nota).split(/[.,]/)[1] || '').length;
+    const fmt = v => v.toFixed(casas).replace('.', ',');
+    clearInterval(el._t); const k = Number(getComputedStyle(el.closest('.dq2-al')).getPropertyValue('--k')) || 0;
+    const ini = performance.now() + 1100 + k * 280, dur = 1300;
+    el.textContent = fmt(0);
+    const passo = t => { const p = Math.min(1, Math.max(0, (t - ini) / dur)); el.textContent = fmt(alvo * (1 - Math.pow(1 - p, 3))); if (p < 1) el._r = requestAnimationFrame(passo); else el.textContent = el.dataset.nota; };
+    cancelAnimationFrame(el._r); el._r = requestAnimationFrame(passo);
+  };
+  bns.forEach(b => b.classList.add('dq-pre'));
+  const io = new IntersectionObserver(es => es.forEach(e => {
+    const b = e.target;
+    if (e.isIntersecting && e.intersectionRatio >= .55) { if (!b.classList.contains('dq-on')) { b.classList.add('dq-on'); if (!reduz) b.querySelectorAll('.dq2-nota').forEach(contar); } }
+    else if (!e.isIntersecting || e.intersectionRatio < .1) { b.classList.remove('dq-on'); b.querySelectorAll('.dq2-nota').forEach(n => { cancelAnimationFrame(n._r); n.textContent = n.dataset.nota; }); }
+  }), { threshold: [0, .1, .55, 1] });
+  bns.forEach(b => io.observe(b));
+})();
