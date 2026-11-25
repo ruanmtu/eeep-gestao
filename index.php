@@ -53,7 +53,7 @@ $atalhos = [   /* só atalhos de uso público (os do painel ficam no login) */
     ['chat-dots', 'Fale conosco', '#contato'],
 ];
 
-$cabeca_extra = '<link href="assets/css/inicio.css?v=34" rel="stylesheet">';
+$cabeca_extra = '<link href="assets/css/inicio.css?v=35" rel="stylesheet">';
 $pagina_classe = 'inicio-galeria';
 require __DIR__ . '/includes/site_topo.php';
 ?>
@@ -312,9 +312,8 @@ require __DIR__ . '/includes/site_topo.php';
         <ul class="gr2-grade">
             <?php foreach ($gremio as $g): $src = gremio_foto_src($g); ?>
             <li><figure class="eq2 gr2-pessoa">
-                <div class="eq2-foto"><?php if ($src): ?><img src="<?= h($src) ?>" alt="<?= h($g['nome']) ?>" loading="lazy"><?php else: ?><span class="eq2-ini"><?= h($iniciais($g['nome'])) ?></span><?php endif; ?>
-                    <span class="gr2-funcao"><?= h($g['funcao']) ?></span></div>
-                <figcaption><strong><?= h($g['nome']) ?></strong><?php if ($g['curso']): ?><small><i class="bi bi-mortarboard"></i><?= h($g['curso']) ?></small><?php endif; ?></figcaption>
+                <div class="eq2-foto"><?php if ($src): ?><img src="<?= h($src) ?>" alt="<?= h($g['nome']) ?>" loading="lazy"><?php else: ?><span class="eq2-ini"><?= h($iniciais($g['nome'])) ?></span><?php endif; ?></div>
+                <figcaption><strong><?= h($g['nome']) ?></strong><span class="gr2-cargo"><i class="bi bi-flag-fill"></i><?= h($g['funcao']) ?></span><?php if ($g['curso']): ?><small><i class="bi bi-mortarboard"></i><?= h($g['curso']) ?></small><?php endif; ?></figcaption>
             </figure></li>
             <?php endforeach; ?>
         </ul>

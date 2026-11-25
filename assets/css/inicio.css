@@ -1375,3 +1375,33 @@ body.dcv-aberto { overflow: hidden; }
   .dq-pre:not(.dq-on) :is(.dq2-logo, .dq2-tit span, .dq2-tit em, .dq2-per, .dq2-foto, .dq2-txt > *) { opacity: 1; }
   .dq2-confete { display: none; }
 }
+
+/* ================= v85 · destaque: foto mais larga e logo maior no computador; faixa lateral "subindo" no celular ================= */
+@media (min-width: 992px) {
+  .dq2-foto { flex-basis: 52%; }
+  .sg-bn .dq2-logo { height: clamp(36px, 3.6vw, 50px); }
+  .dq2-nome { -webkit-line-clamp: 4; }
+}
+@media (max-width: 991.98px) {
+  .sg-bn-dq2 { container-type: size; grid-template-rows: minmax(0, 1fr); padding: 10px 12px 10px calc(15.75% + 20px); }
+  .sg-bn-dq2 > .dq2-intro { position: absolute; left: 0; top: 100%; width: 100cqh; height: calc(28cqh + 8px); transform-origin: 0 0; transform: rotate(-90deg);
+    flex-wrap: nowrap; align-items: center; justify-content: center; gap: 0 5cqh; padding: 0 10px;
+    background: linear-gradient(0deg, rgba(0,0,0,.22), rgba(0,0,0,.06)); border-bottom: 1px solid rgba(255,211,107,.4); }
+  .sg-bn .dq2-logo { display: block; height: 11cqh; width: auto; flex: none; }
+  .dq2-intro .dq2-tit { flex-direction: column; align-items: flex-start; gap: 1px; font-size: 11cqh; }
+  .dq2-intro .dq2-tit em { font-size: .82em; }
+  .dq2-intro .dq2-per { display: none; }
+  .sg-bn-seta { display: none !important; }
+}
+
+/* ================= v85 · Grêmio na página inicial: moldura igual à da equipe; nome, cargo e turma abaixo da foto ================= */
+#gremio .gr2-grade { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+#gremio .gr2-grade > li { background: #fff; border: 1px solid #e6ece7; border-radius: 22px; padding: 8px 8px 14px; box-shadow: 0 14px 28px -24px rgba(6,42,20,.7); transition: transform .25s, box-shadow .25s; }
+#gremio .gr2-grade > li:hover { transform: translateY(-4px); box-shadow: 0 22px 38px -24px rgba(6,42,20,.75); }
+#gremio .eq2 figcaption { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 10px 6px 0; }
+.gr2-cargo { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; padding: 4px 10px; border-radius: 999px; background: #fff1e3; color: #c2570c; font-size: .74rem; font-weight: 800; line-height: 1.25; }
+.gr2-cargo i { font-size: .68rem; color: var(--laranja); }
+#gremio .gr2-pessoa small { margin-top: 0 !important; font-size: .76rem !important; line-height: 1.3; }
+@media (min-width: 576px) { #gremio .gr2-grade { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 992px) { #gremio .gr2-grade { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 18px; } }
+@media (min-width: 1200px) { #gremio .gr2-grade { grid-template-columns: repeat(6, minmax(0, 1fr)); } }

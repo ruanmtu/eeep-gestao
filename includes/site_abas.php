@@ -11,6 +11,7 @@ foreach ($_st_grupos as $_g) foreach ($_g['itens'] as $_x) if ($_x[0] === $_st_a
     <a class="st-nav-voltar" href="site.php"><i class="bi bi-arrow-left"></i><span>Site</span></a>
     <?php if ($_st_aqui): ?><span class="st-nav-aqui"><i class="bi bi-<?= $_st_aqui[1] ?>"></i><?= e($_st_aqui[2]) ?></span><?php endif; ?>
     <div class="st-nav-dir">
+        <?= $st_acoes ?? '' /* botões da própria página (ex.: "Novo banner"), na mesma linha */ ?>
         <div class="dropdown">
             <button class="btn st-nav-ir" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-list"></i><span>Ir para…</span></button>
             <div class="dropdown-menu dropdown-menu-end shadow st-nav-menu">

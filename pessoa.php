@@ -14,7 +14,7 @@ $pagina_titulo = $p['nome'] . ' · ' . $ESCOLA['nome'];
 $pagina_descricao = $p['funcao'] . ' na ' . $ESCOLA['nome'] . '.';
 $pagina_classe = 'pagina-interna inicio-galeria';
 $prefixo = 'index.php';
-$cabeca_extra = '<link href="assets/css/inicio.css?v=34" rel="stylesheet">';
+$cabeca_extra = '<link href="assets/css/inicio.css?v=35" rel="stylesheet">';
 require __DIR__ . '/includes/site_topo.php';
 ?>
 <main id="conteudo" class="sg-pagina pa-pagina">

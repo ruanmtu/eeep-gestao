@@ -83,8 +83,7 @@ require __DIR__ . '/../includes/site_abas.php';
 ?>
 <div class="eq-topo">
     <div class="cf-resumo"><span><b><?= count(array_filter($todos, fn($e) => $e['ativo'])) ?></b> no site</span><span class="<?= $sem_foto ? 'ambar' : '' ?>"><b><?= $sem_foto ?></b> sem foto</span></div>
-    <a class="btn btn-light btn-sm ms-auto" href="<?= RAIZ ?>index.php#equipe" target="_blank"><i class="bi bi-box-arrow-up-right me-1"></i>Ver no site</a>
-    <form method="post" data-confirmar="Trazer para a equipe do site todas as pessoas com acesso ao sistema (com a foto do perfil)? Quem já está na lista não é repetido." data-botao="Trazer">
+    <form class="ms-auto" method="post" data-confirmar="Trazer para a equipe do site todas as pessoas com acesso ao sistema (com a foto do perfil)? Quem já está na lista não é repetido." data-botao="Trazer">
         <?= csrf_campo() ?><input type="hidden" name="acao" value="importar"><button class="btn btn-light btn-sm" type="submit"><i class="bi bi-people me-1"></i>Trazer usuários do sistema</button></form>
     <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#modalEq" data-novo="1"><i class="bi bi-person-plus me-1"></i>Adicionar pessoa</button>
 </div>
@@ -117,12 +116,14 @@ require __DIR__ . '/../includes/site_abas.php';
 <div class="card"><div class="vazio"><i class="bi bi-person-badge"></i><strong>Ninguém <?= $filtro ? 'neste grupo' : 'na equipe do site' ?> ainda</strong>Clique em "Adicionar pessoa" ou em "Trazer usuários do sistema" para começar.</div></div>
 <?php endif; ?>
 
+<form method="post" id="eqTirarFoto" hidden><?= csrf_campo() ?><input type="hidden" name="acao" value="tirar_foto"><input type="hidden" name="id" id="eqTirarId"></form>
 <div class="modal fade" id="modalEq" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable"><form method="post" enctype="multipart/form-data" class="modal-content">
     <?= csrf_campo() ?><input type="hidden" name="acao" value="salvar"><input type="hidden" name="id" id="eqId">
     <div class="modal-header"><h5 class="modal-title" id="eqTit">Adicionar pessoa</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button></div>
     <div class="modal-body">
         <div class="eq-form-foto">
-            <label class="eq-prev" for="eqFoto"><img id="eqPrev" alt="" hidden><span id="eqPrevIc"><i class="bi bi-camera"></i>Escolher foto</span></label>
+            <div class="gr-form-foto eq-foto-lixo"><label class="eq-prev" for="eqFoto"><img id="eqPrev" alt="" hidden><span id="eqPrevIc"><i class="bi bi-camera"></i>Escolher foto</span></label>
+            <button class="gr-prev-lixo" type="submit" form="eqTirarFoto" id="eqLixo" title="Remover a foto" aria-label="Remover a foto" hidden><i class="bi bi-trash3"></i></button></div>
             <div class="small text-secondary">Foto de rosto (JPG ou PNG). Depois de escolher, você ajusta o enquadramento.
                 <input class="form-control form-control-sm mt-2" type="file" id="eqFoto" name="foto" data-recorte="4:5" data-saida="900" data-recorte-titulo="Enquadrar a foto da pessoa" accept="image/*"></div>
         </div>
@@ -151,9 +152,10 @@ $script_pagina = '<script>
     eqId.value = d.id; eqNome.value = d.nome; eqFuncao.value = d.funcao; g.value = d.grupo; eqTexto.value = d.texto; eqOrdem.value = d.ordem; eqFoto.value = ""; eqForm.value = d.formacao || ""; eqBio.value = d.biografia || "";
     eqTit.textContent = d.id ? "Editar " + d.nome : "Adicionar pessoa";
     if (d.foto) { prev.src = d.foto; prev.hidden = false; ic.hidden = true; } else { prev.hidden = true; ic.hidden = false; }
+    eqTirarId.value = d.id; eqLixo.hidden = !(d.id && d.foto);
     textoVis();
   });
-  eqFoto.addEventListener("change", () => { const f = eqFoto.files[0]; if (!f) return; prev.src = URL.createObjectURL(f); prev.hidden = false; ic.hidden = true; });
+  eqFoto.addEventListener("change", () => { const f = eqFoto.files[0]; if (!f) return; prev.src = URL.createObjectURL(f); prev.hidden = false; ic.hidden = true; eqLixo.hidden = true; });
 })();
 </script>';
 require __DIR__ . '/../includes/layout_rodape.php';

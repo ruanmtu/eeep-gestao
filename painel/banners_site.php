@@ -27,6 +27,10 @@ if (eh_post()) {
                 }
                 flash('success', 'Card de alunos destaque salvo.');
                 redirecionar('banners_site.php#destaques');
+            case 'dq_tirar_foto':   /* v85: lixeira na foto do aluno destaque */
+                $k = (int)($_POST['k'] ?? -1);
+                if ($k >= 0 && $k < 3) { site_img_apagar(destaques_foto($k)); config_gravar('site_destaques_foto_' . $k, null); flash('success', 'Foto do ' . ($k + 1) . 'º lugar removida.'); }
+                redirecionar('banners_site.php#destaques');
             case 'salvar':
                 $t = trim((string)($_POST['titulo'] ?? ''));
                 if (mb_strlen($t) < 3) throw new RuntimeException('Escreva o que o banner diz (serve para quem usa leitor de tela e para achar no painel).');
@@ -113,23 +117,26 @@ $titulo = 'Banners do site';
 $subtitulo = 'As artes que passam no topo da página inicial: 1920 × 400 px (computador) e 1600 × 900 px (celular).';
 $menu = 'site';
 require __DIR__ . '/../includes/layout_topo.php';
+$st_acoes = janela_botao('novoBanner', 'Novo banner', 'plus-lg');
 require __DIR__ . '/../includes/site_abas.php';
 ?>
-<div class="pg-acoes"><?= janela_botao('novoBanner', 'Novo banner', 'plus-lg') ?></div>
 <?php $dq = destaques_cfg(); $dq_al = array_pad((array)(json_decode((string)config_ler('site_destaques'), true)['alunos'] ?? []), 3, []); ?>
 <form method="post" enctype="multipart/form-data" class="card mb-3 dq-adm" id="destaques"><?= csrf_campo() ?><input type="hidden" name="acao" value="destaques">
     <div class="card-header"><h2><i class="bi bi-award me-1"></i>Card de alunos destaque</h2><label class="form-check form-switch ms-auto mb-0"><input class="form-check-input" type="checkbox" name="dq_ativo" value="1"<?= !empty($dq['ativo']) ? ' checked' : '' ?>> <span class="form-check-label small">Mostrar no carrossel (primeiro slide)</span></label></div>
     <div class="card-body">
         <div class="row g-2 mb-3">
-            <div class="col-6 col-md-4"><label class="form-label small">Título</label><input class="form-control" name="dq_titulo" maxlength="60" value="<?= e($dq['titulo'] ?? 'Alunos destaque') ?>"></div>
-            <div class="col-6 col-md-4"><label class="form-label small">Período</label><input class="form-control" name="dq_periodo" maxlength="60" value="<?= e($dq['periodo'] ?? '') ?>" placeholder="3º período · 2026"></div>
+            <div class="col-6"><label class="form-label small">Título</label><input class="form-control" name="dq_titulo" maxlength="60" value="<?= e($dq['titulo'] ?? 'Alunos destaque') ?>"></div>
+            <div class="col-6"><label class="form-label small">Período</label><input class="form-control" name="dq_periodo" maxlength="60" value="<?= e($dq['periodo'] ?? '') ?>" placeholder="3º período · 2026"></div>
         </div>
         <div class="dq-adm-alunos">
             <?php foreach ([0, 1, 2] as $k): $a = $dq_al[$k]; $dqf = destaques_foto($k); ?>
             <div class="dq-adm-aluno">
-                <label class="dq-adm-foto" for="dqFoto<?= $k ?>" title="Foto em pé do aluno"><?php if ($dqf): ?><img src="<?= e(site_img_url('dq', $k, $dqf, true, '../')) ?>" alt=""><?php else: ?><img alt="" hidden><span><i class="bi bi-camera"></i>Foto em pé</span><?php endif; ?><b class="dq-adm-pos"><?= $k + 1 ?>º</b></label>
-                <input class="form-control form-control-sm dq-adm-arq" id="dqFoto<?= $k ?>" type="file" name="dq_foto[<?= $k ?>]" accept="image/*">
-                <?php if ($dqf): ?><label class="form-check small mb-1"><input class="form-check-input" type="checkbox" name="dq_tirar[<?= $k ?>]" value="1"> <span class="form-check-label">tirar a foto</span></label><?php endif; ?>
+                <div class="dq-adm-quadro">
+                    <label class="dq-adm-foto" for="dqFoto<?= $k ?>" title="Escolher a foto em pé do aluno"><?php if ($dqf): ?><img src="<?= e(site_img_url('dq', $k, $dqf, true, '../')) ?>" alt=""><?php else: ?><img alt="" hidden><span><i class="bi bi-camera"></i>Foto em pé<small>toque para escolher</small></span><?php endif; ?><b class="dq-adm-pos"><?= $k + 1 ?>º</b></label>
+                    <?php if ($dqf): ?><button class="dq-adm-lixo" type="submit" form="dqTirarFoto" name="k" value="<?= $k ?>" title="Remover a foto" aria-label="Remover a foto do <?= $k + 1 ?>º lugar"><i class="bi bi-trash3"></i></button><?php endif; ?>
+                    <label class="dq-adm-trocar" for="dqFoto<?= $k ?>"><i class="bi bi-crop"></i><?= $dqf ? 'Trocar foto' : 'Escolher foto' ?></label>
+                </div>
+                <input class="visually-hidden dq-adm-arq" id="dqFoto<?= $k ?>" type="file" name="dq_foto[<?= $k ?>]" accept="image/*" data-recorte="3:4" data-saida="900" data-recorte-titulo="Enquadrar a foto em pé do <?= $k + 1 ?>º lugar">
                 <input class="form-control mb-1" name="dq_nome[]" maxlength="120" value="<?= e($a['nome'] ?? '') ?>" placeholder="Nome do aluno" aria-label="Nome do <?= $k + 1 ?>º lugar">
                 <div class="d-flex gap-1"><input class="form-control" style="max-width:90px" name="dq_nota[]" maxlength="8" value="<?= e($a['nota'] ?? '') ?>" placeholder="9,94" aria-label="Média"><input class="form-control" name="dq_turma[]" maxlength="60" value="<?= e($a['turma'] ?? '') ?>" placeholder="Turma (opcional)" aria-label="Turma"></div>
             </div>
@@ -138,6 +145,7 @@ require __DIR__ . '/../includes/site_abas.php';
         <button class="btn btn-primary mt-3"><i class="bi bi-check2 me-1"></i>Salvar card</button>
     </div>
 </form>
+<form method="post" id="dqTirarFoto" hidden><?= csrf_campo() ?><input type="hidden" name="acao" value="dq_tirar_foto"></form>
 <script>document.querySelectorAll('.dq-adm-arq').forEach(inp => inp.addEventListener('change', e => { const f = e.target.files[0], l = document.querySelector('label[for="' + inp.id + '"]'); if (!f) return; const i = l.querySelector('img'); i.src = URL.createObjectURL(f); i.hidden = false; const c = l.querySelector('span'); if (c) c.hidden = true; }));</script>
 <div class="row g-3">
     <div class="col-12">

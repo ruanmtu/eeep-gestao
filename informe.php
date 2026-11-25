@@ -11,7 +11,7 @@ $mais = array_values(array_filter(site_informes(true, 6), fn($x) => (int)$x['id'
 $pagina_titulo = $inf['titulo'] . ' · ' . $ESCOLA['nome'];
 $pagina_classe = 'pagina-interna inicio-galeria';
 $prefixo = 'index.php';
-$cabeca_extra = '<link href="assets/css/inicio.css?v=34" rel="stylesheet">';
+$cabeca_extra = '<link href="assets/css/inicio.css?v=35" rel="stylesheet">';
 require __DIR__ . '/includes/site_topo.php';
 ?>
 <main id="conteudo" class="sg-pagina nm-pagina">

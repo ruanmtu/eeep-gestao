@@ -10,7 +10,7 @@ $outros = array_values(array_filter(site_albuns(true, 7), fn($a) => (int)$a['id'
 $pagina_titulo = $album['titulo'] . ' · ' . $ESCOLA['nome'];
 $pagina_classe = 'pagina-interna inicio-galeria';
 $prefixo = 'index.php';
-$cabeca_extra = '<link href="assets/css/inicio.css?v=34" rel="stylesheet">' . ($fotos ? '<meta property="og:image" content="' . h(site_img_url('f', (int)$fotos[0]['id'], $fotos[0]['arquivo'])) . '">' : '');
+$cabeca_extra = '<link href="assets/css/inicio.css?v=35" rel="stylesheet">' . ($fotos ? '<meta property="og:image" content="' . h(site_img_url('f', (int)$fotos[0]['id'], $fotos[0]['arquivo'])) . '">' : '');
 require __DIR__ . '/includes/site_topo.php';
 ?>
 <main id="conteudo" class="sg-pagina">
