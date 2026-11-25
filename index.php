@@ -56,7 +56,7 @@ $atalhos = [   /* só atalhos de uso público (os do painel ficam no login) */
     ['chat-dots', 'Fale conosco', '#contato'],
 ];
 
-$cabeca_extra = '<link href="assets/css/inicio.css?v=37" rel="stylesheet">';
+$cabeca_extra = '<link href="assets/css/inicio.css?v=38" rel="stylesheet">';
 $pagina_classe = 'inicio-galeria';
 require __DIR__ . '/includes/site_topo.php';
 ?>
@@ -68,7 +68,7 @@ require __DIR__ . '/includes/site_topo.php';
 <?php if ($banners): ?>
 <section class="sg-banners" id="inicio" aria-roledescription="carrossel" aria-label="Destaques da escola">
     <div class="sg-bn-trilha" id="bnTrilha" tabindex="0">
-        <?php foreach ($banners as $i => $b): if (!empty($b['dq'])) { echo destaques_slide($b['dq'], $i, count($banners)); continue; } if (!empty($b['vs'])) { echo venha_slide($b['vs'], $i, count($banners), $CURSOS_SITE, $icones_cursos); continue; } $tag = $b['link'] ? 'a' : 'div'; ?>
+        <?php foreach ($banners as $i => $b): if (!empty($b['dq'])) { echo destaques_slide($b['dq'], $i, count($banners)); continue; } if (!empty($b['vs'])) { echo venha_slide($b['vs'], $i, count($banners)); continue; } $tag = $b['link'] ? 'a' : 'div'; ?>
         <<?= $tag ?> class="sg-bn"<?= $b['link'] ? ' href="' . h($b['link']) . '"' . (str_starts_with($b['link'], 'http') ? ' target="_blank" rel="noopener"' : '') : '' ?> aria-roledescription="slide" aria-label="<?= $i + 1 ?> de <?= count($banners) ?>: <?= h($b['titulo']) ?>">
             <picture><?php if (!empty($b['larga'])): ?><source media="(min-width: 992px)" srcset="<?= h($b['larga']) ?>"><?php endif; ?><img src="<?= h($b['src']) ?>" alt="<?= h($b['titulo']) ?>" width="1600" height="900"<?= $i > 1 ? ' loading="lazy"' : ' fetchpriority="high"' ?>></picture>
         </<?= $tag ?>>

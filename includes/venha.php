@@ -13,9 +13,12 @@ function venha_cfg(): array
     $padrao = ['ativo' => 1, 'linha1' => 'Venha ser', 'linha2' => 'EEEP!', 'selo' => 'Seleção ' . (date('Y') + 1),
         'sub' => 'Saia do ensino médio com uma profissão.',
         'itens' => [['t' => 'Ensino médio + técnico', 'd' => 'Dois diplomas em 3 anos'], ['t' => 'Tempo integral', 'd' => 'Aulas, laboratórios e projetos'], ['t' => 'Estágio no 3º ano', 'd' => 'Experiência no mercado de trabalho']],
-        'botao' => 'Conheça os cursos', 'link' => '#cursos'];
+        'passos_tit' => 'Como entrar', 'passos' => ['Fique de olho no edital', 'Faça sua inscrição', 'Acompanhe o resultado'],
+        'botao' => 'Ver a seleção', 'link' => 'editais.php'];
     if (!is_array($c)) { $c = $padrao; config_gravar('site_venha', json_encode($c, JSON_UNESCAPED_UNICODE)); }
+    if (!isset($c['passos'])) { $c['passos_tit'] = $padrao['passos_tit']; $c['passos'] = $padrao['passos']; if (($c['link'] ?? '') === '#cursos') { $c['link'] = $padrao['link']; $c['botao'] = $padrao['botao']; } }   // v88: sem cursos no card
     $c += $padrao;
+    $c['passos'] = array_values(array_filter(array_slice((array)$c['passos'], 0, 3), fn($x) => trim((string)$x) !== ''));
     $c['itens'] = array_values(array_filter(array_slice((array)$c['itens'], 0, 3), fn($x) => trim((string)($x['t'] ?? '')) !== ''));
     return $c;
 }
@@ -45,7 +48,7 @@ function venha_eh_antigo(array $b): bool
     return stripos((string)($b['titulo'] ?? ''), 'venha ser') === 0 || str_contains((string)($b['src'] ?? ''), 'venha-ser');
 }
 
-function venha_slide(array $c, int $i, int $total, array $cursos, array $icones): string
+function venha_slide(array $c, int $i, int $total): string
 {
     $f = venha_foto();
     $logo = $GLOBALS['ESCOLA']['logo_branca'] ?? 'assets/img/logo-branca.png';
@@ -60,12 +63,11 @@ function venha_slide(array $c, int $i, int $total, array $cursos, array $icones)
        . '<div class="vs-corpo"><ul class="vs-itens">';
     foreach ($c['itens'] as $k => $x)
         $h .= '<li style="--k:' . $k . '"><span class="vs-ic"><i class="bi bi-' . VENHA_ICONES[$k] . '"></i></span><span class="vs-it"><b>' . e($x['t']) . '</b>' . (!empty($x['d']) ? '<small>' . e($x['d']) . '</small>' : '') . '</span></li>';
-    $h .= '</ul><div class="vs-lado"><p class="vs-cursos-tit"><b>' . count($cursos) . '</b> cursos técnicos</p><ul class="vs-cursos">';
-    foreach ($cursos as $k => $cu)
-        $h .= '<li style="--k:' . $k . '"><i class="bi bi-' . e($icones[$cu['nome']] ?? 'mortarboard') . '"></i><span>' . e($cu['nome']) . '</span></li>';
-    $h .= '</ul><a class="vs-bt" href="' . e($link) . '"' . (str_starts_with($link, 'http') ? ' target="_blank" rel="noopener"' : '') . '><span>' . e($c['botao'] ?: 'Conheça os cursos') . '</span><i class="bi bi-arrow-right"></i></a></div></div>'
+    $h .= '</ul><div class="vs-lado">' . ($c['passos'] ? '<p class="vs-cursos-tit">' . e($c['passos_tit'] ?: 'Como entrar') . '</p><ol class="vs-passos">' : '');
+    foreach ($c['passos'] as $k => $x) $h .= '<li style="--k:' . $k . '"><b>' . ($k + 1) . '</b><span>' . e($x) . '</span></li>';
+    $h .= ($c['passos'] ? '</ol>' : '') . '<a class="vs-bt" href="' . e($link) . '"' . (str_starts_with($link, 'http') ? ' target="_blank" rel="noopener"' : '') . '><span>' . e($c['botao'] ?: 'Ver a seleção') . '</span><i class="bi bi-arrow-right"></i></a></div></div>'
        . '<figure class="vs-foto">' . ($f ? '<img src="' . e(site_img_url('vs', 1, $f)) . '" alt="Estudantes da escola"' . ($i > 1 ? ' loading="lazy"' : '') . '>' : '')
-       . '<span class="vs-foto-selo"><b>' . count($cursos) . '</b><small>cursos<br>técnicos</small></span>'
+       . '<span class="vs-foto-selo"><b><i class="bi bi-award-fill"></i></b><small>Desde<br>2009</small></span>'
        . '<span class="vs-foto-tag"><i class="bi bi-heart-fill"></i>Somos EEEP</span></figure></div>';
     return $h;
 }

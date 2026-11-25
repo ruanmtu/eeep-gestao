@@ -35,7 +35,8 @@ if (eh_post()) {
                 config_gravar('site_venha', json_encode(['ativo' => !empty($_POST['vs_ativo']) ? 1 : 0,
                     'linha1' => mb_substr(trim((string)($_POST['vs_linha1'] ?? '')), 0, 30) ?: 'Venha ser', 'linha2' => mb_substr(trim((string)($_POST['vs_linha2'] ?? '')), 0, 20) ?: 'EEEP!',
                     'selo' => mb_substr(trim((string)($_POST['vs_selo'] ?? '')), 0, 40), 'sub' => mb_substr(trim((string)($_POST['vs_sub'] ?? '')), 0, 90),
-                    'itens' => $it, 'botao' => mb_substr(trim((string)($_POST['vs_botao'] ?? '')), 0, 30) ?: 'Conheça os cursos', 'link' => $lk ?: '#cursos'], JSON_UNESCAPED_UNICODE));
+                    'itens' => $it, 'passos_tit' => mb_substr(trim((string)($_POST['vs_ptit'] ?? '')), 0, 30) ?: 'Como entrar',
+                    'passos' => array_map(fn($k) => mb_substr(trim((string)($_POST['vs_p'][$k] ?? '')), 0, 40), [0, 1, 2]), 'botao' => mb_substr(trim((string)($_POST['vs_botao'] ?? '')), 0, 30) ?: 'Ver a seleção', 'link' => $lk ?: 'editais.php'], JSON_UNESCAPED_UNICODE));
                 if (!empty($_FILES['vs_foto']['name'])) {
                     [$arq] = site_img_salvar($_FILES['vs_foto'], 'banners', 'venha');
                     $ant = venha_foto(); if ($ant) site_img_apagar($ant);
@@ -169,7 +170,7 @@ require __DIR__ . '/../includes/site_abas.php';
 <form method="post" id="dqTirarFoto" hidden><?= csrf_campo() ?><input type="hidden" name="acao" value="dq_tirar_foto"></form>
 <script>document.querySelectorAll('.dq-adm-arq').forEach(inp => inp.addEventListener('change', e => { const f = e.target.files[0], l = document.querySelector('label[for="' + inp.id + '"]'); if (!f) return; const i = l.querySelector('img'); i.src = URL.createObjectURL(f); i.hidden = false; const c = l.querySelector('span'); if (c) c.hidden = true; }));</script>
 <?php $vs = venha_cfg(); $vsf = venha_foto(); $vs_it = array_pad((array)(json_decode((string)config_ler('site_venha'), true)['itens'] ?? []), 3, []);
-      $vs_links = ['#cursos' => 'Página inicial › Cursos', 'editais.php' => 'Editais de seleção', '#documentos' => 'Página inicial › Documentos', '#contato' => 'Página inicial › Contato', 'informes.php' => 'Notícias']; ?>
+      $vs_links = ['editais.php' => 'Editais de seleção', '#cursos' => 'Página inicial › Cursos', '#documentos' => 'Página inicial › Documentos', '#contato' => 'Página inicial › Contato', 'informes.php' => 'Notícias']; ?>
 <form method="post" id="vsTirarFoto" hidden><?= csrf_campo() ?><input type="hidden" name="acao" value="vs_tirar_foto"></form>
 <form method="post" enctype="multipart/form-data" class="card mb-3 dq-adm vs-adm" id="venha"><?= csrf_campo() ?><input type="hidden" name="acao" value="venha">
     <div class="card-header"><h2><i class="bi bi-stars me-1"></i>Card "Venha ser EEEP!"</h2><label class="form-check form-switch ms-auto mb-0"><input class="form-check-input" type="checkbox" name="vs_ativo" value="1"<?= !empty($vs['ativo']) ? ' checked' : '' ?>> <span class="form-check-label small">Mostrar no carrossel</span></label></div>
@@ -193,10 +194,14 @@ require __DIR__ . '/../includes/site_abas.php';
                 <div class="d-flex gap-2 align-items-center"><span class="vs-adm-ic"><i class="bi bi-<?= VENHA_ICONES[$k] ?>"></i></span><input class="form-control" name="vs_t[]" maxlength="40" value="<?= e($vs_it[$k]['t'] ?? '') ?>" placeholder="Título" aria-label="Vantagem <?= $k + 1 ?>"><input class="form-control" name="vs_d[]" maxlength="60" value="<?= e($vs_it[$k]['d'] ?? '') ?>" placeholder="Frase curta" aria-label="Frase da vantagem <?= $k + 1 ?>"></div>
                 <?php endforeach; ?>
                 <div class="row g-2 mt-1">
+                    <div class="col-12 col-md-3"><label class="form-label small">Título dos passos</label><input class="form-control" name="vs_ptit" maxlength="30" value="<?= e($vs['passos_tit']) ?>"></div>
+                    <?php foreach ([0, 1, 2] as $k): ?><div class="col-12 col-md-3"><label class="form-label small">Passo <?= $k + 1 ?></label><input class="form-control" name="vs_p[]" maxlength="40" value="<?= e($vs['passos'][$k] ?? '') ?>"></div><?php endforeach; ?>
+                </div>
+                <div class="row g-2 mt-1">
                     <div class="col-6"><label class="form-label small">Texto do botão</label><input class="form-control" name="vs_botao" maxlength="30" value="<?= e($vs['botao']) ?>"></div>
                     <div class="col-6"><label class="form-label small">O botão leva para</label><select class="form-select" name="vs_link"><?php foreach ($vs_links as $u => $r): ?><option value="<?= e($u) ?>"<?= $vs['link'] === $u ? ' selected' : '' ?>><?= e($r) ?></option><?php endforeach; ?><?php if (!isset($vs_links[$vs['link']])): ?><option selected value="<?= e($vs['link']) ?>"><?= e($vs['link']) ?></option><?php endif; ?></select></div>
                 </div>
-                <p class="small text-secondary mb-0"><i class="bi bi-info-circle me-1"></i>Os cursos técnicos aparecem sozinhos no card. Com este card ligado, o banner antigo "Venha ser EEEP" sai do carrossel.</p>
+                <p class="small text-secondary mb-0"><i class="bi bi-info-circle me-1"></i>Com este card ligado, o banner antigo "Venha ser EEEP" sai do carrossel.</p>
                 <div><button class="btn btn-primary mt-1"><i class="bi bi-check2 me-1"></i>Salvar card</button></div>
             </div>
         </div>
