@@ -36,7 +36,6 @@ jobs:
             **/.git*
             **/.git*/**
             .github/**
-            selecao/**
             LEIA-ME.md
             dados/**
             includes/config.php
@@ -52,21 +51,3 @@ jobs:
             **/*.ttf
             **/*.otf
 
-      # Sistema da seleção de estudantes (selecao.eeepvenceslau.com.br): pasta própria do subdomínio.
-      # Aqui vão também o logo, o ícone e as fontes do sistema da seleção (não existem lá ainda).
-      - name: Enviar o sistema da seleção
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_SERVIDOR }}
-          username: ${{ secrets.FTP_USUARIO }}
-          password: ${{ secrets.FTP_SENHA }}
-          protocol: ftp
-          port: 21
-          local-dir: ./selecao/
-          server-dir: /domains/selecao.eeepvenceslau.com.br/public_html/
-          dangerous-clean-slate: false
-          exclude: |
-            **/.git*
-            **/.git*/**
-            includes/config.php
-            dados/**
