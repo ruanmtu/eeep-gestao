@@ -234,7 +234,7 @@ require __DIR__ . '/../includes/layout_topo.php';
         </div>
         <?php if ($editavel): ?>
         <div class="nc-salvar">
-            <span id="ncAviso"><i class="bi bi-info-circle"></i>Role o mouse sobre a nota ou use as setinhas para ajustar de 0,1 em 0,1. Valores acima do máximo não são aceitos. Deixe os 3 vazios para apagar.</span>
+            <span id="ncAviso"><i class="bi bi-info-circle"></i>Role o mouse sobre a nota para ajustar de 0,05 em 0,05, ou use as setinhas (0,1). Valores acima do máximo não são aceitos. Deixe os 3 vazios para apagar.</span>
             <button class="btn btn-primary" type="submit"><i class="bi bi-check2-circle me-1"></i>Salvar notas<?= count($minhas) > 1 ? ' nas ' . count($minhas) . ' disciplinas' : '' ?></button>
         </div>
         <?php endif; ?>
@@ -347,8 +347,8 @@ $script_pagina = '<script>
       if (i.disabled) return;
       const m = +i.dataset.max; let v = num(i.value); if (v === null || isNaN(v)) v = m;   /* vazio: começa pela nota máxima */
       else v = v + d;
-      v = Math.min(m, Math.max(0, Math.round(v * 10) / 10));
-      i.value = br(Number.isInteger(v) ? v : v.toFixed(1)); i.dispatchEvent(new Event("input", { bubbles: true }));
+      v = Math.min(m, Math.max(0, Math.round(v * 20) / 20));
+      i.value = br(Number.isInteger(v) ? v : (Math.round(v * 10) === v * 10 ? v.toFixed(1) : v.toFixed(2))); i.dispatchEvent(new Event("input", { bubbles: true }));
     };
     f.querySelectorAll("input[data-max]:not(:disabled)").forEach(i => {
       const sp = document.createElement("span"); sp.className = "nc-spin";
@@ -361,7 +361,7 @@ $script_pagina = '<script>
         ["pointerup", "pointerleave", "pointercancel"].forEach(t => b.addEventListener(t, para));
         b.addEventListener("click", e => e.preventDefault());
       });
-      i.addEventListener("wheel", e => { if (i.disabled) return; e.preventDefault(); passo(i, e.deltaY < 0 ? 0.1 : -0.1); }, { passive: false });
+      i.addEventListener("wheel", e => { if (i.disabled) return; e.preventDefault(); passo(i, e.deltaY < 0 ? 0.05 : -0.05); }, { passive: false });
       i.addEventListener("keydown", e => { if (e.key === "ArrowUp" || e.key === "ArrowDown") { e.preventDefault(); passo(i, e.key === "ArrowUp" ? 0.1 : -0.1); } });
     });
     f.addEventListener("submit", () => { delete f.dataset.sujo; });
