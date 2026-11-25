@@ -124,8 +124,8 @@ function destaques_slide(array $c, int $i, int $total): string
        . '<div class="dq2-fundo" aria-hidden="true"><i class="dq2-bolha b1"></i><i class="dq2-bolha b2"></i><i class="dq2-bolha b3"></i><span class="dq2-raios"></span>'
        . str_repeat('<b class="dq2-confete"></b>', 14) . '</div>'
        . '<div class="dq2-intro"><img class="dq2-logo" src="' . e($logo) . '" alt="" width="1400" height="451">'
-       . '<h3 class="dq2-tit"><span>' . e($pal[0]) . '</span>' . (isset($pal[1]) ? '<em>' . e($pal[1]) . '</em>' : '') . '</h3>'
-       . '<p class="dq2-per"><i class="bi bi-stars"></i>' . e($c['periodo']) . '</p></div><ol class="dq2-lista">';
+       . '<div class="dq2-txtbox"><h3 class="dq2-tit"><span>' . e($pal[0]) . '</span>' . (isset($pal[1]) ? '<em>' . e($pal[1]) . '</em>' : '') . '</h3>'
+       . '<p class="dq2-per"><i class="bi bi-stars"></i>' . e($c['periodo']) . '</p></div></div><ol class="dq2-lista">';
     foreach ($c['alunos'] as $k => $a) {
         if ($k > 2) break;
         $f = destaques_foto($k);

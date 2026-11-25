@@ -1405,3 +1405,36 @@ body.dcv-aberto { overflow: hidden; }
 @media (min-width: 576px) { #gremio .gr2-grade { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (min-width: 992px) { #gremio .gr2-grade { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 18px; } }
 @media (min-width: 1200px) { #gremio .gr2-grade { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+
+/* ================= v86 ================= */
+/* grêmio: volta sem moldura; função só em laranja, sem fundo */
+#gremio .gr2-grade > li { background: none; border: 0; border-radius: 0; padding: 0; box-shadow: none; }
+#gremio .gr2-grade > li:hover { transform: none; box-shadow: none; }
+#gremio .eq2 figcaption { gap: 3px; padding: 10px 4px 0; }
+.gr2-cargo { padding: 0; border-radius: 0; background: none; color: var(--laranja-escuro, #c2570c); font-size: .8rem; }
+/* documentos: o nome não passa da tela no celular */
+.dc2-lista { grid-template-columns: repeat(auto-fill, minmax(min(380px, 100%), 1fr)); }
+.dc2-lista .dc-item, .dc2-link, .dc2-txt { min-width: 0; }
+@media (max-width: 720px) { .dc2-lista { grid-template-columns: minmax(0, 1fr); } .dc2-tit { flex-wrap: nowrap; } .dc2-tit h3 { font-size: 1rem; } }
+/* destaque no celular: faixa lateral do começo ao fim, com o período; turma embaixo do nome */
+@media (max-width: 991.98px) {
+  .sg-bn-dq2 > .dq2-intro { width: calc(100cqh + 20px); gap: 0 4cqh; }
+  .dq2-intro .dq2-tit { flex-direction: row; align-items: baseline; gap: .28em; font-size: 9.5cqh; white-space: nowrap; }
+  .dq2-intro .dq2-tit em { font-size: 1em; }
+  .dq2-intro > .dq2-txtbox { display: flex; flex-direction: column; gap: 2px; }
+  .dq2-intro .dq2-per { display: inline-flex; font-size: 6cqh; white-space: nowrap; }
+  .sg-bn .dq2-logo { height: 10cqh; }
+  .dq2-turma { display: block; font-size: .5rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dq2-nome { -webkit-line-clamp: 2; }
+}
+@media (min-width: 576px) and (max-width: 991.98px) { .dq2-turma { font-size: .72rem; } }
+@media (max-width: 991.98px) {
+  .dq2-intro .dq2-tit { font-size: 7.6cqh; }
+  .dq2-intro .dq2-per { font-size: 5.2cqh; letter-spacing: .03em; }
+  .sg-bn .dq2-logo { height: 9cqh; }
+  .sg-bn-dq2 > .dq2-intro { gap: 0 3cqh; padding: 0 8px; }
+  /* atalhos: sempre 5 por linha (2 linhas) */
+  .sg-atalhos li { min-width: 0; }
+  .sg-atalhos a { font-size: .68rem !important; }
+}
+@media (max-width: 374px) { .sg-atalhos a { font-size: .62rem !important; letter-spacing: -.01em; } }

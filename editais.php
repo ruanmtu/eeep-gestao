@@ -5,7 +5,7 @@ $editais = editais_lista();
 $pagina_titulo = 'Editais · ' . $ESCOLA['nome'];
 $pagina_classe = 'pagina-interna inicio-galeria';
 $prefixo = 'index.php';
-$cabeca_extra = '<link href="assets/css/inicio.css?v=35" rel="stylesheet">';
+$cabeca_extra = '<link href="assets/css/inicio.css?v=36" rel="stylesheet">';
 require __DIR__ . '/includes/site_topo.php';
 ?>
 <main id="conteudo" class="sg-pagina nl-pagina">

@@ -42,18 +42,19 @@ $banners = site_banners_para_mostrar();
 $dq = destaques_cfg(); if (!empty($dq['ativo']) && $dq['alunos']) array_unshift($banners, ['dq' => $dq, 'titulo' => $dq['titulo']]);   // v80: card dos alunos destaque
 $inf_matricula = null; foreach ($informes as $i) if ($i['categoria'] === 'matricula') { $inf_matricula = $i; break; }
 $atalhos = [   /* só atalhos de uso público (os do painel ficam no login) */
+    editais_lista() ? ['person-check', 'Seleção', 'editais.php'] : ['person-check', 'Como entrar', '#contato'],   // v86: para quem quer uma vaga na escola
     ['megaphone', 'Notícias', 'informes.php'],
     ic_url() ? ['trophy', 'Interclasse', ic_url()] : ['calendar-event', 'Eventos', '#agendaGrade'],   // v80: o interclasse só aparece neste atalho
     ['mortarboard', 'Cursos', '#cursos'],
     ['people', 'Equipe', $equipe ? '#equipe' : '#gestao'],
     ['building', 'A escola', '#escola'],
-    site_arquivos() || editais_lista() ? ['folder2-open', editais_lista() ? 'Editais e documentos' : 'Documentos', '#documentos'] : ['geo-alt', 'Como chegar', '#contato'],
+    site_arquivos() || editais_lista() ? ['folder2-open', 'Documentos', '#documentos'] : ['geo-alt', 'Como chegar', '#contato'],
     gremio_lista() ? ['flag', 'Grêmio estudantil', '#gremio'] : ['person-badge', 'Gestão escolar', '#gestao'],
     ['clock-history', 'História', '#historia'],
     ['chat-dots', 'Fale conosco', '#contato'],
 ];
 
-$cabeca_extra = '<link href="assets/css/inicio.css?v=35" rel="stylesheet">';
+$cabeca_extra = '<link href="assets/css/inicio.css?v=36" rel="stylesheet">';
 $pagina_classe = 'inicio-galeria';
 require __DIR__ . '/includes/site_topo.php';
 ?>
@@ -313,7 +314,7 @@ require __DIR__ . '/includes/site_topo.php';
             <?php foreach ($gremio as $g): $src = gremio_foto_src($g); ?>
             <li><figure class="eq2 gr2-pessoa">
                 <div class="eq2-foto"><?php if ($src): ?><img src="<?= h($src) ?>" alt="<?= h($g['nome']) ?>" loading="lazy"><?php else: ?><span class="eq2-ini"><?= h($iniciais($g['nome'])) ?></span><?php endif; ?></div>
-                <figcaption><strong><?= h($g['nome']) ?></strong><span class="gr2-cargo"><i class="bi bi-flag-fill"></i><?= h($g['funcao']) ?></span><?php if ($g['curso']): ?><small><i class="bi bi-mortarboard"></i><?= h($g['curso']) ?></small><?php endif; ?></figcaption>
+                <figcaption><strong><?= h($g['nome']) ?></strong><span class="gr2-cargo"><?= h($g['funcao']) ?></span><?php if ($g['curso']): ?><small><i class="bi bi-mortarboard"></i><?= h($g['curso']) ?></small><?php endif; ?></figcaption>
             </figure></li>
             <?php endforeach; ?>
         </ul>
