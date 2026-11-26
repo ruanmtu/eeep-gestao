@@ -27,6 +27,16 @@ if (eh_post()) {
                 }
                 flash('success', 'Card de alunos destaque salvo.');
                 redirecionar('banners_site.php#destaques');
+            case 'novo_curso':   /* v96: card "Novo curso técnico" */
+                $lk = trim((string)($_POST['nc_link'] ?? 'editais.php'));
+                if (!preg_match('~^(#[a-z0-9_-]+|[a-z0-9_]+\.php(#[a-z0-9_-]+)?|https?://\S+)$~i', $lk)) $lk = 'editais.php';
+                config_gravar('site_novo_curso', json_encode(['ativo' => !empty($_POST['nc_ativo']) ? 1 : 0,
+                    'selo' => mb_substr(trim((string)($_POST['nc_selo'] ?? '')), 0, 40), 'linha1' => mb_substr(trim((string)($_POST['nc_linha1'] ?? '')), 0, 24) ?: 'Inteligência',
+                    'linha2' => mb_substr(trim((string)($_POST['nc_linha2'] ?? '')), 0, 24), 'aviso' => mb_substr(trim((string)($_POST['nc_aviso'] ?? '')), 0, 40),
+                    'outros_tit' => mb_substr(trim((string)($_POST['nc_otit'] ?? '')), 0, 30) ?: 'Também ofertamos',
+                    'outros' => array_map(fn($k) => mb_substr(trim((string)($_POST['nc_o'][$k] ?? '')), 0, 24), [0, 1, 2]), 'link' => $lk], JSON_UNESCAPED_UNICODE));
+                flash('success', 'Card do novo curso salvo.');
+                redirecionar('banners_site.php#novo-curso');
             case 'venha':   /* v87: card "Venha ser EEEP!" */
                 $it = [];
                 for ($k = 0; $k < 3; $k++) $it[] = ['t' => mb_substr(trim((string)($_POST['vs_t'][$k] ?? '')), 0, 40), 'd' => mb_substr(trim((string)($_POST['vs_d'][$k] ?? '')), 0, 60)];
@@ -169,6 +179,22 @@ require __DIR__ . '/../includes/site_abas.php';
 </form>
 <form method="post" id="dqTirarFoto" hidden><?= csrf_campo() ?><input type="hidden" name="acao" value="dq_tirar_foto"></form>
 <script>document.querySelectorAll('.dq-adm-arq').forEach(inp => inp.addEventListener('change', e => { const f = e.target.files[0], l = document.querySelector('label[for="' + inp.id + '"]'); if (!f) return; const i = l.querySelector('img'); i.src = URL.createObjectURL(f); i.hidden = false; const c = l.querySelector('span'); if (c) c.hidden = true; }));</script>
+<?php $nc = novo_curso_cfg(); $nc_o = array_pad($nc['outros'], 3, ''); ?>
+<form method="post" class="card mb-3 dq-adm" id="novo-curso"><?= csrf_campo() ?><input type="hidden" name="acao" value="novo_curso">
+    <div class="card-header"><h2><i class="bi bi-cpu me-1"></i>Card "Novo curso técnico"</h2><label class="form-check form-switch ms-auto mb-0"><input class="form-check-input" type="checkbox" name="nc_ativo" value="1"<?= !empty($nc['ativo']) ? ' checked' : '' ?>> <span class="form-check-label small">Mostrar no carrossel</span></label></div>
+    <div class="card-body">
+        <div class="row g-2">
+            <div class="col-12 col-md-4"><label class="form-label small">Selo</label><input class="form-control" name="nc_selo" maxlength="40" value="<?= e($nc['selo']) ?>"></div>
+            <div class="col-6 col-md-4"><label class="form-label small">Nome do curso</label><input class="form-control" name="nc_linha1" maxlength="24" value="<?= e($nc['linha1']) ?>"></div>
+            <div class="col-6 col-md-4"><label class="form-label small">Continuação (dourado)</label><input class="form-control" name="nc_linha2" maxlength="24" value="<?= e($nc['linha2']) ?>"></div>
+            <div class="col-12 col-md-4"><label class="form-label small">Aviso <span class="text-secondary">(ex.: Edital em breve, Inscrições abertas)</span></label><input class="form-control" name="nc_aviso" maxlength="40" value="<?= e($nc['aviso']) ?>"></div>
+            <div class="col-12 col-md-4"><label class="form-label small">O aviso leva para</label><select class="form-select" name="nc_link"><?php foreach (['editais.php' => 'Editais de seleção', '#cursos' => 'Página inicial › Cursos', 'informes.php' => 'Notícias'] as $u => $r): ?><option value="<?= e($u) ?>"<?= $nc['link'] === $u ? ' selected' : '' ?>><?= e($r) ?></option><?php endforeach; ?></select></div>
+            <div class="col-12 col-md-4"><label class="form-label small">Título dos outros cursos</label><input class="form-control" name="nc_otit" maxlength="30" value="<?= e($nc['outros_tit']) ?>"></div>
+            <?php foreach ([0, 1, 2] as $k): ?><div class="col-4"><label class="form-label small">Outro curso <?= $k + 1 ?></label><input class="form-control" name="nc_o[]" maxlength="24" value="<?= e($nc_o[$k]) ?>"></div><?php endforeach; ?>
+        </div>
+        <button class="btn btn-primary mt-3"><i class="bi bi-check2 me-1"></i>Salvar card</button>
+    </div>
+</form>
 <?php $vs = venha_cfg(); $vsf = venha_foto(); $vs_it = array_pad((array)(json_decode((string)config_ler('site_venha'), true)['itens'] ?? []), 3, []);
       $vs_links = ['editais.php' => 'Editais de seleção', '#cursos' => 'Página inicial › Cursos', '#documentos' => 'Página inicial › Documentos', '#contato' => 'Página inicial › Contato', 'informes.php' => 'Notícias']; ?>
 <form method="post" id="vsTirarFoto" hidden><?= csrf_campo() ?><input type="hidden" name="acao" value="vs_tirar_foto"></form>

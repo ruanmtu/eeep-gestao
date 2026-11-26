@@ -42,6 +42,7 @@ $banners = site_banners_para_mostrar();
 $vs = venha_cfg();
 if (!empty($vs['ativo'])) { $banners = array_values(array_filter($banners, fn($b) => !venha_eh_antigo($b))); array_unshift($banners, ['vs' => $vs, 'titulo' => $vs['linha1'] . ' ' . $vs['linha2']]); }   // v87: card "Venha ser EEEP!"
 $dq = destaques_cfg(); if (!empty($dq['ativo']) && $dq['alunos']) array_unshift($banners, ['dq' => $dq, 'titulo' => $dq['titulo']]);   // v80: card dos alunos destaque
+$nc = novo_curso_cfg(); if (!empty($nc['ativo'])) array_unshift($banners, ['nc' => $nc, 'titulo' => $nc['linha1'] . ' ' . $nc['linha2']]);   // v96: novo curso técnico (primeiro do carrossel)
 $inf_matricula = null; foreach ($informes as $i) if ($i['categoria'] === 'matricula') { $inf_matricula = $i; break; }
 $atalhos = [   /* só atalhos de uso público (os do painel ficam no login) */
     editais_lista() ? ['person-check', 'Seleção', 'editais.php'] : ['person-check', 'Como entrar', '#contato'],   // v86: para quem quer uma vaga na escola
@@ -56,7 +57,7 @@ $atalhos = [   /* só atalhos de uso público (os do painel ficam no login) */
     ['chat-dots', 'Fale conosco', '#contato'],
 ];
 
-$cabeca_extra = '<link href="assets/css/inicio.css?v=38" rel="stylesheet">';
+$cabeca_extra = '<link href="assets/css/inicio.css?v=39" rel="stylesheet">';
 $pagina_classe = 'inicio-galeria';
 require __DIR__ . '/includes/site_topo.php';
 ?>
@@ -68,7 +69,7 @@ require __DIR__ . '/includes/site_topo.php';
 <?php if ($banners): ?>
 <section class="sg-banners" id="inicio" aria-roledescription="carrossel" aria-label="Destaques da escola">
     <div class="sg-bn-trilha" id="bnTrilha" tabindex="0">
-        <?php foreach ($banners as $i => $b): if (!empty($b['dq'])) { echo destaques_slide($b['dq'], $i, count($banners)); continue; } if (!empty($b['vs'])) { echo venha_slide($b['vs'], $i, count($banners)); continue; } $tag = $b['link'] ? 'a' : 'div'; ?>
+        <?php foreach ($banners as $i => $b): if (!empty($b['nc'])) { echo novo_curso_slide($b['nc'], $i, count($banners)); continue; } if (!empty($b['dq'])) { echo destaques_slide($b['dq'], $i, count($banners)); continue; } if (!empty($b['vs'])) { echo venha_slide($b['vs'], $i, count($banners)); continue; } $tag = $b['link'] ? 'a' : 'div'; ?>
         <<?= $tag ?> class="sg-bn"<?= $b['link'] ? ' href="' . h($b['link']) . '"' . (str_starts_with($b['link'], 'http') ? ' target="_blank" rel="noopener"' : '') : '' ?> aria-roledescription="slide" aria-label="<?= $i + 1 ?> de <?= count($banners) ?>: <?= h($b['titulo']) ?>">
             <picture><?php if (!empty($b['larga'])): ?><source media="(min-width: 992px)" srcset="<?= h($b['larga']) ?>"><?php endif; ?><img src="<?= h($b['src']) ?>" alt="<?= h($b['titulo']) ?>" width="1600" height="900"<?= $i > 1 ? ' loading="lazy"' : ' fetchpriority="high"' ?>></picture>
         </<?= $tag ?>>
@@ -418,4 +419,4 @@ require __DIR__ . '/includes/site_topo.php';
 </section>
 </main>
 
-<?php $rodape_extra = '<script src="assets/js/inicio.js?v=8" defer></script>'; require __DIR__ . '/includes/site_rodape.php'; ?>
+<?php $rodape_extra = '<script src="assets/js/inicio.js?v=9" defer></script>'; require __DIR__ . '/includes/site_rodape.php'; ?>

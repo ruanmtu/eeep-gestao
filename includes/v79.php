@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/venha.php';   // v87: card "Venha ser EEEP!"
+require_once __DIR__ . '/novo_curso.php';   // v96: card "Novo curso técnico: Inteligência Artificial"
 /* ======================================================================
  *  v79 — Editais de seleção e Grêmio estudantil no site
  * ====================================================================== */

@@ -156,7 +156,7 @@ document.querySelectorAll('a[href="#agenda"]').forEach(a => a.addEventListener('
 
 /* v84 · Banner "Alunos destaque": anima toda vez que aparece e conta a média de 0 até a nota */
 (function () {
-  const bns = document.querySelectorAll('.sg-bn-dq2'); if (!bns.length || !('IntersectionObserver' in window)) return;
+  const bns = document.querySelectorAll('.sg-bn-dq2, .sg-bn-ia'); if (!bns.length || !('IntersectionObserver' in window)) return;
   const reduz = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const contar = el => {
     const alvo = parseFloat(String(el.dataset.nota).replace(',', '.')); if (isNaN(alvo)) return;
