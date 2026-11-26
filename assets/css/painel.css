@@ -3818,6 +3818,14 @@ html[data-ms-modo="ver"][data-ms-mudou="0"] .ms-salvar { display: none; }
     .menu-gestao .mg-rodape { flex-direction: column; padding: 10px 13px 18px; gap: 4px; }
     .menu-gestao .mg-rodape a { justify-content: flex-start; gap: 14px; padding: 12px 15px; background: none; }
     .menu-gestao .mg-rodape a i { font-size: 1.15rem; width: 22px; text-align: center; flex-shrink: 0; }
+    /* v94: largura do menu = o maior nome + um pouquinho (antes ocupava quase a tela toda) */
+    .menu-gestao { --bs-offcanvas-width: fit-content; width: fit-content !important; min-width: 236px; max-width: 86vw; }
+    .menu-gestao .mg-item span:not(.contagem), .menu-gestao .mg-rodape a span, .menu-gestao .mg-grupo { white-space: nowrap; }
+    .menu-gestao .mg-item { padding-right: 22px; }
+    .menu-gestao .mg-busca input { width: 0; min-width: 0; }
+    .menu-gestao .mg-usuario strong, .menu-gestao .mg-usuario small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .menu-gestao .mg-topo { padding: 16px 13px 8px 18px; }
+    .pn-menu-ic .bi-list { font-size: 1.45rem; line-height: 1; }
 }
 
 /* ===== v69: usuários — editar/excluir pessoa; perfis mais intuitivos ===== */

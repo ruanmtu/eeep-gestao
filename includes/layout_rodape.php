@@ -6,7 +6,7 @@
 <?php if (!empty($usa_graficos)): ?>
 <script src="<?= RAIZ ?>assets/vendor/chartjs/chart.umd.min.js"></script>
 <?php endif; ?>
-<script src="<?= RAIZ ?>assets/js/painel.js?v=13"></script>
+<script src="<?= RAIZ ?>assets/js/painel.js?v=14"></script>
 <script src="<?= RAIZ ?>assets/js/recorte.js?v=3"></script>
 <script src="<?= RAIZ ?>assets/js/lote.js?v=1"></script>
 <script src="<?= RAIZ ?>assets/js/janela.js?v=1"></script>

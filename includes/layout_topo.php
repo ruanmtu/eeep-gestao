@@ -65,7 +65,7 @@ $itens_menu = [
     <link href="<?= RAIZ ?>assets/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
     <link href="<?= RAIZ ?>assets/css/fontes.css?v=3" rel="stylesheet">
     <link href="<?= RAIZ ?>assets/vendor/icons/bootstrap-icons.min.css" rel="stylesheet">
-    <link href="<?= RAIZ ?>assets/css/painel.css?v=80" rel="stylesheet">
+    <link href="<?= RAIZ ?>assets/css/painel.css?v=81" rel="stylesheet">
     <link href="<?= RAIZ ?>assets/css/padrao.css?v=4" rel="stylesheet">
     <link rel="icon" href="<?= RAIZ ?>assets/img/favicon.png" type="image/png">
     <link rel="apple-touch-icon" href="<?= RAIZ ?>assets/img/apple-touch-icon.png">
@@ -77,7 +77,7 @@ $itens_menu = [
 <aside class="offcanvas-lg offcanvas-start menu-gestao" tabindex="-1" id="menuLateral" aria-labelledby="menuTitulo">
     <div class="mg-topo">
         <img src="<?= RAIZ ?>assets/img/logo-branca.png" alt="<?= e($ESCOLA['nome']) ?>" width="1400" height="451">
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Fechar menu"></button>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" data-bs-target="#menuLateral" aria-label="Fechar menu"></button>
     </div>
     <div class="mg-usuario">
         <?= avatar($u, 'usuario', 'avatar-md') ?>
@@ -129,7 +129,7 @@ $itens_menu = [
                 </div>
             </div>
             <button class="pn-menu-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#menuLateral" aria-controls="menuLateral" aria-label="Abrir o menu completo">
-                <span class="pn-menu-ic"><i class="bi bi-grid-3x3-gap-fill"></i></span><span class="pn-menu-txt">Menu</span><?php if ($n_pend || $n_notif): ?><span class="pn-ponto"></span><?php endif; ?>
+                <span class="pn-menu-ic"><i class="bi bi-list"></i></span><span class="pn-menu-txt">Menu</span><span class="pn-ponto" id="menuPonto" data-pend="<?= (int)$n_pend ?>"<?= ($n_pend || $n_notif) ? '' : ' hidden' ?>></span>
             </button>
             <div class="dropdown">
                 <button class="btn usuario-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Minha conta">

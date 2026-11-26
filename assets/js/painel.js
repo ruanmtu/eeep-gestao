@@ -155,7 +155,7 @@ window.esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': 
     const btn = document.getElementById('sinoBtn'); if (!btn) return;
     const CSRF = (document.querySelector('meta[name=csrf]') || {}).content || '';
     const cont = document.getElementById('sinoCont'), lista = document.getElementById('sinoLista');
-    let vistos = null, pendAnt = null, audio = null;
+    let vistos = null, pendAnt = null, audio = null, naoLidas = 0;
     try { vistos = new Set(JSON.parse(sessionStorage.getItem('notif_vistas') || 'null') || []); } catch (e) { vistos = new Set(); }
     let primeira = !sessionStorage.getItem('notif_vistas');
     const guardar = () => { try { sessionStorage.setItem('notif_vistas', JSON.stringify([...vistos].slice(-200))); } catch (e) {} };
@@ -193,7 +193,8 @@ window.esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': 
         try {
             const j = await (await fetch('api.php?acao=notif&limite=8', { cache: 'no-store' })).json();
             if (!j.ok) return;
-            cont.textContent = j.nao_lidas; cont.hidden = !j.nao_lidas; contagem('notificacoes', j.nao_lidas);
+            cont.textContent = j.nao_lidas; cont.hidden = !j.nao_lidas; contagem('notificacoes', j.nao_lidas); naoLidas = j.nao_lidas;
+            const ponto = document.getElementById('menuPonto'); if (ponto) ponto.hidden = !(j.nao_lidas || j.pendentes || (j.pendentes === null && +ponto.dataset.pend));
             if (j.pendentes !== null) { contagem('saidas', j.pendentes); const p = document.getElementById('sinoPend'); if (p) p.textContent = j.pendentes; }
             desenhar(j.itens);
             let toca = false, ocNova = false;
@@ -213,9 +214,18 @@ window.esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': 
             primeira = false; guardar();
         } catch (e) {}
     }
-    document.getElementById('sinoLerTodas').addEventListener('click', () => {
+    function lerTodas() {
         const fd = new FormData(); fd.append('acao', 'notif_lida'); fd.append('id', 'todas'); fd.append('csrf', CSRF);
-        fetch('api.php', { method: 'POST', body: fd }).then(consultar);
+        return fetch('api.php', { method: 'POST', body: fd }).then(consultar);
+    }
+    document.getElementById('sinoLerTodas').addEventListener('click', lerTodas);
+    /* abriu o sino e viu as notificações: ao fechar, todas contam como lidas e o número some */
+    let abertoCom = 0;
+    btn.addEventListener('shown.bs.dropdown', () => { abertoCom = naoLidas; });
+    btn.addEventListener('hidden.bs.dropdown', () => {
+        if (!abertoCom && !naoLidas) return;
+        abertoCom = 0; naoLidas = 0; cont.hidden = true; contagem('notificacoes', 0);
+        lerTodas();
     });
     consultar();
     setInterval(() => { if (!document.hidden) consultar(); }, 20000);
