@@ -38,13 +38,13 @@ require __DIR__ . '/../includes/layout_topo.php';
     <section class="scan-palco" id="palco" aria-label="Câmera">
         <video id="video" playsinline muted autoplay></video>
         <canvas id="congelado" hidden></canvas>
-        <div class="scan-guia" id="guia" hidden><svg class="sg-puxa" aria-hidden="true"><polygon points=""/></svg><span></span><span></span><span></span><span></span></div>
+        <div class="scan-guia" id="guia" hidden><span></span><span></span><span></span><span></span><i class="sg-alvo"></i><i class="sg-alvo"></i><i class="sg-alvo"></i><i class="sg-alvo"></i></div>
         <div class="scan-status" id="status" hidden>Aponte a câmera para a folha</div>
 
         <div class="scan-inicio" id="inicio">
             <span class="si-ic"><i class="bi bi-camera"></i></span>
             <strong>Correção pela câmera</strong>
-            <p>Use o <b>gabarito gerado pelo sistema</b> para esta prova. Coloque a folha numa mesa bem iluminada e aponte a câmera para os <b>4 quadrados pretos</b> da grade de respostas. Não precisa alinhar certinho: mesmo com a folha torta ou de lado, o sistema acha os quadrados e “puxa” a folha. A leitura é automática.</p>
+            <p>Use o <b>gabarito gerado pelo sistema</b> para esta prova. Coloque a folha numa mesa bem iluminada e aponte a câmera para os <b>4 quadrados pretos</b> da grade de respostas. Encaixe cada quadrado preto num dos quadrados grandes da tela: quando ele fica verde, o quadrado foi achado. A leitura é automática e instantânea.</p>
             <button class="btn btn-primary btn-lg" type="button" id="abrirCamera"><i class="bi bi-camera-video me-2"></i>Abrir câmera</button>
             <label class="btn btn-link text-white-50 mt-1" for="arquivoFoto"><i class="bi bi-image me-1"></i>Ou envie uma foto</label>
         </div>
@@ -160,7 +160,7 @@ require __DIR__ . '/../includes/layout_topo.php';
 
 <?php
 $script_pagina = '<script src="' . RAIZ . 'assets/vendor/jsqr/jsQR.js"></script>
-<script src="' . RAIZ . 'assets/js/omr.js?v=18"></script>
+<script src="' . RAIZ . 'assets/js/omr.js?v=19"></script>
 <script>
 (function () {
   "use strict";
@@ -200,16 +200,16 @@ $script_pagina = '<script src="' . RAIZ . 'assets/vendor/jsqr/jsQR.js"></script>
     return { x: (sw - w) / 2, y: topo + (sh - topo - base - w * ASP) / 2, w, h: w * ASP, k: w / MM.larg };
   }
   function posicionarGuia() {
-    const f = quadro(), t = Math.max(34, f.k * L.marcador * 2.6);             // v93: quadrado da guia grande (≈ 2,6× o impresso), como nos apps de correção
+    const f = quadro(), t = tamGuia(f);             // v95: quadrado da guia BEM grande e de tamanho fixo (não muda sozinho)
     const px = (x, y) => [f.x + (x - MM.x0) * f.k, f.y + (y - MM.y0) * f.k];
     const g = $("guia"), sp = g.querySelectorAll("span");
-    g.classList.remove("puxando"); g.querySelector(".sg-puxa polygon").setAttribute("points", "");
     [[f.x, f.y], [f.x + f.w, f.y], [f.x + f.w, f.y + f.h], [f.x, f.y + f.h]].forEach(([x, y], i) => {
       sp[i].style.cssText = `left:${x - t / 2}px;top:${y - t / 2}px;width:${t}px;height:${t}px`;
     });
     /* v73: só os quatro quadrados de canto (sem o desenho da folha por cima da câmera) */
     g.querySelectorAll("i.sg-cartao, i.sg-qr, i.sg-orient").forEach(x => x.remove());
   }
+  function tamGuia(f) { return Math.max(64, Math.min(f.w * 0.3, f.k * L.marcador * 4.2)); }
   /* o palco toma a proporção do vídeo (sem cortar a imagem), até 80% da altura da tela */
   function ajustarPalco() {
     if (!video.videoWidth) return;
@@ -219,29 +219,47 @@ $script_pagina = '<script src="' . RAIZ . 'assets/vendor/jsqr/jsQR.js"></script>
   function regioes(img) {
     const sw = palco.clientWidth, sh = palco.clientHeight, vw = video.videoWidth, vh = video.videoHeight;
     const s = Math.max(sw / vw, sh / vh), dx = (sw - vw * s) / 2, dy = (sh - vh * s) / 2, k = img.W / vw, f = quadro();
-    const rx = Math.max(f.w * 0.18, f.k * L.marcador * 3.4), ry = Math.max(f.h * 0.1, f.k * L.marcador * 3.4), conv = (X, Y) => [(X - dx) / s * k, (Y - dy) / s * k];
+    const rx = Math.max(f.w * 0.2, tamGuia(f) * 0.75), ry = Math.max(f.h * 0.11, tamGuia(f) * 0.75), conv = (X, Y) => [(X - dx) / s * k, (Y - dy) / s * k];
     const lm = f.w * L.marcador / (L.marcadores[1][0] - L.marcadores[0][0]) / s * k;      // lado do quadrado na imagem
     return [[f.x, f.y], [f.x + f.w, f.y], [f.x + f.w, f.y + f.h], [f.x, f.y + f.h]].map(([x, y]) => {
       const [x0, y0] = conv(x - rx, y - ry), [x1, y1] = conv(x + rx, y + ry);
-      const [cx, cy] = conv(x, y); return { x0, y0, x1, y1, ladoMin: lm * 0.6, ladoMax: lm * 2.4, cx, cy };
+      const [cx, cy] = conv(x, y); return { x0, y0, x1, y1, ladoMin: lm * 0.7, ladoMax: lm * 2.3, cx, cy };   // v95: bolinha marcada e quadradinho do QR são menores que o quadrado preto
     });
   }
-  function marcarGuias(pts) { $("guia").querySelectorAll("span").forEach((s, i) => s.classList.toggle("ok", !!pts[i])); }
   /* v76: ponto da imagem analisada -> ponto na tela (o vídeo é exibido com object-fit: cover) */
   function naTela(p, img) {
     const sw = palco.clientWidth, sh = palco.clientHeight, vw = video.videoWidth, vh = video.videoHeight;
     const s = Math.max(sw / vw, sh / vh), dx = (sw - vw * s) / 2, dy = (sh - vh * s) / 2, k = img.W / vw;
     return [p.x / k * s + dx, p.y / k * s + dy, (p.lado || 10) / k * s];
   }
-  /* v76: a folha não está nos quadrados da tela -> os quadrados da tela vão até os da folha ("puxam" a folha) */
-  let puxando = false;
-  function puxarGuias(pts, img) {
-    const g = $("guia"), sp = g.querySelectorAll("span"), tela = pts.map(p => naTela(p, img));
-    tela.forEach(([x, y, l], i) => { const t = Math.max(26, l * 1.6); sp[i].style.cssText = `left:${x - t / 2}px;top:${y - t / 2}px;width:${t}px;height:${t}px`; sp[i].classList.add("ok"); });
-    g.querySelector(".sg-puxa polygon").setAttribute("points", tela.map(([x, y]) => x.toFixed(1) + "," + y.toFixed(1)).join(" "));
-    g.classList.add("puxando"); puxando = true;
+  /* v95: o quadrado grande da tela fica parado; quando acha o quadradinho preto da folha, o quadrado grande
+     fica verde e aparece uma moldurinha verde em volta do quadradinho preto */
+  function marcarGuias(pts, img) {
+    const g = $("guia"), sp = g.querySelectorAll("span"), al = g.querySelectorAll("i.sg-alvo");
+    sp.forEach((s, i) => {
+      const p = pts && pts[i], a = al[i];
+      if (!p || !img || p === 1) { s.classList.toggle("ok", p === 1); if (p !== 1) a.classList.remove("on"); return; }
+      const [x, y, l] = naTela(p, img), t = Math.max(18, l * 1.7);
+      a.style.cssText = `left:${x - t / 2}px;top:${y - t / 2}px;width:${t}px;height:${t}px`; a.classList.add("on");
+      const r = s.getBoundingClientRect(), pr = palco.getBoundingClientRect(), fx = x + pr.left, fy = y + pr.top, fol = r.width * 0.35;
+      s.classList.toggle("ok", fx > r.left - fol && fx < r.right + fol && fy > r.top - fol && fy < r.bottom + fol);
+    });
   }
-  function soltarGuias() { if (puxando) { puxando = false; posicionarGuia(); } }
+  /* v95: só aceita 4 pontos que formam uma folha de verdade (sem "triângulo" nem cantos cruzados) */
+  function quadValido(pts, img) {
+    if (!pts || !pts.every(Boolean)) return false;
+    let area = 0, sinal = 0;
+    for (let i = 0; i < 4; i++) {
+      const a = pts[i], b = pts[(i + 1) % 4], c = pts[(i + 2) % 4];
+      area += a.x * b.y - b.x * a.y;
+      sinal += Math.sign((b.x - a.x) * (c.y - b.y) - (b.y - a.y) * (c.x - b.x));
+    }
+    if (Math.abs(sinal) !== 4 || Math.abs(area) / 2 < img.W * img.H * 0.035) return false;
+    const d = (a, b) => Math.hypot(a.x - b.x, a.y - b.y), lados = [d(pts[0], pts[1]), d(pts[1], pts[2]), d(pts[2], pts[3]), d(pts[3], pts[0])];
+    if (lados[0] / lados[2] > 2.2 || lados[2] / lados[0] > 2.2 || lados[1] / lados[3] > 2.2 || lados[3] / lados[1] > 2.2) return false;
+    const asp = (lados[1] + lados[3]) / (lados[0] + lados[2]);
+    return asp > ASP * 0.45 && asp < ASP * 2.2;
+  }
   function status(txt, tipo) { const s = $("status"); s.hidden = !txt; s.textContent = txt || ""; s.className = "scan-status" + (tipo ? " " + tipo : ""); }
 
   /* ---------------- Câmera ---------------- */
@@ -286,36 +304,44 @@ $script_pagina = '<script src="' . RAIZ . 'assets/vendor/jsqr/jsQR.js"></script>
   function procurar() {
     st.estado = "procurando"; st.estaveis = 0; st.ultimos = null;
     $("congelado").hidden = true; $("resultado").hidden = true;
-    status("Aponte para a folha: os 4 quadrados pretos precisam aparecer"); soltarGuias();
+    status("Aponte para a folha: os 4 quadrados pretos precisam aparecer"); marcarGuias(null);
   }
   function esperarSaida() { st.estado = "aguardando_saida"; st.ausente = 0; }
 
+  /* v95: leitura "vapt-vupt" — o modelo inteiro da folha (quadrado de orientação + bolinhas impressas)
+     já confere os 4 cantos, então lê no PRIMEIRO quadro confirmado, sem esperar a folha "parar" */
+  let volta = 0;
   function laco() {
     if (!st.stream) return;
+    const ini = performance.now();
     if ((st.estado === "procurando" || st.estado === "aguardando_saida") && video.videoWidth) {
-      const img = OMR.prepararImagem(video, 520);
-      let pts = OMR.detectarCantos(img, regioes(img)), livre = false;
-      if (st.modo === "escola" && pts.every(Boolean)) { const ok = OMR.confirmarCantos(img, L, pts); pts = ok || [null, null, null, null]; }   // v93: guia grande -> confere com o modelo
-      /* v76: fora dos quadrados da tela? procura os 4 quadrados na imagem toda (torta, de lado, em ângulo) */
-      if (!pts.every(Boolean) && st.modo === "escola" && st.ultimos) {   // v92: segue a folha do quadro anterior (rápido)
+      volta++;
+      const img = OMR.prepararImagem(video, 520), escola = st.modo === "escola";
+      const vistos = OMR.detectarCantos(img, regioes(img));
+      let pts = vistos, conf = false;
+      if (escola && vistos.every(Boolean)) { const ok = OMR.confirmarCantos(img, L, vistos); if (ok) { pts = ok; conf = true; } }
+      if (!conf && escola && st.ultimos) {   // segue a folha do quadro anterior (rápido)
         const seg = OMR.confirmarCantos(img, L, st.ultimos);
-        if (seg) { pts = seg; livre = true; }
+        if (seg) { pts = seg; conf = true; }
       }
-      if (!pts.every(Boolean)) {
-        const achados = OMR.acharFolha(img, st.modo === "escola" ? L : null);
-        if (achados) { pts = achados; livre = true; }
+      /* procura na imagem toda (folha torta ou fora dos quadrados): é a parte mais pesada, então
+         roda um quadro sim, outro não, enquanto nada foi achado */
+      if (!conf && (volta % 2 === 0 || vistos.filter(Boolean).length >= 2)) {
+        const achados = OMR.acharFolha(img, escola ? L : null);
+        if (achados) { pts = achados; conf = escola; }
       }
+      if (pts.every(Boolean) && !quadValido(pts, img)) { pts = vistos.every(Boolean) && quadValido(vistos, img) ? vistos : vistos.map(() => null); conf = false; }
       const todos = pts.every(Boolean);
       if (st.estado === "aguardando_saida") {
         st.ausente = todos ? 0 : st.ausente + 1;
-        if (st.ausente >= 4) procurar();
+        if (st.ausente >= 5) procurar();
       } else {
-        if (livre) puxarGuias(pts, img); else { soltarGuias(); marcarGuias(pts); }
+        marcarGuias(pts, img);
         if (todos) {
           const mov = st.ultimos ? Math.max(...pts.map((p, i) => Math.hypot(p.x - st.ultimos[i].x, p.y - st.ultimos[i].y))) : 1e9;
-          st.estaveis = mov < img.W * 0.03 ? st.estaveis + 1 : 1; st.ultimos = pts;   // v93: tolera a mão tremendo um pouco
-          status(st.estaveis >= 2 ? "Segure firme…" : (livre ? "Folha encontrada: puxando pelos quadrados" : "Folha encontrada"), "ok");
-          if (st.estaveis >= 2) { capturar(pts, img); }
+          st.estaveis = mov < img.W * 0.04 ? st.estaveis + 1 : 1; st.ultimos = pts;
+          status("Folha encontrada", "ok");
+          if (conf || st.estaveis >= 2) capturar(pts, img);   // folha da escola confirmada pelo modelo: lê já
         } else {
           st.estaveis = 0; st.ultimos = null;
           const n = pts.filter(Boolean).length;
@@ -323,14 +349,14 @@ $script_pagina = '<script src="' . RAIZ . 'assets/vendor/jsqr/jsQR.js"></script>
         }
       }
     }
-    setTimeout(laco, 80);
+    setTimeout(laco, Math.max(10, 45 - (performance.now() - ini)));
   }
 
   function capturar(pts, pequena) {
     st.estado = "lendo"; status("Lendo a folha…", "ok"); marcarGuias([1, 1, 1, 1]);
     /* v92: na folha da escola lê 3 quadros seguidos e fica com o que a maioria leu (como os apps de correção) */
     if (st.modo !== "escola") {
-      setTimeout(() => { const big = OMR.prepararImagem(video, 1600); processar(big, OMR.refinarCantos(big, pts, big.W / pequena.W)); }, 20);
+      setTimeout(() => { const big = OMR.prepararImagem(video, 1600); processar(big, OMR.refinarCantos(big, pts, big.W / pequena.W)); }, 0);
       return;
     }
     const lidas = []; let cant = pts, fator = null;
@@ -342,10 +368,10 @@ $script_pagina = '<script src="' . RAIZ . 'assets/vendor/jsqr/jsQR.js"></script>
       if (r.ok && r.contorno) cant = r.contorno.map(([x, y]) => ({ x, y, lado: c[0].lado }));
       else cant = c;
       const limpa = lidas.length === 1 && r.ok && r.qr && !r.duvidas.length;   // v93: leitura limpa -> pronto, sem esperar mais quadros
-      if (!limpa && lidas.length < 3 && lidas.filter(x => x.ok).length < 3 && lidas.length - lidas.filter(x => x.ok).length < 2) setTimeout(um, 60);
+      if (!limpa && lidas.length < 3 && lidas.filter(x => x.ok).length < 3 && lidas.length - lidas.filter(x => x.ok).length < 2) setTimeout(um, 30);
       else tratar(OMR.combinar(lidas));
     };
-    setTimeout(um, 20);
+    setTimeout(um, 0);
   }
 
   /* Uma leitura (câmera ou foto) */

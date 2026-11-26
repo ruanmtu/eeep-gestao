@@ -4395,3 +4395,9 @@ html[data-ms-modo="ver"][data-ms-mudou="0"] .ms-salvar { display: none; }
 .nc-spin button:hover { background: color-mix(in srgb, var(--nc, #13692a) 16%, #fff); color: var(--nc, #13692a); }
 .nc-spin button:active { background: var(--nc, #13692a); color: #fff; }
 @media (max-width: 767.98px) { .nc-spin { height: 38px; width: 22px; bottom: 3px; right: 3px; } .nc-cel.com-spin input { padding-right: 28px; } }
+
+/* ===== v95: guia da câmera: quadrados grandes, fixos e sem moldura; verde quando encaixa ===== */
+.scan-guia span { border: 3px solid transparent !important; border-radius: 16px !important; background: rgba(255,255,255,.16) !important; box-shadow: none !important; transition: border-color .12s, background .12s !important; }
+.scan-guia span.ok { border-color: #3ddc58 !important; background: rgba(61,220,88,.2) !important; }
+.scan-guia .sg-alvo { position: absolute; display: block; border: 2.5px solid #3ddc58; border-radius: 6px; box-shadow: 0 0 0 2px rgba(0,0,0,.25), 0 0 10px rgba(61,220,88,.7); opacity: 0; z-index: 2; pointer-events: none; transition: opacity .1s; }
+.scan-guia .sg-alvo.on { opacity: 1; }
